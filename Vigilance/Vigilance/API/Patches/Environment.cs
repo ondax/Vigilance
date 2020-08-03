@@ -34,68 +34,43 @@ namespace Vigilance.API.Patches
 			{
 				return false;
 			}
+
 			if (doorId == null)
 			{
 				return false;
 			}
+
 			if (__instance._ccm.CurClass == RoleType.None || __instance._ccm.CurClass == RoleType.Spectator)
 			{
 				return false;
 			}
+
 			Door door;
 			if (!doorId.TryGetComponent<Door>(out door))
 			{
 				return false;
 			}
+
 			if ((door.Buttons.Count == 0) ? (!__instance.ChckDis(doorId.transform.position)) : door.Buttons.All((Door.DoorButton item) => !__instance.ChckDis(item.button.transform.position)))
 			{
 				return false;
 			}
-			Player player = __instance.GetPlayer();
+
+			Player player = __instance.GetPlayer() == null ? Server.Host.GetPlayer() : __instance.GetPlayer();
 			DoorInteractEvent ev = new DoorInteractEvent(door, player);
-			ev.Allow = true;
-			ev.Destroy = false;
 			EventController.StartEvent<DoorInteractEventHandler>(ev);
-			if (player.PlayerLock)
-			{
-				__instance.RpcDenied(doorId);
-				__instance.OnInteract();
-				return false;
-			}
-			if (player.BreakDoors)
-			{
-				door.Networkdestroyed = true;
-				__instance.OnInteract();
-				return false;
-			}
-			if (ev.Destroy)
-			{
-				door.DestroyDoor(true);
-				__instance.OnInteract();
-				return false;
-			}
-			if (!ev.Allow)
-			{
-				__instance.RpcDenied(doorId);
-				__instance.OnInteract();
-				return false;
-			}
 			__instance.OnInteract();
 			if (__instance._sr.BypassMode)
 			{
 				door.ChangeState(true);
 				return false;
 			}
-			if (Data.RemoteCard.CheckPermission(player, door))
+			if (Data.RemoteCard.Enabled)
 			{
-				door.ChangeState(true);
-				return false;
-			}
-			foreach (Item item in player.GetItems())
-			{
-				if (item.permissions.Contains(ev.Permission.ToUpper()))
+				if (Data.RemoteCard.CheckPermission(player, door))
 				{
 					door.ChangeState(true);
+					return false;
 				}
 			}
 			if (door.PermissionLevels.HasPermission(Door.AccessRequirements.Checkpoints) && __instance._ccm.CurRole.team == Team.SCP)
@@ -133,8 +108,9 @@ namespace Vigilance.API.Patches
 					__instance.RpcDenied(doorId);
 				}
 			}
-			catch
+			catch (Exception e)
 			{
+				Log.Error("DoorInteractEvent", e);
 				__instance.RpcDenied(doorId);
 				return false;
 			}

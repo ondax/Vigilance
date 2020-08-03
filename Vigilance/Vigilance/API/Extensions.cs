@@ -347,19 +347,32 @@ namespace Vigilance.API.Extensions
     }
 
 	public static class StringExtensions
-    {
+	{
 		public static string GetWords(this string[] array)
-        {
+		{
 			string str = "";
 			foreach (string s in array.SkipCommand())
-            {
+			{
 				if (s == array[1])
 					str += s;
 				if (s != array[1])
 					str += $" {s}";
-            }
+			}
 			return str;
-        }
+		}
+
+		public static string SkipWords(this string[] array, int amount)
+        {
+			string str = "";
+			foreach (string s in array.Skip(amount))
+			{
+				if (s == array[1])
+					str += s;
+				if (s != array[1])
+					str += $" {s}";
+			}
+			return str;
+		}
 
 		public static string DiscordSanitize(this string str)
         {

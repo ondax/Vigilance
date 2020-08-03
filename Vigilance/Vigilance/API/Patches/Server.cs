@@ -1,6 +1,7 @@
 ﻿using Harmony;
 using Vigilance.Events;
 using Vigilance.Handlers;
+using System;
 
 namespace Vigilance.API.Patches
 {
@@ -19,10 +20,17 @@ namespace Vigilance.API.Patches
     {
         private static void Prefix()
         {
-            EventController.StartEvent<RoundStartEventHandler>(new RoundStartEvent());
-            Data.RoundCounter.AddRound();
-            Data.Cleanup.Start();
-            Data.Sitrep.Post(Data.Sitrep.Translation.RoundStart(), Enums.PostType.Sitrep);
+            try
+            {
+                EventController.StartEvent<RoundStartEventHandler>(new RoundStartEvent());
+                Data.RoundCounter.AddRound();
+                Data.Cleanup.Start();
+                Data.Sitrep.Post(Data.Sitrep.Translation.RoundStart(), Enums.PostType.Sitrep);
+            }
+            catch (Exception e)
+            {
+                Log.Error("RoundStartEventPatch", e);
+            }
         }
     }
 

@@ -128,7 +128,7 @@ namespace Vigilance
 			FileLog.CheckDirectories();
 			loadedPlugins = new List<Plugin>();
 			dependencies = new List<string>();
-			version = "4.1.0";
+			version = "4.1.1";
 			gameVersion = "Scopophobia";
 			_harmonyFound = false;
 		}

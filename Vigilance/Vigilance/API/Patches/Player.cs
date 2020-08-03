@@ -10,17 +10,6 @@ using MEC;
 
 namespace Vigilance.API.Patches
 {
-    [HarmonyPatch(typeof(BanHandler), nameof(BanHandler.IssueBan))]
-    public static class BanEventPatchOne
-    {
-        private static void Postfix(BanDetails ban, BanHandler.BanType banType)
-        {
-            BanEvent ev = new BanEvent(ban.GetPlayer(), ban.GetIssuer(), ban.GetDuration(), ban.Reason, true);
-            EventController.StartEvent<BanEventHandler>(ev);
-            FileLog.BanLog(ban.GetIssuer(), ban.GetPlayer(), ban.Reason, ban.GetDuration());
-            Data.Sitrep.Post(Data.Sitrep.Translation.Ban(ev), Enums.PostType.Ban);
-        }
-    }
 
     [HarmonyPatch(typeof(BanPlayer), nameof(BanPlayer.BanUser), new[] { typeof(GameObject), typeof(int), typeof(string), typeof(string), typeof(bool) })]
     public static class BanEventPatchTwo
@@ -125,11 +114,7 @@ namespace Vigilance.API.Patches
                             return false;
                         }
                     }
-                    else if (duration == 0)
-                    {
-                    }
                 }
-
                 targetPlayer.Kick(message);
                 return false;
             }
@@ -240,26 +225,29 @@ namespace Vigilance.API.Patches
         }
     }
 
-    [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.AddPlayer))]
-    public static class PlayerJoinEventPatch
+    [HarmonyPatch(typeof(NicknameSync), nameof(NicknameSync.SetNick))]
+    public class PlayerJoinEventPatch
     {
-        private static void Postfix(GameObject player)
+        public static void Postfix(NicknameSync __instance)
         {
             try
             {
-                Player ply = player.GetPlayer();
+                Player player = __instance.gameObject.GetPlayer();
                 Timing.CallDelayed(0.25f, () =>
                 {
-                    if (ply != null && ply.IsMuted)
-                        ply.ClassManager.SetDirtyBit(1UL);
+                    if (player != null && player.IsMuted)
+                        player.ClassManager.SetDirtyBit(1UL);
                 });
-                Data.NicknameFilter.CheckNickname(ply);
-                PlayerJoinEvent ev = new PlayerJoinEvent(ply);
-                EventController.StartEvent<PlayerJoinEventHandler>(ev);
-                Data.Sitrep.Post(Data.Sitrep.Translation.JoinEvent(ev.Player), Enums.PostType.Sitrep);
+                if (!string.IsNullOrEmpty(player.ClassManager.UserId))
+                {
+                    EventController.StartEvent<PlayerJoinEventHandler>(new PlayerJoinEvent(player));
+                    Data.NicknameFilter.CheckNickname(player);
+                    Data.Sitrep.Post(Data.Sitrep.Translation.JoinEvent(player), Enums.PostType.Sitrep);
+                }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Log.Error("PlayerJoinEvent", exception);
             }
         }
     }
@@ -367,9 +355,8 @@ namespace Vigilance.API.Patches
                             Player ply = __instance.GetPlayer();
                             PlayerSpawnEvent ev = new PlayerSpawnEvent(ply);
                             EventController.StartEvent<PlayerSpawnEventHandler>(ev);
-                            Data.Sitrep.Post(Data.Sitrep.Translation.SpawnEvent(ply), Enums.PostType.Sitrep);
                             Data.ScpHealing.StartHealing(ply);
-                            __instance._pms.OnPlayerClassChange(ev.Position, 0f);
+                            __instance._pms.OnPlayerClassChange(randomPosition.transform.position, rotY);
                         }
                         if (!__instance.SpawnProtected && __instance.EnableSP && __instance.SProtectedTeam.Contains((int)role.team))
                         {

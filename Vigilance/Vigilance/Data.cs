@@ -10,7 +10,6 @@ namespace Vigilance
         private static List<string> _instantKill;
         private static List<string> _breakDoors;
         private static Random _random;
-        private static bool _warheadLock;
         private static RoundCounter _roundCounter;
         private static Cleanup _cleanup;
         private static RemoteCard _remoteCard;
@@ -37,7 +36,6 @@ namespace Vigilance
             _instantKill = new List<string>();
             _breakDoors = new List<string>();
             _random = new Random();
-            _warheadLock = false;
             _roundCounter = new RoundCounter();
             _roundCounter?.Start();
             _cleanup = new Cleanup();
@@ -60,7 +58,6 @@ namespace Vigilance
             _instantKill.Clear();
             _breakDoors.Clear();
             _random = new Random();
-            _warheadLock = false;
         }
     }
 }

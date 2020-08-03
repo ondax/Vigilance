@@ -10,7 +10,7 @@ namespace Vigilance.API.Features
 {
     public class ScpHealing
     {
-        public static bool Enabled => ConfigManager.GetBool("enable_remote_card");
+        public static bool Enabled => ConfigManager.GetBool("enable_scp_healing");
         public static int WaitTime => ConfigManager.GetInt("scp_healing_wait_time");
         public static int Health => ConfigManager.GetInt("scp_healing_health");
 
