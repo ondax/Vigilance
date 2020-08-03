@@ -119,19 +119,21 @@ namespace Vigilance.API.Patches
 	}
 
 	[HarmonyPatch(typeof(RespawnManager), nameof(RespawnManager.Spawn))]
-	public static class TeamRespawnEventPatch
+	internal static class TeamRespawnEventPatch
 	{
 		private static bool Prefix(RespawnManager __instance)
 		{
 			try
 			{
-				if (!RespawnWaveGenerator.SpawnableTeams.TryGetValue(__instance.NextKnownTeam, out SpawnableTeam spawnableTeam) || __instance.NextKnownTeam == SpawnableTeamType.None)
+				if (!RespawnWaveGenerator.SpawnableTeams.TryGetValue(__instance.NextKnownTeam, out SpawnableTeam spawnableTeam) ||
+					__instance.NextKnownTeam == SpawnableTeamType.None)
 				{
 					ServerConsole.AddLog("Fatal error. Team '" + __instance.NextKnownTeam + "' is undefined.", ConsoleColor.Red);
 				}
 				else
 				{
 					List<Player> list = Server.Players.Where(p => p.Role == RoleType.Spectator && !p.IsInOverwatch).ToList();
+
 					if (__instance._prioritySpawn)
 					{
 						list = list.OrderBy(item => item.Hub.characterClassManager.DeathTime).ToList();
@@ -150,12 +152,9 @@ namespace Vigilance.API.Patches
 					}
 
 					int num = Mathf.Min(a, spawnableTeam.MaxWaveSize);
+
 					List<ReferenceHub> referenceHubList = ListPool<ReferenceHub>.Rent();
-					TeamRespawnEvent ev = new TeamRespawnEvent(list.ToArray(), __instance.NextKnownTeam == SpawnableTeamType.ChaosInsurgency);
-					EventController.StartEvent<TeamRespawnEventHandler>(ev);
-					Data.Sitrep.Post(Data.Sitrep.Translation.TeamRespawn(ev), Enums.PostType.Sitrep);
-					if (ev.IsChaos)
-						__instance.NextKnownTeam = SpawnableTeamType.ChaosInsurgency;
+					EventController.StartEvent<TeamRespawnEventHandler>(new TeamRespawnEvent(list.ToArray(), __instance.NextKnownTeam == SpawnableTeamType.ChaosInsurgency));
 					while (list.Count > num)
 						list.RemoveAt(list.Count - 1);
 					list.ShuffleList();
@@ -164,8 +163,10 @@ namespace Vigilance.API.Patches
 					{
 						try
 						{
-							RoleType classid = spawnableTeam.ClassQueue[Mathf.Min(referenceHubList.Count, spawnableTeam.ClassQueue.Length - 1)];
-							me.Hub.characterClassManager.SetPlayersClass(classid, me.GameObject);
+							RoleType classid =
+								spawnableTeam.ClassQueue[
+									Mathf.Min(referenceHubList.Count, spawnableTeam.ClassQueue.Length - 1)];
+							me.Hub.characterClassManager.SetPlayersClass(classid, me.Hub.gameObject);
 							referenceHubList.Add(me.Hub);
 							ServerLogs.AddLog(ServerLogs.Modules.ClassChange, "Player " + me.Hub.LoggedNameFromRefHub() + " respawned as " + classid + ".", ServerLogs.ServerLogType.GameEvent);
 						}
@@ -191,7 +192,8 @@ namespace Vigilance.API.Patches
 							rule.GenerateNew(__instance.NextKnownTeam, out string regular);
 							foreach (ReferenceHub referenceHub in referenceHubList)
 							{
-								referenceHub.characterClassManager.NetworkCurSpawnableTeamType = (byte)__instance.NextKnownTeam;
+								referenceHub.characterClassManager.NetworkCurSpawnableTeamType =
+									(byte)__instance.NextKnownTeam;
 								referenceHub.characterClassManager.NetworkCurUnitName = regular;
 							}
 

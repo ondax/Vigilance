@@ -27,12 +27,13 @@ namespace Vigilance.API.Patches
         }
     }
 
-    [HarmonyPatch(typeof(CharacterClassManager), "set_" + nameof(CharacterClassManager.NetworkCurClass))]
+    [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.NetworkCurClass), MethodType.Setter)]
     public static class CcmDoubleSpawnFix
     {
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             bool isNOPDetected = false;
+
             foreach (CodeInstruction instruction in instructions)
             {
                 if (instruction.opcode == OpCodes.Nop)

@@ -18,7 +18,7 @@ namespace Vigilance.API.Patches
     [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.CmdStartRound))]
     public static class RoundStartEventPatch
     {
-        private static void Prefix()
+        private static void Postfix()
         {
             try
             {
