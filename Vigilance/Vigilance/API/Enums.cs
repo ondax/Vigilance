@@ -32,7 +32,8 @@
 		Poison,
 		Scp207,
 		Recontainment,
-		FriendlyFireDetector
+		FriendlyFireDetector,
+                Disconnect
 	}
 
 	public enum DurationType
