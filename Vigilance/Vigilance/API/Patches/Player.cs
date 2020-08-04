@@ -51,7 +51,7 @@ namespace Vigilance.API.Patches
                 {
                     if (duration > 0)
                     {
-                        BanEvent ev = new BanEvent(issuerPlayer, targetPlayer, duration, reason, true);
+                        BanEvent ev = new BanEvent(issuerPlayer, targetPlayer, duration, reason.GetBanReason(), true);
                         EventController.StartEvent<BanEventHandler>(ev);
                         Data.Sitrep.Post(Data.Sitrep.Translation.Ban(ev), Enums.PostType.Ban);
                         string originalName = string.IsNullOrEmpty(targetPlayer.Nick) ? "(no nick)" : targetPlayer.Nick;

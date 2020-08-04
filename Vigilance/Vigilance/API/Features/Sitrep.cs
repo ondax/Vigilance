@@ -58,8 +58,6 @@ namespace Vigilance.API.Features
                 _reportWebhook.Post(msg);
             if (post == PostType.RemoteAdmin && _raLogWebhook != null)
             {
-                if (string.IsNullOrEmpty(msg))
-                    return;
                 _raLogWebhook.Post(msg);
             }
         }
@@ -109,7 +107,7 @@ namespace Vigilance.API.Features
 
             public string Ban(BanEvent ev)
             {
-                return ConfigManager.GetString("sitrep_ban_message").Replace("%bannedNick%", ev.Player.Nick.DiscordSanitize()).Replace("%bannedUserId%", ev.Player.UserId).Replace("%bannedToken%", ev.Player.Token).Replace("%reason%", ev.Reason).Replace("%adminNick%", ev.Admin.Nick.DiscordSanitize()).Replace("%adminUserId%", ev.Admin.Role.ToString()).Replace("%adminToken%", ev.Admin.Token).Replace("%duration%", ev.Duration.ToString());
+                return ConfigManager.GetString("sitrep_ban_message").Replace("%bannedNick%", ev.Player.Nick.DiscordSanitize()).Replace("%bannedUserId%", ev.Player.UserId).Replace("%bannedToken%", ev.Player.Token).Replace("%reason%", ev.Reason).Replace("%adminNick%", ev.Admin.Nick.DiscordSanitize()).Replace("%adminUserId%", ev.Admin.Role.ToString()).Replace("%adminToken%", ev.Admin.Token).Replace("%duration%", ev.Duration.GetDurationString());
             }
 
             public string Report(CheaterReportEvent ev)

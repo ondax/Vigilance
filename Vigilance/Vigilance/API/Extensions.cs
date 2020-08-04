@@ -327,30 +327,67 @@ namespace Vigilance.API.Extensions
 	}
 
 	public static class BanDetailsExtensions
-    {
+	{
 		public static Player GetIssuer(this BanDetails banDetails)
-        {
+		{
 			return banDetails.Issuer.GetPlayer();
-        }
+		}
 
 		public static Player GetPlayer(this BanDetails banDetails)
-        {
+		{
 			return banDetails.Id.GetPlayer();
-        }
+		}
 		public static TimeSpan GetExpirationTime(this BanDetails banDetails)
-        {
+		{
 			return TimeSpan.FromTicks(banDetails.Expires);
-        }
+		}
 
 		public static int GetDuration(this BanDetails banDetails)
-        {
+		{
 			return banDetails.GetExpirationTime().Seconds;
-        }
+		}
 
 		public static TimeSpan GetIssuanceTime(this BanDetails banDetails)
-        {
+		{
 			return TimeSpan.FromTicks(banDetails.IssuanceTime);
-        }
+		}
+
+		public static string GetBanReason(this string str)
+		{
+			BanDetails ban = new BanDetails
+			{
+				Reason = str
+			};
+			return ban.GetReason();
+		}
+
+		public static string GetReason(this BanDetails banDetails)
+		{
+			return string.IsNullOrEmpty(banDetails.Reason) ? "No reason provided." : banDetails.Reason;
+		}
+
+		public static string GetDurationString(this BanDetails banDetails)
+		{
+			string daysTranslation = ConfigManager.GetString("days_translation");
+			string hoursTranslation = ConfigManager.GetString("hours_translation");
+			string minutesTranslation = ConfigManager.GetString("minutes_translation");
+			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "Days" : daysTranslation;
+			string hoursT = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "Hours" : hoursTranslation;
+			string minutesT = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "Minutes" : minutesTranslation;
+			int minutes = (int)TimeSpan.FromSeconds((double)banDetails.GetDuration()).TotalMinutes;
+			int hours = (int)TimeSpan.FromMinutes((double)minutes).TotalHours;
+			int days = (int)TimeSpan.FromHours((double)hours).TotalDays;
+			return $"{days}{day}{hours}{hoursT}{minutes}{minutesT}";
+		}
+
+		public static string GetDurationString(this int duration)
+		{
+			BanDetails banDetails = new BanDetails
+			{
+				Expires = DateTime.UtcNow.AddSeconds(duration).Ticks
+			};
+			return banDetails.GetDurationString(); 
+		}
     }
 
 	public static class StringExtensions
