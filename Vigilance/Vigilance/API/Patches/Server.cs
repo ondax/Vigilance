@@ -31,6 +31,8 @@ namespace Vigilance.API.Patches
         {
             try
             {
+                if (q.StartsWith("REQUEST_DATA"))
+                    return;
                 Player admin = sender.GetPlayer();
                 FileLog.RemoteAdminLog(q, admin);
                 RACommandEvent ev = new RACommandEvent(admin, sender, q, true);

@@ -64,7 +64,7 @@ namespace Vigilance.API.Patches
 				return false;
 			}
 
-			Player player = __instance.GetPlayer() == null ? Server.Host.GetPlayer() : __instance.GetPlayer();
+			Player player = __instance.GetPlayer();
 			DoorInteractEvent ev = new DoorInteractEvent(door, player);
 			EventController.StartEvent<DoorInteractEventHandler>(ev);
 			__instance.OnInteract();
@@ -116,9 +116,8 @@ namespace Vigilance.API.Patches
 					__instance.RpcDenied(doorId);
 				}
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
-				Log.Error("PlayerInteract", e);
 				__instance.RpcDenied(doorId);
 				return false;
 			}

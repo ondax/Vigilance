@@ -57,7 +57,11 @@ namespace Vigilance.API.Features
             if (post == PostType.Report && _reportWebhook != null)
                 _reportWebhook.Post(msg);
             if (post == PostType.RemoteAdmin && _raLogWebhook != null)
+            {
+                if (string.IsNullOrEmpty(msg))
+                    return;
                 _raLogWebhook.Post(msg);
+            }
         }
 
        
@@ -78,7 +82,7 @@ namespace Vigilance.API.Features
                 if (role == RoleType.Spectator)
                 {
                     Role[] newArray = target.ClassManager.Classes.Where(h => h.roleId != RoleType.Spectator).ToArray();
-                    role = newArray[newArray.Count() - 1].roleId;
+                    role = newArray[newArray.Count()].roleId;
                 }
                 return ConfigManager.GetString("sitrep_death_message").Replace("%killerNick%", killer.Nick.DiscordSanitize()).Replace("%killerUserId%", killer.UserId).Replace("%killerRole%", killer.Role.ToString()).Replace("%killerToken%", killer.Token).Replace("%playerNick%", target.Nick.DiscordSanitize()).Replace("%playerUserId%", target.UserId).Replace("%playerRole%", role.ToString()).Replace("%playerToken%", target.Token).Replace("%damageAmount%", hitInfo.Amount.ToString()).Replace("%damagetype%", hitInfo.GetDamageType().Convert().ToString());
             }
@@ -115,7 +119,9 @@ namespace Vigilance.API.Features
 
             public string Command(RACommandEvent ev)
             {
-                return ConfigManager.GetString("sitrep_remote_admin_message").Replace("%issuerNick%", ev.Admin.Nick.DiscordSanitize()).Replace("%issuerUserId%", ev.Admin.UserId).Replace("%issuerGroup%", ev.Admin.UserGroup.BadgeText).Replace("%issuerToken%", ev.Admin.Token).Replace("%command%", ev.Command);
+                if (ev.Command == "REQUEST_DATA")
+                    return string.Empty;
+                return ConfigManager.GetString("sitrep_remote_admin_message").Replace("%issuerNick%", ev.Admin.Nick.DiscordSanitize()).Replace("%issuerUserId%", ev.Admin.UserId).Replace("%issuerGroup%", ev.Admin.UserGroup.BadgeText).Replace("%issuerToken%", ev.Admin.Token).Replace("%command%", ev.Query);
             }
 
             public string RoundEnd() => ConfigManager.GetString("sitrep_round_end_message");

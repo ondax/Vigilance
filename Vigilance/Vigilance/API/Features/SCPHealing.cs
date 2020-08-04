@@ -17,6 +17,8 @@ namespace Vigilance.API.Features
 
         public void StartHealing(Player player)
         {
+            if (!Enabled)
+                return;
             if (player.Team == Enums.TeamType.SCP)
             {
                 Timing.RunCoroutine(Heal(player));
@@ -36,7 +38,7 @@ namespace Vigilance.API.Features
                     {
                         if (player.Team == Enums.TeamType.SCP)
                         {
-                            Log.Debug("SCPHealing", $"Adding {Health} to {player.Nick} ({player.Role})");
+                            Log.Debug("SCPHealing", $"Adding {Health} HP to {player.Nick} ({player.Role})");
                             player.Health += Health;
                             if (player.Health >= player.MaxHealth)
                             {

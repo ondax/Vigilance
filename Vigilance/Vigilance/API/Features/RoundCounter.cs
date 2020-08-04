@@ -19,8 +19,8 @@
 
         public void AddRound()
         {
-            Log.Debug("RoundCounter", $"Rounds amount: {_roundCount}");
             _roundCount++;
+            Log.Debug("RoundCounter", $"Rounds amount: {_roundCount}");
         }
 
         public void Restart()

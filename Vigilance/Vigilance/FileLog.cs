@@ -129,13 +129,18 @@ namespace Vigilance
         {
             if (!Enabled)
                 return;
-            if (string.IsNullOrEmpty(line) || string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrEmpty(filePath))
                 return;
             try
             {
                 CheckDirectories();
                 using (StreamWriter writer = new StreamWriter(filePath, true))
                 {
+                    if (string.IsNullOrEmpty(line))
+                    {
+                        writer.WriteLine(line);
+                        return;
+                    }
                     writer.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {line}");
                 }
             }
