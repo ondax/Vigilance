@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System;
 using RemoteAdmin;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Reflection;
 
 namespace Vigilance.API.Extensions
 {
@@ -20,6 +20,16 @@ namespace Vigilance.API.Extensions
             }
         }
     }
+
+	public static class MethodExtensions
+	{
+		public static void InvokeStaticMethod(this Type type, string methodName, object[] param)
+		{
+			BindingFlags flags = BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public;
+			MethodInfo info = type.GetMethod(methodName, flags);
+			info?.Invoke(null, param);
+		}
+	}
 
     public static class HitInfoExtensions
     {
@@ -211,15 +221,16 @@ namespace Vigilance.API.Extensions
 			List<Player> list = new List<Player>(gameObjects.Count);
 			foreach (GameObject @object in gameObjects)
 			{
-				list.Add(new Player(@object));
+				if (!@object.GetComponent<CharacterClassManager>().IsHost || !string.IsNullOrEmpty(@object.GetComponent<CharacterClassManager>().UserId))
+					list.Add(new Player(@object));
 			}
 			return list;
 		}
 
 		public static List<Player> GetPlayers(this List<ReferenceHub> hubs)
 		{
-			List<Player> list = new List<Player>(hubs.Count);
-			foreach (ReferenceHub referenceHub in hubs)
+			List<Player> list = new List<Player>();
+			foreach (ReferenceHub referenceHub in hubs.Where(h => !h.characterClassManager.IsHost && !string.IsNullOrEmpty(h.characterClassManager.UserId)))
 			{
 				list.Add(new Player(referenceHub.gameObject));
 			}
@@ -256,11 +267,7 @@ namespace Vigilance.API.Extensions
 
 				if (int.TryParse(args, out int id))
                 {
-					foreach (Player player in Server.Players)
-                    {
-						if (player.Id == id)
-							return player;
-                    }
+					return id.GetPlayer();
                 }
 
 				if (args.EndsWith("@steam") || args.EndsWith("@discord") || args.EndsWith("@northwood") || args.EndsWith("@patreon"))

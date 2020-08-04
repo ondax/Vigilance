@@ -5,6 +5,7 @@ using Vigilance.API.Enums;
 using UnityEngine;
 using Vigilance.API.Extensions;
 using GameCore;
+using System.IO;
 
 namespace Vigilance.API
 {
@@ -45,24 +46,11 @@ namespace Vigilance.API
         }
 
         public static GameObject Host => PlayerManager.localPlayer;
-        public static List<Player> Players
-        {
-            get
-            {
-                List<Player> players = new List<Player>();
-                foreach (GameObject gameObject in PlayerManager.players)
-                {
-                    if (!string.IsNullOrEmpty(gameObject.GetComponent<CharacterClassManager>().UserId) && !gameObject.GetComponent<CharacterClassManager>().IsHost)
-                    {
-                        players.Add(gameObject.GetPlayer());
-                    }
-                }
-                return players;
-            }
-        }
+        public static List<Player> Players => PlayerManager.players.GetPlayers();
 
         public static void Restart(bool safeRestart = true)
         {
+            DeleteLogs(false);
             if (safeRestart)
             {
                 Timing.RunCoroutine(SafeRestart());
@@ -215,6 +203,17 @@ namespace Vigilance.API
         public static string RunCommand(string command)
         {
             return ServerConsole.EnterCommand(command, out ConsoleColor color, new ConsoleCommandSender());
+        }
+
+        public static void DeleteLogs(bool serverLogs)
+        {
+            if (serverLogs)
+            {
+                Directory.Delete($"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}/SCP Secret Laboratory/ServerLogs");
+                FileLog.DeleteLogs();
+                return;
+            }
+            FileLog.DeleteLogs();
         }
     }
 }

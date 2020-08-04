@@ -104,12 +104,36 @@ namespace Vigilance
             WriteLine($"[{target.Role}] {target.Nick} ({target.UserId}) has been killed by [{killer.Role}] {killer.Nick} ({killer.UserId}) using {hitInfo.GetDamageType().Convert()} dealing {hitInfo.Amount} damage.", KillsLogPath);
         }
 
+        public static void DeleteLogs()
+        {
+            try
+            {
+                File.Delete(DebugLogPath);
+                File.Delete(InfoLogPath);
+                File.Delete(WarnLogPath);
+                File.Delete(ErrorLogPath);
+                File.Delete(ConsoleLogPath);
+                File.Delete(RemoteAdminLogPath);
+                File.Delete(BanLogPath);
+                File.Delete(KillsLogPath);
+                Directory.Delete(LogsPath);
+                CheckDirectories();
+            }
+            catch (Exception e)
+            {
+                Log.Error("FileLog", e);
+            }
+        }
+
         public static void WriteLine(string line, string filePath)
         {
             if (!Enabled)
                 return;
+            if (string.IsNullOrEmpty(line) || string.IsNullOrEmpty(filePath))
+                return;
             try
             {
+                CheckDirectories();
                 using (StreamWriter writer = new StreamWriter(filePath, true))
                 {
                     writer.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {line}");

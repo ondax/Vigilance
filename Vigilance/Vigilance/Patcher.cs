@@ -35,9 +35,7 @@ namespace Vigilance.API.Features
             try
             {
                 if (!PatchesEnabled)
-                {
                     return;
-                }
                 _harmonyInstance.PatchAll();
                 Log.Debug("Patcher", "Succesfully patched!");
             }

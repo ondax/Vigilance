@@ -1,4 +1,6 @@
-﻿namespace Vigilance.API.Features
+﻿using System.Collections.Generic;
+
+namespace Vigilance.API.Features
 {
     public class RemoteCard
     {
@@ -11,11 +13,13 @@
         {
             if (!Enabled)
                 return false;
-            foreach (Inventory.SyncItemInfo itemInfo in player.SyncItems)
-            {
-                foreach (string perm in door.backwardsCompatPermissions.Keys)
+            foreach (Inventory.SyncItemInfo itemInfo in player.Inventory.items)
+            { 
+                foreach (string perm in player.Inventory.GetItemByID(itemInfo.id).permissions)
                 {
-                    if (player.GetItem(itemInfo.id).permissions.Contains(perm))
+                    if (perm.ToUpper() == door.permissionLevel.ToUpper())
+                        return true;
+                    if (Door.backwardsCompatPermissions.TryGetValue(perm, out Door.AccessRequirements access) && door.PermissionLevels.HasPermission(access))
                     {
                         return true;
                     }

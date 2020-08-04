@@ -33,7 +33,8 @@
 		Scp207,
 		Recontainment,
 		FriendlyFireDetector,
-                Disconnect
+        Disconnect,
+		CmdSuicide
 	}
 
 	public enum DurationType
@@ -79,5 +80,38 @@
 		Ban,
 		Report,
 		RemoteAdmin
+	}
+
+	public enum RespawnEffectType : byte
+	{
+		PlayChaosInsurgencyMusic = 0,
+		SummonChaosInsurgencyVan = 128,
+		SummonNtfChopper = 129,
+	}
+
+	public enum SitrepEventType
+	{
+		PlayerDeath,
+		PlayerLure,
+		PlayerJoin,
+		PlayerLeave,
+		PlayerSpawn,
+
+		ServerBan,
+		ServerReport,
+		ServerCommand,
+
+		RoundEnd,
+		RoundStart,
+		RoundWaiting,
+		RoundRespawn,
+
+
+		EnvDecontaminate,
+		EnvDetonate,
+		EnvStart,
+		EnvStop,
+
+		None
 	}
 }

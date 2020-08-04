@@ -5,6 +5,7 @@ using Vigilance.API.Discord;
 using Vigilance.API.Enums;
 using Vigilance.API.Extensions;
 using Vigilance.Events;
+using System.Linq;
 
 namespace Vigilance.API.Features
 {
@@ -73,7 +74,13 @@ namespace Vigilance.API.Features
 
             public string PlayerDeathEvent(Player killer, Player target, PlayerStats.HitInfo hitInfo)
             {
-                return ConfigManager.GetString("sitrep_death_message").Replace("%killerNick%", killer.Nick.DiscordSanitize()).Replace("%killerUserId%", killer.UserId).Replace("%killerRole%", killer.Role.ToString()).Replace("%killerToken%", killer.Token).Replace("%playerNick%", target.Nick.DiscordSanitize()).Replace("%playerUserId%", target.UserId).Replace("%playerRole%", target.Role.ToString()).Replace("%playerToken%", target.Token).Replace("%damageAmount%", hitInfo.Amount.ToString()).Replace("%damagetype%", hitInfo.GetDamageType().Convert().ToString());
+                RoleType role = target.Role;
+                if (role == RoleType.Spectator)
+                {
+                    Role[] newArray = target.ClassManager.Classes.Where(h => h.roleId != RoleType.Spectator).ToArray();
+                    role = newArray[newArray.Count() - 1].roleId;
+                }
+                return ConfigManager.GetString("sitrep_death_message").Replace("%killerNick%", killer.Nick.DiscordSanitize()).Replace("%killerUserId%", killer.UserId).Replace("%killerRole%", killer.Role.ToString()).Replace("%killerToken%", killer.Token).Replace("%playerNick%", target.Nick.DiscordSanitize()).Replace("%playerUserId%", target.UserId).Replace("%playerRole%", role.ToString()).Replace("%playerToken%", target.Token).Replace("%damageAmount%", hitInfo.Amount.ToString()).Replace("%damagetype%", hitInfo.GetDamageType().Convert().ToString());
             }
 
             public string LureEvent(Player player)

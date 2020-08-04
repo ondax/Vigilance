@@ -2,6 +2,8 @@
 using Vigilance.Events;
 using Vigilance.Handlers;
 using System;
+using RemoteAdmin;
+using Vigilance.API.Extensions;
 
 namespace Vigilance.API.Patches
 {
@@ -10,8 +12,34 @@ namespace Vigilance.API.Patches
     {
         private static void Prefix()
         {
-            EventController.StartEvent<RoundRestartEventHandler>(new RoundRestartEvent());
-            Data.Sitrep.Post(Data.Sitrep.Translation.RoundRestart(), Enums.PostType.Sitrep);
+            try
+            {
+                EventController.StartEvent<RoundRestartEventHandler>(new RoundRestartEvent());
+                Data.Sitrep.Post(Data.Sitrep.Translation.RoundRestart(), Enums.PostType.Sitrep);
+            }
+            catch (Exception e)
+            {
+                Log.Error("PlayerStats", e);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CommandProcessor), nameof(CommandProcessor.ProcessQuery))]
+    public static class CommandProcessorPatch
+    {
+        public static void Postfix(string q, CommandSender sender)
+        {
+            try
+            {
+                Player admin = sender.GetPlayer();
+                FileLog.RemoteAdminLog(q, admin);
+                RACommandEvent ev = new RACommandEvent(admin, sender, q, true);
+                Data.Sitrep.Post(Data.Sitrep.Translation.Command(ev), Enums.PostType.RemoteAdmin);
+            }
+            catch (Exception e)
+            {
+                Log.Error("CommandProcessor", e);
+            }
         }
     }
 
@@ -29,7 +57,7 @@ namespace Vigilance.API.Patches
             }
             catch (Exception e)
             {
-                Log.Error("RoundStartEventPatch", e);
+                Log.Error("CharacterClassManager", e);
             }
         }
     }
@@ -39,17 +67,24 @@ namespace Vigilance.API.Patches
     {
         private static void Prefix(string q)
         {
-            FileLog.ConsoleLog(q);
-            if (q == "Waiting for players...")
+            try
             {
-                EventController.StartEvent<WaitingForPlayersEventHandler>(new WaitingForPlayersEvent());
-                Data.Sitrep.Post(Data.Sitrep.Translation.WaitingForPlayers(), Enums.PostType.Sitrep);
+                FileLog.ConsoleLog(q);
+                if (q == "Waiting for players...")
+                {
+                    EventController.StartEvent<WaitingForPlayersEventHandler>(new WaitingForPlayersEvent());
+                    Data.Sitrep.Post(Data.Sitrep.Translation.WaitingForPlayers(), Enums.PostType.Sitrep);
+                }
+                if (q.StartsWith("Round finished! Anomalies:"))
+                {
+                    EventController.StartEvent<RoundEndEventHandler>(new RoundEndEvent());
+                    Data.Sitrep.Post(Data.Sitrep.Translation.RoundEnd(), Enums.PostType.Sitrep);
+                    Data.RoundCounter.Restart();
+                }
             }
-            if (q.StartsWith("Round finished! Anomalies:"))
+            catch (Exception e)
             {
-                EventController.StartEvent<RoundEndEventHandler>(new RoundEndEvent());
-                Data.Sitrep.Post(Data.Sitrep.Translation.RoundEnd(), Enums.PostType.Sitrep);
-                Data.RoundCounter.Restart();
+                Log.Error("ServerConsole", e);
             }
         }
     }

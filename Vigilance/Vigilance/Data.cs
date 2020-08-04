@@ -32,25 +32,29 @@ namespace Vigilance
 
         public static void Prepare()
         {
-            _playerLock = new List<string>();
-            _instantKill = new List<string>();
-            _breakDoors = new List<string>();
-            _random = new Random();
-            _roundCounter = new RoundCounter();
-            _roundCounter?.Start();
-            _cleanup = new Cleanup();
-            _remoteCard = new RemoteCard();
-            _scpHealing = new ScpHealing();
-            _scpHealing?.Start();
-            _nicknameFilter = new NicknameFilter();
-            _patcher = new Patcher();
-            _patcher?.Start();
-            _sitrep = new Sitrep();
-            _sitrep?.Start();
-            Reset();
+            try
+            {
+                _playerLock = new List<string>();
+                _instantKill = new List<string>();
+                _breakDoors = new List<string>();
+                _random = new Random();
+                _roundCounter = new RoundCounter();
+                _roundCounter?.Start();
+                _cleanup = new Cleanup();
+                _remoteCard = new RemoteCard();
+                _scpHealing = new ScpHealing();
+                _nicknameFilter = new NicknameFilter();
+                _patcher = new Patcher();
+                _patcher?.Start();
+                _sitrep = new Sitrep();
+                _sitrep?.Start();
+                Reset();
+            }
+            catch (Exception e)
+            {
+                Log.Error("Data", e);
+            }
         }
-
-        public static void StartCleanup() => _cleanup?.Start();
 
         public static void Reset()
         {

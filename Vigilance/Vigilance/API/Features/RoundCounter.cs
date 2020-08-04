@@ -17,15 +17,22 @@
 
         public void Reset() => _roundCount = 0;
 
-        public void AddRound() => _roundCount++;
+        public void AddRound()
+        {
+            Log.Debug("RoundCounter", $"Rounds amount: {_roundCount}");
+            _roundCount++;
+        }
 
         public void Restart()
         {
             if (!RestartEnabled)
                 return;
             if (RoundsToPass >= _roundCount)
+            {
+                Log.Info("RoundCounter", $"{RoundsToPass} rounds have passed, restarting the server ..");
                 Server.Restart(true);
-            Reset();
+                Reset();
+            }
         }
     }
 }

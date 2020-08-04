@@ -1,5 +1,6 @@
 ﻿using System.Collections.Specialized;
 using System.Net;
+using System;
 
 namespace Vigilance.API.Discord
 {
@@ -11,16 +12,23 @@ namespace Vigilance.API.Discord
 
         public void Post(string message)
         {
-            using (WebClient webClient = new WebClient())
+            try
             {
-                NameValueCollection collection = new NameValueCollection()
+                using (WebClient webClient = new WebClient())
+                {
+                    NameValueCollection collection = new NameValueCollection()
                 {
                     {
                        "content",
                         message
                     }
                 };
-                webClient.UploadValues(_url, collection);
+                    webClient.UploadValues(_url, collection);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Webhook", e);
             }
         }
     }

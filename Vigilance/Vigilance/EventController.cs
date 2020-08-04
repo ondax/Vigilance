@@ -9,7 +9,7 @@ namespace Vigilance
 	{
 		public static void StartEvent<T>(Event ev) where T : Handler
 		{
-			foreach (T t in EventController.GetHandlers<T>())
+			foreach (T t in GetHandlers<T>())
 			{
 				try
 				{
@@ -18,7 +18,7 @@ namespace Vigilance
 				}
 				catch (Exception ex)
 				{
-					Log.Error("EventController", string.Format("Failed to handle {0}", ev));
+					Log.Error("EventController", string.Format("Failed to handle {0}", ev.GetType().Name));
 					Log.Error("EventController", ex.ToString());
 				}
 			}
@@ -30,7 +30,7 @@ namespace Vigilance
 			{
 				if (typeof(Handler).IsAssignableFrom(type))
 				{
-					EventController.AddEventHandler(plugin, type, handler);
+					AddEventHandler(plugin, type, handler);
 				}
 			}
 		}
@@ -38,31 +38,28 @@ namespace Vigilance
 		public static void AddEventHandler(Plugin plugin, Type eventType, Handler handler)
 		{
 			EventHandlerWrapper wrapper = new EventHandlerWrapper(plugin, handler);
-			if (!EventController.snapshots.ContainsKey(plugin))
+			if (!snapshots.ContainsKey(plugin))
 			{
-				EventController.snapshots.Add(plugin, new Snapshot());
+				snapshots.Add(plugin, new Snapshot());
 			}
-			EventController.snapshots[plugin].Entries.Add(new Snapshot.SnapshotEntry(eventType, wrapper));
-			EventController.AddEventMeta(eventType, wrapper, handler);
+			snapshots[plugin].Entries.Add(new Snapshot.SnapshotEntry(eventType, wrapper));
+			AddEventMeta(eventType, wrapper, handler);
 		}
 
 		public static void AddEventMeta(Type eventType, EventHandlerWrapper wrapper, Handler handler)
 		{
-			if (!EventController.event_meta.ContainsKey(eventType))
+			if (!event_meta.ContainsKey(eventType))
 			{
-				EventController.event_meta.Add(eventType, new List<EventHandlerWrapper>
-				{
-					wrapper
-				});
+				event_meta.Add(eventType, new List<EventHandlerWrapper> { wrapper });
 				return;
 			}
-			EventController.event_meta[eventType].Add(wrapper);
+			event_meta[eventType].Add(wrapper);
 		}
 
 		public static List<T> GetHandlers<T>() where T : Handler
 		{
 			List<T> list = new List<T>();
-			if (EventController.event_meta.ContainsKey(typeof(T)))
+			if (event_meta.ContainsKey(typeof(T)))
 			{
 				using (List<EventHandlerWrapper>.Enumerator enumerator = EventController.event_meta[typeof(T)].GetEnumerator())
 				{

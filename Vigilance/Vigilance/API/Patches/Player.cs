@@ -119,8 +119,9 @@ namespace Vigilance.API.Patches
                 targetPlayer.Kick(message);
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("BanPlayer", e);
                 return true;
             }
         }
@@ -157,8 +158,9 @@ namespace Vigilance.API.Patches
 
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("PlayerInteract", e);
                 return true;
             }
         }
@@ -197,8 +199,9 @@ namespace Vigilance.API.Patches
 
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("CharacterClassManager", e);
                 return true;
             }
         }
@@ -220,6 +223,10 @@ namespace Vigilance.API.Patches
                 {
                     dmgType = DamageType.Disconnect;
                 }
+                if (attacker.Compare(target) && info.Attacker.ToLower() == "cmdsuicide")
+                {
+                    dmgType = DamageType.CmdSuicide;
+                }
                 PlayerDeathEvent ev = new PlayerDeathEvent(target, attacker, true, dmgType);
                 EventController.StartEvent<PlayerDeathEventHandler>(ev);
                 if (!attacker.Compare(target))
@@ -228,8 +235,9 @@ namespace Vigilance.API.Patches
                     FileLog.KillLog(attacker, target, info);
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("PlayerStats", e);
             }
         }
     }
@@ -256,7 +264,7 @@ namespace Vigilance.API.Patches
             }
             catch (Exception exception)
             {
-                Log.Error("PlayerJoinEvent", exception);
+                Log.Error("NicknameSync", exception);
             }
         }
     }
@@ -275,8 +283,9 @@ namespace Vigilance.API.Patches
                 EventController.StartEvent<PlayerLeaveEventHandler>(ev);
                 Data.Sitrep.Post(Data.Sitrep.Translation.LeaveEvent(ev.Player), Enums.PostType.Sitrep);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("ReferenceHub", e);
             }
         }
     }
@@ -313,8 +322,9 @@ namespace Vigilance.API.Patches
                 {
                     __instance.GetComponent<FootstepSync>().SetLoudness(role.team, role.roleId.Is939());
                 }
-                catch
+                catch (Exception e)
                 {
+                    Log.Error("FootstepSync", e);
                 }
 
                 if (NetworkServer.active)
@@ -386,8 +396,9 @@ namespace Vigilance.API.Patches
                 __instance.RefreshPlyModel();
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("CharacterClassManager", e);
                 return true;
             }
         }
@@ -419,8 +430,9 @@ namespace Vigilance.API.Patches
                 }
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("ConsumableAndWearableItems", e);
                 return true;
             }
         }

@@ -4,11 +4,12 @@ using System.Linq;
 using Grenades;
 using Mirror;
 using Respawning;
-using Scp914;
 using UnityEngine;
 using Vigilance.API.Enums;
 using Vigilance.API.Extensions;
 using Object = UnityEngine.Object;
+using RemoteAdmin;
+using MEC;
 
 namespace Vigilance.API
 {
@@ -27,6 +28,8 @@ namespace Vigilance.API
 		public static List<Pickup> Pickups => Object.FindObjectsOfType<Pickup>().ToList();
 		public static string Seed => Server.Host.GetComponent<RandomSeedSync>().seed.ToString();
 		public static List<TeslaGate> TeslaGates => Object.FindObjectsOfType<TeslaGate>().ToList();
+		public static List<Generator079> Generators => Generator079.Generators;
+		public static RespawnEffectsController Respawn => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
 
 		public static void Broadcast(string message, int duration)
         {
@@ -49,8 +52,29 @@ namespace Vigilance.API
 			RespawnEffectsController.PlayCassieAnnouncement(message, makeHold, makeNoise);
         }
 
+		public static void PlayEffect(RespawnEffectType effectType)
+		{
+			Respawn.RpcPlayEffects(new byte[] { (byte)effectType });
+		}
+
+		public static void SummonChopper()
+		{
+			PlayEffect(RespawnEffectType.SummonNtfChopper);
+		}
+
+		public static void SummonVan(bool playMusic = true)
+		{
+			if (playMusic)
+			{
+				PlayEffect(RespawnEffectType.PlayChaosInsurgencyMusic);
+				PlayEffect(RespawnEffectType.SummonChaosInsurgencyVan);
+				return;
+			}
+			PlayEffect(RespawnEffectType.SummonChaosInsurgencyVan);
+		}
+
 		public static Vector3 GetRandomSpawnpoint(RoleType role) => Server.Host.GetComponent<SpawnpointManager>().GetRandomPosition(role).transform.position;
-		public static void TurnOffLights(float time = 9999f, bool onlyHeavy = false) => Generator079.Generators[0].CallRpcCustomOverchargeForOurBeautifulModCreators(time, onlyHeavy);
+		public static void TurnOffLights(float time = 9999f, bool onlyHeavy = false) => Generators[0].ServerOvercharge(time, onlyHeavy);
 
 		public static Grenade SpawnGrenade(Player player, GrenadeType grenadeType)
 		{
@@ -77,6 +101,48 @@ namespace Vigilance.API
 			component3.InitData(grenadeManager3, Vector3.zero, Vector3.zero, 0f);
 			NetworkServer.Spawn(component3.gameObject);
 			return component3;
+		}
+
+		public static void SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
+		{
+			GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
+			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
+			ccm.CurClass = role;
+			ccm.RefreshPlyModel();
+			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
+			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
+			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
+			obj.transform.localScale = new Vector3(x, y, z);
+			obj.transform.position = position;
+			obj.transform.rotation = rotation;
+			NetworkServer.Spawn(obj);
+		}
+
+		public static void SpawnWorkbench(Vector3 position, Vector3 rotation, Vector3 size)
+		{
+			GameObject bench = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.Find(p => p.gameObject.name == "Work Station"));
+			Offset offset = new Offset();
+			offset.position = position;
+			offset.rotation = rotation;
+			offset.scale = Vector3.one;
+			bench.gameObject.transform.localScale = size;
+			NetworkServer.Spawn(bench);
+			bench.GetComponent<WorkStation>().Networkposition = offset;
+			bench.AddComponent<WorkStationUpgrader>();
+		}
+
+		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player, role, count));
+
+		private static IEnumerator<float> SpawnBodies(Player player, int role, int count)
+		{
+			for (int i = 0; i < count; i++)
+			{
+				player.GameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.Position + Vector3.up * 5,
+					Quaternion.identity, Vector3.zero, role,
+					new PlayerStats.HitInfo(1000f, player.UserId, DamageTypes.Falldown,
+						player.Id), false, "SCP-343", "SCP-343", 0);
+				yield return MEC.Timing.WaitForSeconds(0.15f);
+			}
 		}
 
 		public static class Warhead

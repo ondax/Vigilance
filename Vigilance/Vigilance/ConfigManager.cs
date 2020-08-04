@@ -25,34 +25,58 @@ namespace Vigilance
         public static ItemType GetItem(string key) => (ItemType)Enum.Parse(typeof(ItemType), ConfigManager.GetString(key));
         public static List<ItemType> GetItems(string key)
         {
-            List<ItemType> items = new List<ItemType>();
-            foreach (int val in GetIntList(key))
+            try
             {
-                items.Add((ItemType)Enum.Parse(typeof(ItemType), val.ToString()));
+                List<ItemType> items = new List<ItemType>();
+                foreach (int val in GetIntList(key))
+                {
+                    items.Add((ItemType)Enum.Parse(typeof(ItemType), val.ToString()));
+                }
+                return items;
             }
-            return items;
+            catch (Exception e)
+            {
+                Log.Error("ConfigManager", e);
+                return new List<ItemType>();
+            }
         }
 
         public static RoleType GetRole(string key) => (RoleType)Enum.Parse(typeof(RoleType), GetString(key));
         public static List<RoleType> GetRoles(string key)
         {
-            List<RoleType> roles = new List<RoleType>();
-            foreach (int val in GetIntList(key))
+            try
             {
-                roles.Add((RoleType)Enum.Parse(typeof(RoleType), val.ToString()));
+                List<RoleType> roles = new List<RoleType>();
+                foreach (int val in GetIntList(key))
+                {
+                    roles.Add((RoleType)Enum.Parse(typeof(RoleType), val.ToString()));
+                }
+                return roles;
             }
-            return roles;
+            catch (Exception e)
+            {
+                Log.Error("ConfigManager", e);
+                return new List<RoleType>();
+            }
         }
 
         public static TeamType GetTeam(string key) => (TeamType)Enum.Parse(typeof(TeamType), GetString(key));
         public static List<TeamType> GetTeams(string key)
         {
-            List<TeamType> teams = new List<TeamType>();
-            foreach (int val in GetIntList(key))
+            try
             {
-                teams.Add((TeamType)Enum.Parse(typeof(TeamType), val.ToString()));
+                List<TeamType> teams = new List<TeamType>();
+                foreach (int val in GetIntList(key))
+                {
+                    teams.Add((TeamType)Enum.Parse(typeof(TeamType), val.ToString()));
+                }
+                return teams;
             }
-            return teams;
+            catch (Exception e)
+            {
+                Log.Error("ConfigManager", e);
+                return new List<TeamType>();
+            }
         }
     }
 }

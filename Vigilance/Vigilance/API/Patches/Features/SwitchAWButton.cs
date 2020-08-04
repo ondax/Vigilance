@@ -38,8 +38,9 @@ namespace Vigilance.API.Patches
                 __instance.OnInteract();
                 return false;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error("PlayerInteract", e);
                 return true;
             }
         }

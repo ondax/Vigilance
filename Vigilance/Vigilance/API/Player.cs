@@ -8,6 +8,7 @@ using Hints;
 using Searching;
 using System.Collections.Generic;
 using CustomPlayerEffects;
+using MEC;
 
 namespace Vigilance.API
 {
@@ -210,18 +211,56 @@ namespace Vigilance.API
 
         public void Teleport(Vector3 pos) => this.PlayerMovement.OverridePosition(pos, 0f);
 
-        public void ShowHint(string message)
+        public void ShowHint(string message, float duration = 5f)
         {
             HintParameter[] parameters = new HintParameter[]
             {
-                new StringHintParameter(message)
+                new StringHintParameter(message),
             };
-            HintEffect[] effects = new HintEffect[]
+            HintDisplay.Show(new TextHint(message, parameters, null, duration));
+        }
+
+        public void SetPlayerScale(float x, float y, float z)
+        {
+            try
             {
-                new OutlineEffect(new Color32(0, 0, 0, 0), 5f, 0f, 1f)
-            };
-            TextHint hint = new TextHint(message, parameters, effects, 3f);
-            this.HintDisplay.Show(hint);
+                GameObject target = this.GameObject;
+                NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
+                target.transform.localScale = new Vector3(1 * x, 1 * y, 1 * z);
+                ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
+                destroyMessage.netId = identity.netId;
+                foreach (GameObject player in PlayerManager.players)
+                {
+                    NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
+                    if (player != target)
+                        playerCon.Send(destroyMessage, 0);
+                    object[] parameters = new object[] { identity, playerCon };
+                    typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Log.Error("Player", e);
+            }
+        }
+
+        public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
+
+        private IEnumerator<float> DoRocket(Player player, float speed)
+        {
+            int maxAmnt = ConfigManager.GetInt("rocket_max_amount") == 0 ? 1000 : ConfigManager.GetInt("rocket_max_amount");
+            int amnt = 0;
+            while (player.Role != RoleType.Spectator)
+            {
+                player.Position = player.Position + Vector3.up * speed;
+                amnt++;
+                if (amnt >= maxAmnt)
+                {
+                    player.GodMode = false;
+                    player.Kill();
+                }
+                yield return Timing.WaitForOneFrame;
+            }
         }
 
         public override string ToString() => $"{this.Nick};{this.UserId};{this.Id};{this.Token};{this.Role}";
