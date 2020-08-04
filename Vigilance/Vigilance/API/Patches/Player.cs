@@ -1,6 +1,7 @@
 ﻿using Harmony;
 using System;
 using Vigilance.API.Extensions;
+using Vigilance.API.Enums;
 using Vigilance.Events;
 using Vigilance.Handlers;
 using UnityEngine;
@@ -214,10 +215,18 @@ namespace Vigilance.API.Patches
                 Player target = go.GetPlayer();
                 if ((target != null && (target.Role != RoleType.Spectator || target.GodMode || target.ClassManager.IsHost)) || attacker == null)
                     return;
-                PlayerDeathEvent ev = new PlayerDeathEvent(target, attacker, true, info.GetDamageType().Convert());
+                DamageType dmgType = info.GetDamageType().Convert();
+                if (attacker.Compare(target) && info.Attacker.ToLower() == "disconnect")
+                {
+                    dmgType = DamageType.Disconnect;
+                }
+                PlayerDeathEvent ev = new PlayerDeathEvent(target, attacker, true, dmgType);
                 EventController.StartEvent<PlayerDeathEventHandler>(ev);
-                Data.Sitrep.Post(Data.Sitrep.Translation.PlayerDeathEvent(ev.Killer, ev.Player, info), Enums.PostType.Sitrep);
-                FileLog.KillLog(attacker, target, info);
+                if (!attacker.Compare(target))
+                {
+                    Data.Sitrep.Post(Data.Sitrep.Translation.PlayerDeathEvent(ev.Killer, ev.Player, info), Enums.PostType.Sitrep);
+                    FileLog.KillLog(attacker, target, info);
+                }
             }
             catch (Exception)
             {
