@@ -25,6 +25,7 @@ namespace Vigilance.API.Patches
 		}
 	}
 
+        /*
 	[HarmonyPatch(typeof(PlayerInteract), nameof(PlayerInteract.CallCmdOpenDoor), typeof(GameObject))]
 	public static class DoorInteractEventPatch
 	{
@@ -117,7 +118,9 @@ namespace Vigilance.API.Patches
 			return false;
 		}
 	}
+        */
 
+        /*
 	[HarmonyPatch(typeof(RespawnManager), nameof(RespawnManager.Spawn))]
 	internal static class TeamRespawnEventPatch
 	{
@@ -214,6 +217,7 @@ namespace Vigilance.API.Patches
 			}
 		}
 	}
+        */
 
 	[HarmonyPatch(typeof(AlphaWarheadController), nameof(AlphaWarheadController.Detonate))]
 	public static class WarheadDetonateEventPatch
