@@ -6,6 +6,7 @@ using System;
 using RemoteAdmin;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace Vigilance.API.Extensions
 {
@@ -157,7 +158,7 @@ namespace Vigilance.API.Extensions
 
 		public static Player GetPlayer(this PlayerStats stats)
 		{
-			return new Player(stats.gameObject);
+			return stats.ccm.GetPlayer();
 		}
 
 		public static Player GetPlayer(this PlayerInteract interact)
@@ -324,6 +325,8 @@ namespace Vigilance.API.Extensions
 			else
 				return false;
         }
+
+		public static bool IsSteam(this UserIdType idType) => idType != UserIdType.Discord && idType != UserIdType.Unspecified;
 	}
 
 	public static class BanDetailsExtensions
@@ -354,16 +357,12 @@ namespace Vigilance.API.Extensions
 
 		public static string GetBanReason(this string str)
 		{
-			BanDetails ban = new BanDetails
-			{
-				Reason = str
-			};
-			return ban.GetReason();
+			return str.IsEmpty() ? "No reason provided." : str;
 		}
 
 		public static string GetReason(this BanDetails banDetails)
 		{
-			return string.IsNullOrEmpty(banDetails.Reason) ? "No reason provided." : banDetails.Reason;
+			return banDetails.Reason.IsEmpty() ? "No reason provided." : banDetails.Reason;
 		}
 
 		public static string GetDurationString(this BanDetails banDetails)
@@ -371,22 +370,55 @@ namespace Vigilance.API.Extensions
 			string daysTranslation = ConfigManager.GetString("days_translation");
 			string hoursTranslation = ConfigManager.GetString("hours_translation");
 			string minutesTranslation = ConfigManager.GetString("minutes_translation");
-			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "Days" : daysTranslation;
-			string hoursT = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "Hours" : hoursTranslation;
-			string minutesT = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "Minutes" : minutesTranslation;
-			int minutes = (int)TimeSpan.FromSeconds((double)banDetails.GetDuration()).TotalMinutes;
-			int hours = (int)TimeSpan.FromMinutes((double)minutes).TotalHours;
-			int days = (int)TimeSpan.FromHours((double)hours).TotalDays;
-			return $"{days}{day}{hours}{hoursT}{minutes}{minutesT}";
+			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "d" : daysTranslation;
+			string hour = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "h" : hoursTranslation;
+			string minute = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "m" : minutesTranslation;
+			int minutes = banDetails.GetDuration() / 60;
+			int hours = minutes / 60;
+			int days = hours / 24;
+			if (minutes > 0)
+			{
+				return $"{minutes}{minute}";
+			}
+
+			if (minutes > 0 && hours > 0)
+			{
+				return $"{hours}{hour} {minutes}{minute}";
+			}
+
+			if (minutes > 0 && hours > 0 && days > 0)
+			{
+				return $"{days}{day} {hours}{hour} {minutes}{minute}";
+			}
+			return $"{days}{day} {hours}{hour} {minutes}{minute}";
 		}
 
 		public static string GetDurationString(this int duration)
 		{
-			BanDetails banDetails = new BanDetails
+			string daysTranslation = ConfigManager.GetString("days_translation");
+			string hoursTranslation = ConfigManager.GetString("hours_translation");
+			string minutesTranslation = ConfigManager.GetString("minutes_translation");
+			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "d" : daysTranslation;
+			string hour = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "h" : hoursTranslation;
+			string minute = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "m" : minutesTranslation;
+			int minutes = duration;
+			int hours = minutes / 60;
+			int days = hours / 24;
+			if (minutes > 0)
 			{
-				Expires = DateTime.UtcNow.AddSeconds(duration).Ticks
-			};
-			return banDetails.GetDurationString(); 
+				return $"{minutes}{minute}";
+			}
+
+			if (minutes > 0 && hours > 0)
+			{
+				return $"{hours}{hour} {minutes}{minute}";
+			}
+
+			if (minutes > 0 && hours > 0 && days > 0)
+			{
+				return $"{days}{day} {hours}{hour} {minutes}{minute}";
+			}
+			return $"{days}{day} {hours}{hour} {minutes}{minute}";
 		}
     }
 
@@ -453,6 +485,77 @@ namespace Vigilance.API.Extensions
 				}
 			}
 			return d[n, m];
+		}
+
+		public static bool IsEmpty(this string str)
+		{
+			if (string.IsNullOrEmpty(str) || str.ToLower() == "none")
+				return true;
+			else
+				return false;
+		}
+
+		public static string ReplaceLines(this string str)
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+			foreach (string s in str.Split(' '))
+			{
+				if (s == "\n")
+					stringBuilder.Append(Environment.NewLine);
+				else
+					stringBuilder.Append(s);
+			}
+			return stringBuilder.ToString();
+		}
+	}
+
+	public static class RoleExtensions
+	{
+		public static string GetName(this RoleType role)
+		{
+			switch (role)
+			{
+				case RoleType.ChaosInsurgency:
+					return "Chaos Insurgent";
+				case RoleType.ClassD:
+					return "Class-D";
+				case RoleType.FacilityGuard:
+					return "Facility Guard";
+				case RoleType.None:
+					return "Undefined";
+				case RoleType.NtfCadet:
+					return "NTF Cadet";
+				case RoleType.NtfCommander:
+					return "NTF Commnder";
+				case RoleType.NtfLieutenant:
+					return "NTF Lieutenant";
+				case RoleType.NtfScientist:
+					return "NTF Scientist";
+				case RoleType.Scientist:
+					return "Scientist";
+				case RoleType.Scp049:
+					return "SCP-049";
+				case RoleType.Scp0492:
+					return "SCP-049-2";
+				case RoleType.Scp079:
+					return "SCP-079";
+				case RoleType.Scp096:
+					return "SCP-096";
+				case RoleType.Scp106:
+					return "SCP-106";
+				case RoleType.Scp173:
+					return "SCP-173";
+				case RoleType.Scp93953:
+					return "SCP-939-53";
+				case RoleType.Scp93989:
+					return "SCP-939-89";
+				case RoleType.Spectator:
+					return "Spectator";
+				case RoleType.Tutorial:
+					return "Tutorial";
+				default:
+					return "Unspecified";
+			}
 		}
 	}
 }

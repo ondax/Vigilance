@@ -64,6 +64,31 @@ namespace Vigilance.API
             }
         }
 
+        public string ParsedUserId
+        {
+            get
+            {
+                string[] array = UserId.Split('@');
+                return array[0];
+            }
+        }
+
+        public UserIdType UserIdType
+        {
+            get
+            {
+                if (UserId.Contains("@discord"))
+                    return UserIdType.Discord;
+                if (UserId.Contains("@patreon"))
+                    return UserIdType.Patreon;
+                if (UserId.Contains("@steam"))
+                    return UserIdType.Steam;
+                if (UserId.Contains("@northwood"))
+                    return UserIdType.Northwood;
+                return UserIdType.Unspecified;
+            }
+        }
+
         public bool BypassMode { get => this.ServerRoles.BypassMode; set => this.ServerRoles.BypassMode = value; }
         public bool DoNotTrack { get => this.ServerRoles.DoNotTrack; set => this.ServerRoles.DoNotTrack = value; }
         public bool GodMode { get => this.ClassManager.GodMode; set => this.ClassManager.GodMode = value; }

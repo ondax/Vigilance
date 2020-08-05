@@ -129,14 +129,14 @@ namespace Vigilance
         {
             if (!Enabled)
                 return;
-            if (string.IsNullOrEmpty(filePath))
+            if (filePath.IsEmpty())
                 return;
             try
             {
                 CheckDirectories();
                 using (StreamWriter writer = new StreamWriter(filePath, true))
                 {
-                    if (string.IsNullOrEmpty(line))
+                    if (line.IsEmpty())
                     {
                         writer.WriteLine(line);
                         return;
@@ -144,9 +144,8 @@ namespace Vigilance
                     writer.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {line}");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Log.Error("FileLog", e);
             }
         }
     }

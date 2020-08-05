@@ -216,24 +216,14 @@ namespace Vigilance.API.Patches
             {
                 Player attacker = __instance.GetPlayer();
                 Player target = go.GetPlayer();
-                if ((target != null && (target.Role != RoleType.Spectator || target.GodMode || target.ClassManager.IsHost)) || attacker == null)
+                if ((target == null && (target.Role != RoleType.Spectator || target.GodMode || target.ClassManager.IsHost)) || attacker == null)
                     return;
-                DamageType dmgType = info.GetDamageType().Convert();
-                if (attacker.Compare(target) && info.Attacker.ToLower() == "disconnect")
-                {
-                    dmgType = DamageType.Disconnect;
-                }
-                if (attacker.Compare(target) && info.Attacker.ToLower() == "cmdsuicide")
-                {
-                    dmgType = DamageType.CmdSuicide;
-                }
+                DamageType dmgType = info.Attacker.ToLower() == "disconnect" ? DamageType.Disconnect : info.GetDamageType().Convert();
+                dmgType = info.Attacker.ToLower() == "cmdsuicide" ? DamageType.CmdSuicide : info.GetDamageType().Convert();
                 PlayerDeathEvent ev = new PlayerDeathEvent(target, attacker, true, dmgType);
                 EventController.StartEvent<PlayerDeathEventHandler>(ev);
-                if (!attacker.Compare(target))
-                {
-                    Data.Sitrep.Post(Data.Sitrep.Translation.PlayerDeathEvent(ev.Killer, ev.Player, info), Enums.PostType.Sitrep);
-                    FileLog.KillLog(attacker, target, info);
-                }
+                Data.Sitrep.Post(Data.Sitrep.Translation.PlayerDeathEvent(ev.Killer, ev.Player, info), Enums.PostType.Sitrep);
+                FileLog.KillLog(attacker, target, info);
             }
             catch (Exception e)
             {
@@ -255,8 +245,10 @@ namespace Vigilance.API.Patches
                     if (player != null && player.IsMuted)
                         player.ClassManager.SetDirtyBit(1UL);
                 });
-                if (!string.IsNullOrEmpty(player.ClassManager.UserId))
+                if (!player.UserId.IsEmpty() && player.IpAdress != "localClient")
                 {
+                    ServerGuard.SteamShield.CheckAccount(player);
+                    ServerGuard.VPNShield.CheckIP(player);
                     EventController.StartEvent<PlayerJoinEventHandler>(new PlayerJoinEvent(player));
                     Data.NicknameFilter.CheckNickname(player);
                     Data.Sitrep.Post(Data.Sitrep.Translation.JoinEvent(player), Enums.PostType.Sitrep);
@@ -322,9 +314,8 @@ namespace Vigilance.API.Patches
                 {
                     __instance.GetComponent<FootstepSync>().SetLoudness(role.team, role.roleId.Is939());
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Log.Error("FootstepSync", e);
                 }
 
                 if (NetworkServer.active)
@@ -396,9 +387,8 @@ namespace Vigilance.API.Patches
                 __instance.RefreshPlyModel();
                 return false;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Log.Error("CharacterClassManager", e);
                 return true;
             }
         }

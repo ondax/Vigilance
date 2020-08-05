@@ -1,35 +1,36 @@
-﻿using System.Collections.Specialized;
-using System.Net;
+﻿using System.Net;
 using System;
+using Newtonsoft.Json;
 
 namespace Vigilance.API.Discord
 {
     public class Webhook
     {
-        private string _url;
 
-        public Webhook(string url) => _url = url;
-
-        public void Post(string message)
+        private Uri _Uri;
+        public Webhook(string URL)
         {
-            try
+            if (!Uri.TryCreate(URL, UriKind.Absolute, out _Uri))
             {
-                using (WebClient webClient = new WebClient())
+                throw new UriFormatException();
+            }
+        }
+
+        public string Post(string message)
+        {
+            using (WebClient wb = new WebClient())
+            {
+                Message msg = new Message
                 {
-                    NameValueCollection collection = new NameValueCollection()
-                {
-                    {
-                       "content",
-                        message
-                    }
+                    content = message
                 };
-                    webClient.UploadValues(_url, collection);
-                }
+                wb.Headers.Add(HttpRequestHeader.ContentType, "application/json");
+                return wb.UploadString(_Uri, "POST", JsonConvert.SerializeObject(msg));
             }
-            catch (Exception e)
-            {
-                Log.Error("Webhook", e);
-            }
+        }
+        public struct Message
+        {
+            public string content;
         }
     }
 }

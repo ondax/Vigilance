@@ -18,6 +18,7 @@ namespace Vigilance
 			public static string HarmonyFile => $"{SCPSL_Data}/Managed/0Harmony.dll";
 			public static string Dependencies => $"{Vigilance}/Dependencies";
 			public static string Plugins => $"{Vigilance}/Plugins";
+			public static string NewtonsoftJson => $"{Managed}/Newtonsoft.Json.dll";
         }
 
 		public static string Version => version;
@@ -128,7 +129,7 @@ namespace Vigilance
 			FileLog.CheckDirectories();
 			loadedPlugins = new List<Plugin>();
 			dependencies = new List<string>();
-			version = "4.1.5";
+			version = "4.1.7";
 			gameVersion = "Scopophobia v10.0.1";
 			_harmonyFound = false;
 		}

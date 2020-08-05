@@ -54,6 +54,15 @@
 		Scp018
 	}
 
+	public enum UserIdType
+	{
+		Steam,
+		Discord,
+		Northwood,
+		Patreon,
+		Unspecified
+	}
+
 	public enum TeamType
 	{
 		ChaosInsurgency,
@@ -113,5 +122,18 @@
 		EnvStop,
 
 		None
+	}
+
+	public enum KickType
+	{
+		NewAccount,
+		NonSetupAccount,
+		DetectedVPN
+	}
+
+	public enum Module
+	{
+		VPNShield,
+		SteamShield
 	}
 }
