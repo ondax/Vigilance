@@ -46,7 +46,7 @@ namespace Vigilance
 
             if (kickType == KickType.DetectedVPN)
             {
-                player.Kick("");
+                player.Kick("This server does not allow VPN connections.");
                 Log.Info("ServerGuard", $"Kicked {player.Nick} for {kickType}");
             }
         }
