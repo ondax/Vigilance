@@ -10,9 +10,14 @@ namespace Vigilance.API
 {
     public static class Server
     {
-        public static GameObject Host => PlayerManager.localPlayer;
+        public static GameObject Host => ReferenceHub.LocalHub.gameObject;
+        public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
         public static List<Player> Players => PlayerManager.players.GetPlayers();
-        public static int Port => (int)ServerStatic.ServerPort;
+        public static int Port => ServerStatic.ServerPortSet ? ServerStatic.ServerPort : 7777;
+        public static bool RoundLock { get => RoundSummary.RoundLock; set => RoundSummary.RoundLock = value; }
+        public static bool LobbyLock { get => RoundStart.LobbyLock; set => RoundStart.LobbyLock = value; }
+        public static string Name { get => ServerConsole._serverName; set => ServerConsole._serverName = value; }
+        public static string IpAddress { get => ServerConsole.Ip; set => ServerConsole.Ip = value; }
 
         public static void Restart(bool safeRestart = true)
         {
@@ -162,17 +167,14 @@ namespace Vigilance.API
         public static void ReloadConfigs()
         {
             ConfigFile.ReloadGameConfigs(false);
+            PluginManager.Config.Reload();
+            PluginManager.ReloadPluginConfigs();
             ServerStatic.PermissionsHandler?.RefreshPermissions();
         }
 
         public static string RunCommand(string command)
         {
             return ServerConsole.EnterCommand(command, out ConsoleColor color, new ConsoleCommandSender());
-        }
-
-        public static void DeleteLogs()
-        {
-            Paths.Delete($"{System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData)}/SCP Secret Laboratory/ServerLogs");
         }
     }
 }

@@ -11,7 +11,9 @@ namespace Vigilance.Registered
 		public string Command => "clean";
 		public string Usage => "Missing arguments!\nUsage: clean <itemId/all/*>";
 
-		public string Execute(Player sender, string[] args)
+		public string Aliases => "";
+
+        public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 1)
 				return Usage;
@@ -21,16 +23,19 @@ namespace Vigilance.Registered
 					pickup.Delete();
 				return "Succesfully cleared all items.";
 			}
-			ItemType item = ItemType.None;
-			foreach (Pickup pickup in Map.Pickups)
+			else
 			{
-				if ((int)pickup.ItemId == int.Parse(args[1]))
+				ItemType item = ItemType.None;
+				foreach (Pickup pickup in Map.Pickups)
 				{
-					pickup.Delete();
-					item = pickup.ItemId;
+					if ((int)pickup.ItemId == int.Parse(args[1]))
+					{
+						pickup.Delete();
+						item = pickup.ItemId;
+					}
 				}
+				return $"Succesfully cleared all {item}s";
 			}
-			return $"Succesfully cleared all {item}s";
 		}
 	}
 
@@ -39,6 +44,8 @@ namespace Vigilance.Registered
 		public string Usage => "Missing arguments!\nUsage: dropall <player/*>";
 
 		public string Command => "dropall";
+
+		public string Aliases => "da";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -55,7 +62,9 @@ namespace Vigilance.Registered
 		public string Usage => $"giveall <itemId>";
 
 		public string Command => "giveall";
-			
+
+		public string Aliases => "ga";
+
         public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 1)
@@ -75,6 +84,8 @@ namespace Vigilance.Registered
 
 		public string Command => "players";
 
+		public string Aliases => "list";
+
         public string Execute(Player sender, string[] args)
 		{
 			string str = $"Players ({Server.Players.Count}):\n";
@@ -90,7 +101,9 @@ namespace Vigilance.Registered
 	{
 		public string Usage => "Missing arguments!\nUsage: tpx <player1/*> <player2>";
 
-		public string Command => "tpx";
+		public string Command => "teleport";
+
+		public string Aliases => "tpx tp";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -116,7 +129,9 @@ namespace Vigilance.Registered
 	{
 		public string Usage => "Missing arguments!\nUsage: pbc <player> <time> <message>";
 
-		public string Command => "pbc";
+		public string Command => "personalbroadcast";
+
+		public string Aliases => "pbc";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -124,8 +139,8 @@ namespace Vigilance.Registered
 				return Usage;
 			Player player = args[0].GetPlayer();
 			int time = int.Parse(args[1]);
-			player.Broadcast(args.SkipWords(2), time);
-			return $"Success!\nDuration: {time}\nMessage: {args.SkipWords(3)}\nPlayer: {player.Nick} ({player.UserId})";
+			player.Broadcast($"<b><color=red>[Personal]</b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", time);
+			return $"Success!\nDuration: {time}\nMessage: {args.SkipWords(2)}\nPlayer: {player.Nick} ({player.UserId})";
 		}
 	}
 
@@ -133,7 +148,9 @@ namespace Vigilance.Registered
 	{
 		public string Usage => "Missing arguments!\nUsage: abc <time> <message>";
 
-		public string Command => "abc";
+		public string Command => "adminbroadcast";
+
+		public string Aliases => "abc";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -141,7 +158,7 @@ namespace Vigilance.Registered
 				return Usage;
 			foreach (Player admin in Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin))
 			{
-				admin.Broadcast($"<b><color=red>[AdminChat]</color></b> {sender.Nick}:\n{args.SkipWords(2)}", int.Parse(args[1]));
+				admin.Broadcast($"<b><color=red>[AdminChat]</color></b>\n</b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", int.Parse(args[1]));
 			}
 			return $"Success! Your message has been delivered to {Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin).Count()} online administrators!\nMessage: {args.SkipWords(2)}\nDuration: {int.Parse(args[1])} seconds.";
 		}
@@ -153,6 +170,8 @@ namespace Vigilance.Registered
 
 		public string Command => "clearragdolls";
 
+		public string Aliases => "cr clearr";
+
         public string Execute(Player sender, string[] args)
 		{
 			foreach (Ragdoll ragdoll in Map.Ragdolls)
@@ -163,16 +182,19 @@ namespace Vigilance.Registered
 		}
 	}
 
-	public class CommandReloadConfigs : CommandHandler
+	public class CommandReload : CommandHandler
 	{
 		public string Usage => "";
 
-		public string Command => "configr";
+		public string Command => "reload";
+
+		public string Aliases => "rel re";
 
         public string Execute(Player sender, string[] args)
 		{
 			Server.ReloadConfigs();
-			return $"Success! Configs will be applied on your server next round.";
+			PluginManager.Reload();
+			return $"Success! Changes will be applied on your server next round.";
 		}
 	}
 
@@ -181,6 +203,8 @@ namespace Vigilance.Registered
 		public string Usage => "";
 
 		public string Command => "restart";
+
+		public string Aliases => "reset res";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -195,9 +219,11 @@ namespace Vigilance.Registered
 
 		public string Command => "grenade";
 
+		public string Aliases => "fraggrenade grenadefrag fg";
+
         public string Execute(Player sender, string[] args)
 		{
-			if (args.Length < 2)
+			if (args.Length < 1)
 				return Usage;
 			if (args[1].ToLower() == "*")
 			{
@@ -218,6 +244,8 @@ namespace Vigilance.Registered
 		public string Usage => "Missing arguments!\nUsage: flash <player/*>";
 
 		public string Command => "flash";
+
+		public string Aliases => "flashgrenade grenadeflash";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -243,6 +271,8 @@ namespace Vigilance.Registered
 
 		public string Command => "ball";
 
+		public string Aliases => "018 scp018 spawnball spawn018 spawnscp018";
+
         public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 1)
@@ -266,6 +296,8 @@ namespace Vigilance.Registered
 		public string Usage => "Missing arguments!\nUsage: ragdoll <player/*> <role> <amount>";
 
 		public string Command => "ragdoll";
+
+		public string Aliases => "ra rg";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -295,6 +327,8 @@ namespace Vigilance.Registered
 
 		public string Command => "dummy";
 
+		public string Aliases => "model spawnmodel spawndummy";
+
         public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 5)
@@ -322,7 +356,9 @@ namespace Vigilance.Registered
 	{
 		public string Usage => "Missing arguments!\nUsage: swp <player/*> <x> <y> <z>";
 
-		public string Command => "swb";
+		public string Command => "spawnworkbench";
+
+		public string Aliases => "swb";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -350,6 +386,8 @@ namespace Vigilance.Registered
 
 		public string Command => "rocket";
 
+		public string Aliases => "ro rc";
+
         public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 2)
@@ -376,6 +414,8 @@ namespace Vigilance.Registered
 
 		public string Command => "scale";
 
+		public string Aliases => "size resize rsz sc";
+
         public string Execute(Player sender, string[] args)
 		{
 			if (args.Length < 4)
@@ -395,4 +435,23 @@ namespace Vigilance.Registered
 			return $"Succesfully changed size of {player.Nick}";
 		}
 	}
+
+    public class CommandChangeUnit : CommandHandler
+    {
+		public string Command => "changeunit";
+
+		public string Usage => "Missing arguments!\nUsage: changeunit <player> <new unit>";
+
+		public string Aliases => "changeunit cu chu";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 2)
+				return Usage;
+			Player player = args[0].GetPlayer();
+			string unit = args.SkipWords(1);
+			player.NtfUnit = unit;
+			return $"Succesfully changed unit of {player.Nick}";
+        }
+    }
 }

@@ -46,6 +46,16 @@ namespace Vigilance.API
 			}
 		}
 
+		public static Camera079 GetCamera(int cameraId)
+        {
+			foreach (Camera079 camera in Scp079PlayerScript.allCameras)
+			{
+				if (camera.cameraId == cameraId)
+					return camera;
+			}
+			return null;
+		}
+
 		public static void Announce(string message, bool makeHold = false, bool makeNoise = false)
 		{
 			RespawnEffectsController.PlayCassieAnnouncement(message, makeHold, makeNoise);
@@ -74,6 +84,7 @@ namespace Vigilance.API
 
 		public static Vector3 GetRandomSpawnpoint(RoleType role) => Server.Host.GetComponent<SpawnpointManager>().GetRandomPosition(role).transform.position;
 		public static void TurnOffLights(float time = 9999f, bool onlyHeavy = false) => Generators[0].ServerOvercharge(time, onlyHeavy);
+		public static Pickup SpawnItem(ItemType itemType, Vector3 position, Quaternion rotation = default, int sight = 0, int barrel = 0, int other = 0) => Server.LocalHub.inventory.SetPickup(itemType, -4.6566467E+11f, position, rotation, sight, barrel, other);
 
 		public static Grenade SpawnGrenade(Player player, GrenadeType grenadeType)
 		{

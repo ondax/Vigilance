@@ -14,79 +14,84 @@ namespace Vigilance
         public static YamlConfig Config => _config;
         private static List<Assembly> _dependencies;
         private static List<Plugin> _plugins;
-        private static bool _enabled;
         private static YamlConfig _config;
 
         public static void Enable()
         {
-            if (_enabled)
-                return;
-            CommandManager.Enable();
-            EventManager.Enable();
-            Paths.CheckDirectories();
-            Paths.CheckDependencies();
-            _plugins = new List<Plugin>();
-            _dependencies = new List<Assembly>();
-            _enabled = false;
-
             try
             {
-                HarmonyInstance.Create("vigilance.patches").PatchAll();
-            }
-            catch (Exception e)
-            {
-                Log.Add("PluginManager", e);
-            }
+                CommandManager.Enable();
+                EventManager.Enable();
+                Paths.CheckDirectories();
+                Paths.CheckDependencies();
+                _config = new YamlConfig(Paths.ConfigPath);
+                _plugins = new List<Plugin>();
+                _dependencies = new List<Assembly>();
+                _config?.Reload();
 
-            try
-            {
-                foreach (Assembly assembly in Paths.GetAssemblies(Paths.Plugins))
+                try
                 {
-                    foreach (Type type in assembly.GetTypes())
+                    HarmonyInstance.Create("vigilance.patches").PatchAll();
+                }
+                catch (Exception e)
+                {
+                    Log.Add("PluginManager", e);
+                }
+
+                try
+                {
+                    foreach (Assembly assembly in Paths.GetAssemblies(Paths.Plugins))
                     {
-                        if (type.IsSubclassOf(typeof(Plugin)))
+                        foreach (Type type in assembly.GetTypes())
                         {
-                            Plugin plugin = (Plugin)Activator.CreateInstance(type);
-                            try
+                            if (type.IsSubclassOf(typeof(Plugin)))
                             {
-                                plugin.Enable();
-                                if (!File.Exists(Paths.GetPluginConfigPath(plugin)))
-                                    File.Create(Paths.GetPluginConfigPath(plugin));
-                                plugin.Config = new YamlConfig(Paths.GetPluginConfigPath(plugin));
-                                _plugins.Add(plugin);
-                                Log.Add("PluginManager", $"Succesfully loaded {plugin.Name}", LogType.Info);
-                            }
-                            catch (Exception e)
-                            {
-                                Log.Add("PluginManager", $"Plugin {plugin.Name} caused an exception while enabling.", LogType.Error);
-                                Log.Add("PluginManager", e);
+                                Plugin plugin = (Plugin)Activator.CreateInstance(type);
+                                try
+                                {
+                                    if (!File.Exists(Paths.GetPluginConfigPath(plugin)))
+                                        File.Create(Paths.GetPluginConfigPath(plugin));
+                                    plugin.Config = new YamlConfig(Paths.GetPluginConfigPath(plugin));
+                                    plugin.Config?.Reload();
+                                    plugin.Enable();
+                                    _plugins.Add(plugin);
+                                    Log.Add("PluginManager", $"Succesfully loaded {plugin.Name}", LogType.Info);
+                                }
+                                catch (Exception e)
+                                {
+                                    Log.Add("PluginManager", $"Plugin {plugin.Name} caused an exception while enabling.", LogType.Error);
+                                    Log.Add("PluginManager", e);
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Log.Add("PluginManager", e);
-            }
-
-            try
-            {
-                foreach (string a in Directory.GetFiles(Paths.Dependencies))
+                catch (Exception e)
                 {
-                    if (a.EndsWith(".dll"))
+                    Log.Add("PluginManager", e);
+                }
+
+                try
+                {
+                    foreach (string a in Directory.GetFiles(Paths.Dependencies))
                     {
-                        Assembly assembly = Assembly.LoadFrom(a);
-                        _dependencies.Add(assembly);
+                        if (a.EndsWith(".dll"))
+                        {
+                            Assembly assembly = Assembly.LoadFrom(a);
+                            _dependencies.Add(assembly);
+                        }
                     }
                 }
+                catch (Exception e)
+                {
+                    Log.Add("PluginManager", e);
+                }
+                Log.Add("PluginManager", "Succesfully loaded!", LogType.Info);
             }
             catch (Exception e)
             {
                 Log.Add("PluginManager", e);
             }
-            _config = new YamlConfig(Paths.ConfigPath);
-            _enabled = true;
         }
 
         public static void Reload()
@@ -121,6 +126,14 @@ namespace Vigilance
                     Log.Add("PluginManager", $"Plugin {plugin.Name} caused an exception while disabling.", LogType.Error);
                     Log.Add("PluginManager", e);
                 }
+            }
+        }
+
+        public static void ReloadPluginConfigs()
+        {
+            foreach (Plugin plugin in _plugins)
+            {
+                plugin.Config?.Reload();
             }
         }
     }

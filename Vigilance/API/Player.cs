@@ -33,7 +33,15 @@ namespace Vigilance.API
         public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetClassID(value); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; }
         public string UserId { get => _hub.characterClassManager.UserId; set => _hub.characterClassManager.UserId = value; }
+        public string NtfUnit { get => _hub.characterClassManager.NetworkCurUnitName; set => _hub.characterClassManager.NetworkCurUnitName = value; }
         public NetworkConnection Connection => _hub.scp079PlayerScript.connectionToClient;
+        public bool IsCuffed { get => _hub.handcuffs.CufferId != -1; set => _hub.handcuffs.CallCmdCuffTarget(GameObject); }
+        public bool IsReloading => _hub.weaponManager.IsReloading();
+        public bool IsZooming => _hub.weaponManager.ZoomInProgress();
+        public bool IsAlive => Role != RoleType.None && Role != RoleType.Spectator;
+        public bool IsAnySCP => Team == TeamType.SCP;
+        public bool IsSCP => Team == TeamType.SCP && Role != RoleType.Scp0492;
+        public bool IsNTF => Team == TeamType.NineTailedFox;
         public TeamType Team
         {
             get
@@ -70,7 +78,7 @@ namespace Vigilance.API
             }
         }
 
-        public string ParsedUserId => UserId.Split('@')[0];
+        public string ParsedUserId => UserId.Substring(0, UserId.LastIndexOf('@'));
 
         public UserIdType UserIdType
         {
@@ -136,6 +144,13 @@ namespace Vigilance.API
                 Log.Add("Player", e);
             }
         }
+
+        public void SetWeaponAmmo(WeaponType weapon, int ammo)
+        {
+            _hub.inventory.items.ModifyDuration(_hub.inventory.items.IndexOf(this.GetWeapon(weapon)), ammo);
+        }
+
+        public float GetWeaponAmmo(WeaponType weapon) => this.GetWeapon(weapon).durability;
 
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
 

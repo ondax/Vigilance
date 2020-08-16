@@ -10,6 +10,8 @@ namespace Vigilance
     {
         private static List<CommandHandler> _commands;
         private static List<GameCommandHandler> _gameCommands;
+        public static List<CommandHandler> Commands => _commands;
+        public static List<GameCommandHandler> GameCommands => _gameCommands;
 
         public static void Enable()
         {
@@ -24,7 +26,7 @@ namespace Vigilance
             RegisterCommand(new CommandPersonalBroadcast());
             RegisterCommand(new CommandAdminChat());
             RegisterCommand(new CommandClearRagdolls());
-            RegisterCommand(new CommandReloadConfigs());
+            RegisterCommand(new CommandReload());
             RegisterCommand(new CommandRestart());
             RegisterCommand(new CommandGrenade());
             RegisterCommand(new CommandFlash());
@@ -34,20 +36,22 @@ namespace Vigilance
             RegisterCommand(new CommandWorkbench());
             RegisterCommand(new CommandRocket());
             RegisterCommand(new CommandScale());
+            RegisterCommand(new CommandChangeUnit());
         }
 
-        public static bool CallGameCommand(string command, CommandSender sender, string query, out string reply)
+        public static bool CallGameCommand(string query, CommandSender sender, out string reply)
         {
             try
             {
+                string command = query.Split(' ')[0].ToUpper();
                 GameCommandHandler handler = GetGameCommandHandler(command);
-                reply = handler == null ? "SERVER#Unknown command" : $"SERVER#{handler.Execute(sender.GetPlayer(), query.Split(' ').SkipCommand())}";
+                reply = handler == null ? "SERVER#Unknown command!" : $"SERVER#{handler.Execute(sender.GetPlayer(), query.Split(' ').SkipCommand())}";
                 return handler == null ? false : true;
             }
             catch (Exception e)
             {
                 Log.Add("CommandManager", e);
-                reply = "ER-1";
+                reply = $"An error occured!\nStacktrace:\n {e.StackTrace}";
                 return false;
             }
         }
@@ -58,6 +62,11 @@ namespace Vigilance
             {
                 if (handler.Command.ToUpper() == command.ToUpper())
                     return handler;
+                else
+                    if (!handler.Aliases.IsEmpty())
+                    foreach (string alias in GetAliases(handler))
+                        if (alias.ToUpper() == command.ToUpper())
+                            return handler;
             }
             return null;
         }
@@ -68,22 +77,43 @@ namespace Vigilance
             {
                 if (handler.Command.ToUpper() == command.ToUpper())
                     return handler;
+                else
+                    if (!handler.Aliases.IsEmpty())
+                    foreach (string alias in GetAliases(handler))
+                        if (alias.ToUpper() == command.ToUpper())
+                            return handler;
             }
             return null;
         }
 
-        public static string CallCommand(string command, CommandSender sender, string query)
+        public static string CallCommand(string query, CommandSender sender)
         {
             try
             {
+                string command = query.Split(' ')[0].ToUpper();
                 CommandHandler handler = GetCommandHandler(command);
                 return handler == null ? "SERVER#Unknown command!" : $"SERVER#{handler.Execute(sender.GetPlayer(), query.Split(' ').SkipCommand())}";
             }
             catch (Exception e)
             {
                 Log.Add("CommandManager", e);
-                return "SERVER#An exception occured";
+                return $"SERVER#An error occured!\nStacktrace: \n{e.StackTrace}";
             }
+        }
+
+        public static string[] GetAliases(string str)
+        {
+            return str.Split(' ');
+        }
+
+        public static string[] GetAliases(CommandHandler command)
+        {
+            return GetAliases(command.Aliases);
+        }
+
+        public static string[] GetAliases(GameCommandHandler handler)
+        {
+            return GetAliases(handler.Aliases);
         }
 
         public static void RegisterCommand(CommandHandler handler) => _commands.Add(handler);
@@ -94,11 +124,15 @@ namespace Vigilance
     {
         string Command { get; }
         string Usage { get; }
+        string Aliases { get; }
         string Execute(Player sender, string[] args);
     }
 
-    public interface GameCommandHandler : CommandHandler
+    public interface GameCommandHandler
     {
-
+        string Command { get; }
+        string Usage { get; }
+        string Aliases { get; }
+        string Execute(Player sender, string[] args);
     }
 }

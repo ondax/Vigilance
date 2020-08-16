@@ -19,8 +19,6 @@ namespace Vigilance
 		public static string Plugins => $"{Vigilance}/Plugins";
 		public static string NewtonsoftJson => $"{Managed}/Newtonsoft.Json.dll";
 		public static string ConfigPath => $"{Vigilance}/Config-{Server.Port}.yml";
-
-		public static string JsonDownloadURL => "https://github.com/DrGaster17/Vigilance/releases/download/v4.1.6/Newtonsoft.Json.dll";
 		public static string HarmonyDownloadURL => "https://github.com/DrGaster17/Vigilance/releases/download/v4.1.2/0Harmony.dll";
 
 		public static DirectoryInfo Create(string directory)
@@ -71,7 +69,7 @@ namespace Vigilance
 					return assemblies;
 				foreach (string f in Directory.GetFiles(path))
 				{
-					if (path.EndsWith(".dll"))
+					if (f.EndsWith(".dll"))
 					{
 						Log.Add("Paths", $"Loading assemblies in {path}", LogType.Debug);
 						Assembly a = Assembly.LoadFrom(f);
@@ -102,22 +100,23 @@ namespace Vigilance
 
 		public static byte[] GetBytes(string path)
         {
-			return GetBytes(Assembly.LoadFrom(path));
-        }
+			FileStream fileStream = File.Open(path, FileMode.Open);
+			byte[] result;
+			using (MemoryStream memoryStream = new MemoryStream())
+			{
+				fileStream.CopyTo(memoryStream);
+				result = memoryStream.ToArray();
+			}
+			fileStream.Close();
+			return result;
+		}
 
 		public static void CheckDependencies()
         {
-			CheckDirectories();
 			if (!File.Exists(HarmonyFile))
             {
-				Log.Add("Paths", "Downloading Harmony", LogType.Debug);
+				Log.Add("Paths", "Downloading Harmony", LogType.Info);
 				Download(HarmonyDownloadURL, HarmonyFile);
-            }
-
-			if (!File.Exists(NewtonsoftJson))
-            {
-				Log.Add("Paths", "Downloading Newtonsoft.Json", LogType.Debug);
-				Download(JsonDownloadURL, NewtonsoftJson);
             }
         }
 

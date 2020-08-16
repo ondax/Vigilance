@@ -15,39 +15,40 @@ namespace Vigilance
     public static class ServerGuard
     {
         public static bool IsEnabled => PluginManager.Config.GetBool("guard_enabled", false);
-        public static List<string> EnabledModules => GetEnabledModules();
-
-        private static List<string> GetEnabledModules()
+        public static List<string> EnabledModules
         {
-            List<string> modules = new List<string>();
-            foreach (string str in PluginManager.Config.GetStringList("guard_enabled_modules"))
+            get
             {
-                if (str.ToLower() == "vpn" || str.ToLower() == "vpnshield")
-                    modules.Add("vpn");
-                if (str.ToLower() == "steam" || str.ToLower() == "steamshield")
-                    modules.Add("steam");
+                List<string> modules = new List<string>();
+                foreach (string str in PluginManager.Config.GetStringList("guard_enabled_modules"))
+                {
+                    if (str.ToLower() == "vpn" || str.ToLower() == "vpnshield")
+                        modules.Add("vpn");
+                    if (str.ToLower() == "steam" || str.ToLower() == "steamshield")
+                        modules.Add("steam");
+                }
+                return modules;
             }
-            return modules;
         }
 
         public static void KickPlayer(Player player, int kickType)
         {
             if (kickType == 1)
             {
-                player.Kick("This server does not allow new Steam accounts, you have to buy something on Steam before playing.");
-                Log.Add("ServerGuard", $"Kicked {player.Nick}. This server does not allow new Steam accounts.", LogType.Info);
+                player.Kick("This server does not allow new Steam accounts. You have to buy something on Steam before playing.");
+                Log.Add("ServerGuard", $"Detected a new account [{player.Nick} ({player.ParsedUserId})]", LogType.Info);
             }
 
             if (kickType == 2)
             {
-                player.Kick("This server does not allow non setup Steam accounts, you have to setup your Steam profile before playing.");
-                Log.Add("ServerGuard", $"Kicked {player.Nick}. This server does not allow non-setup Steam accounts", LogType.Info);
+                player.Kick("This server does not allow non setup Steam accounts. You have to setup your Steam profile before playing.");
+                Log.Add("ServerGuard", $"Detected a non-setup account [{player.Nick} ({player.ParsedUserId})]", LogType.Info);
             }
 
             if (kickType == 3)
             {
                 player.Kick("This server does not allow VPN connections.");
-                Log.Add("ServerGuard", $"Detected a possible VPN connection ({player.Nick})", LogType.Info);
+                Log.Add("ServerGuard", $"Detected a possible VPN connection [{player.Nick} ({player.UserIdType}ID: {player.ParsedUserId} / IP: {player.IpAddress})", LogType.Info);
             }
         }
 
@@ -78,7 +79,6 @@ namespace Vigilance
         public static class VPNShield
         {
             public static bool IsEnabled => EnabledModules.Contains("vpn");
-
             public static string APIKey => PluginManager.Config.GetString("vpn_api_key");
 
             public static bool CheckIP(Player player)
@@ -117,12 +117,13 @@ namespace Vigilance
         {
 
             public static bool IsEnabled => EnabledModules.Contains("steam");
-
             public static bool BlockNewAccounts => PluginManager.Config.GetBool("steam_block_new_accounts");
             public static bool BlockNonSetupAccounts => PluginManager.Config.GetBool("steam_block_non_setup_accounts");
 
             public static bool CheckAccount(Player player)
             {
+                if (!IsEnabled)
+                    return false;
                 if (player.UserIdType == UserIdType.Discord)
                     return false;
                 ServicePointManager.ServerCertificateValidationCallback = SSLValidation;
@@ -144,7 +145,7 @@ namespace Vigilance
                         }
                         else
                         {
-                            Log.Add("ServerGuard", "Steam account check failed. Their profile did not have the required information.", LogType.Warn);
+                            Log.Add("ServerGuard", $"Failed while checking Steam profile [{player.Nick} ({player.ParsedUserId})]", LogType.Warn);
                             return false;
                         }
                     }
@@ -158,7 +159,7 @@ namespace Vigilance
                         }
                     }
                 }
-                catch (WebException e)
+                catch (Exception e)
                 {
                     Log.Add("ServerGuard", e);
                 }

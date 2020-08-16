@@ -51,7 +51,8 @@
 	{
 		FragGrenade,
 		FlashGrenade,
-		Scp018
+		Scp018,
+		None
 	}
 
 	public enum UserIdType
@@ -89,4 +90,16 @@
 		SummonChaosInsurgencyVan = 128,
 		SummonNtfChopper = 129,
 	}
+
+	public enum WeaponType
+    {
+		Epsilon11,
+		Project90,
+		Logicer,
+		USP,
+		Com15,
+		MicroHID,
+		MP7,
+		None
+    }
 }

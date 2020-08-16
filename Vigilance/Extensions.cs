@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Vigilance.API;
+using System.Runtime.CompilerServices;
 
 namespace Vigilance.Extensions
 {
@@ -21,6 +22,16 @@ namespace Vigilance.Extensions
 				NetworkServer.Destroy(gameObject);
 			}
 		}
+
+		public static bool IsPlayer(this GameObject gameObject)
+        {
+			if (gameObject == null)
+				return false;
+			if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
+				return true;
+			else
+				return false;
+        }
 	}
 
 	public static class MethodExtensions
@@ -127,6 +138,27 @@ namespace Vigilance.Extensions
 
 	public static class PlayerExtensions
 	{
+		public static Inventory.SyncItemInfo GetWeapon(this Player player, WeaponType weapon)
+        {
+			foreach (Inventory.SyncItemInfo item in player.Hub.inventory.items)
+            {
+				if (item.id == ItemType.GunCOM15 && weapon == WeaponType.Com15)
+					return item;
+				if (item.id == ItemType.GunE11SR && weapon == WeaponType.Epsilon11)
+					return item;
+				if (item.id == ItemType.GunLogicer && weapon == WeaponType.Logicer)
+					return item;
+				if (item.id == ItemType.GunMP7 && weapon == WeaponType.MP7)
+					return item;
+				if (item.id == ItemType.GunProject90 && weapon == WeaponType.Project90)
+					return item;
+				if (item.id == ItemType.GunUSP && weapon == WeaponType.USP)
+					return item;
+				if (item.id == ItemType.MicroHID && weapon == WeaponType.MicroHID)
+					return item;
+            }
+			return new Inventory.SyncItemInfo();
+        }
 		public static void SendRemoteAdminMessage(this CommandSender sender, string message, string command)
 		{
 			sender.RaReply(command.ToUpper() + "#" + message, true, true, string.Empty);
@@ -139,12 +171,14 @@ namespace Vigilance.Extensions
 
 		public static void SendRemoteAdminMessage(this Player player, string message)
 		{
-			player.QueryProcessor._sender.RaReply($"SERVER#{message}", true, true, string.Empty);
+			player.Hub.queryProcessor._sender.RaReply($"SERVER#{message}", true, true, string.Empty);
 		}
 
 		public static Player GetPlayer(this GameObject gameObject)
 		{
-			return new Player(ReferenceHub.GetHub(gameObject));
+			if (gameObject == null)
+				return ReferenceHub.LocalHub.GetPlayer();
+			return ReferenceHub.GetHub(gameObject).GetPlayer();
 		}
 
 		public static Player GetPlayer(this ReferenceHub hub)
@@ -187,7 +221,7 @@ namespace Vigilance.Extensions
 			PlayerCommandSender pcs = sender as PlayerCommandSender;
 			if (pcs == null)
 			{
-				return Server.Host.GetPlayer();
+				return ReferenceHub.LocalHub.GetPlayer();
 			}
 			return pcs?.CCM.GetPlayer();
 		}
@@ -238,6 +272,28 @@ namespace Vigilance.Extensions
 			}
 			return list;
 		}
+
+		public static List<GameObject> GetGameObjects(this List<CharacterClassManager> ccms)
+        {
+			List<GameObject> objects = new List<GameObject>();
+			foreach (CharacterClassManager ccm in ccms.Where(c => !c.IsHost && !c.UserId.IsEmpty()))
+            {
+				objects.Add(ccm.gameObject);
+            }
+			return objects;
+        }
+
+		public static List<GameObject> GetGameObjects(this List<ReferenceHub> hubs)
+        {
+			List<GameObject> objects = new List<GameObject>();
+			foreach (ReferenceHub hub in hubs.Where(h => !h.characterClassManager.IsHost && !h.characterClassManager.UserId.IsEmpty()))
+            {
+				objects.Add(hub.gameObject);
+            }
+			return objects;
+        }
+
+		public static List<Player> GetPlayers(this List<CharacterClassManager> ccms) => ccms.GetGameObjects().GetPlayers();
 
 		public static Player GetPlayer(this int playerId)
 		{
@@ -368,58 +424,18 @@ namespace Vigilance.Extensions
 
 		public static string GetDurationString(this BanDetails banDetails)
 		{
-			string daysTranslation = ConfigManager.GetString("days_translation");
-			string hoursTranslation = ConfigManager.GetString("hours_translation");
-			string minutesTranslation = ConfigManager.GetString("minutes_translation");
-			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "d" : daysTranslation;
-			string hour = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "h" : hoursTranslation;
-			string minute = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "m" : minutesTranslation;
 			int minutes = banDetails.GetDuration() / 60;
 			int hours = minutes / 60;
 			int days = hours / 24;
-			if (minutes > 0)
-			{
-				return $"{minutes}{minute}";
-			}
-
-			if (minutes > 0 && hours > 0)
-			{
-				return $"{hours}{hour} {minutes}{minute}";
-			}
-
-			if (minutes > 0 && hours > 0 && days > 0)
-			{
-				return $"{days}{day} {hours}{hour} {minutes}{minute}";
-			}
-			return $"{days}{day} {hours}{hour} {minutes}{minute}";
+			return $"{days}d {hours}h {minutes}m";
 		}
 
-		public static string GetDurationString(this int duration)
+		public static string GetDurationString(this int seconds)
 		{
-			string daysTranslation = ConfigManager.GetString("days_translation");
-			string hoursTranslation = ConfigManager.GetString("hours_translation");
-			string minutesTranslation = ConfigManager.GetString("minutes_translation");
-			string day = string.IsNullOrEmpty(daysTranslation) || daysTranslation.ToLower() == "none" ? "d" : daysTranslation;
-			string hour = string.IsNullOrEmpty(hoursTranslation) || hoursTranslation.ToLower() == "none" ? "h" : hoursTranslation;
-			string minute = string.IsNullOrEmpty(minutesTranslation) || minutesTranslation.ToLower() == "none" ? "m" : minutesTranslation;
-			int minutes = duration;
+			int minutes = seconds / 60;
 			int hours = minutes / 60;
 			int days = hours / 24;
-			if (minutes > 0)
-			{
-				return $"{minutes}{minute}";
-			}
-
-			if (minutes > 0 && hours > 0)
-			{
-				return $"{hours}{hour} {minutes}{minute}";
-			}
-
-			if (minutes > 0 && hours > 0 && days > 0)
-			{
-				return $"{days}{day} {hours}{hour} {minutes}{minute}";
-			}
-			return $"{days}{day} {hours}{hour} {minutes}{minute}";
+			return $"{days}d {hours}h {minutes}m";
 		}
 	}
 
@@ -432,7 +448,7 @@ namespace Vigilance.Extensions
 			{
 				if (s == array[1])
 					str += s;
-				if (s != array[1])
+				else
 					str += $" {s}";
 			}
 			return str;
@@ -445,7 +461,7 @@ namespace Vigilance.Extensions
 			{
 				if (s == array[1])
 					str += s;
-				if (s != array[1])
+				else
 					str += $" {s}";
 			}
 			return str;
@@ -495,11 +511,6 @@ namespace Vigilance.Extensions
 			else
 				return false;
 		}
-
-		public static string ReplaceLines(this string str)
-		{
-			return str;
-		}
 	}
 
 	public static class RoleExtensions
@@ -515,7 +526,7 @@ namespace Vigilance.Extensions
 				case RoleType.FacilityGuard:
 					return "Facility Guard";
 				case RoleType.None:
-					return "Undefined";
+					return "Unspecified";
 				case RoleType.NtfCadet:
 					return "NTF Cadet";
 				case RoleType.NtfCommander:
@@ -549,6 +560,190 @@ namespace Vigilance.Extensions
 				default:
 					return "Unspecified";
 			}
+		}
+
+		public static Color GetColor(this RoleType role) => role == RoleType.None ? Color.white : CharacterClassManager._staticClasses.Get(role).classColor;
+		public static TeamType GetTeam(this RoleType roleType)
+		{
+			switch (roleType)
+			{
+				case RoleType.ChaosInsurgency:
+					return TeamType.ChaosInsurgency;
+				case RoleType.Scientist:
+					return TeamType.Scientist;
+				case RoleType.ClassD:
+					return TeamType.ClassDPersonnel;
+				case RoleType.Scp049:
+				case RoleType.Scp93953:
+				case RoleType.Scp93989:
+				case RoleType.Scp0492:
+				case RoleType.Scp079:
+				case RoleType.Scp096:
+				case RoleType.Scp106:
+				case RoleType.Scp173:
+					return TeamType.SCP;
+				case RoleType.Spectator:
+					return TeamType.Spectator;
+				case RoleType.FacilityGuard:
+				case RoleType.NtfCadet:
+				case RoleType.NtfLieutenant:
+				case RoleType.NtfCommander:
+				case RoleType.NtfScientist:
+					return TeamType.NineTailedFox;
+				case RoleType.Tutorial:
+					return TeamType.Tutorial;
+				default:
+					return TeamType.Spectator;
+			}
+		}
+	}
+
+	public static class Config
+    {
+		public static ItemType GetItem(this YamlConfig cfg, string key) => (ItemType)Enum.Parse(typeof(ItemType), cfg.GetString(key));
+		public static RoleType GetRole(this YamlConfig cfg, string key) => (RoleType)Enum.Parse(typeof(RoleType), cfg.GetString(key));
+		public static TeamType GetTeam(this YamlConfig cfg, string key) => (TeamType)Enum.Parse(typeof(TeamType), cfg.GetString(key));
+
+		public static List<ItemType> GetItems(this YamlConfig cfg, string key)
+		{
+			try
+			{
+				List<ItemType> items = new List<ItemType>();
+				foreach (int val in cfg.GetIntList(key))
+				{
+					items.Add((ItemType)Enum.Parse(typeof(ItemType), val.ToString()));
+				}
+				return items;
+			}
+			catch (Exception e)
+			{
+				Log.Add("YamlConfig", e);
+				return new List<ItemType>();
+			}
+		}
+
+		public static List<RoleType> GetRoles(this YamlConfig cfg, string key)
+		{
+			try
+			{
+				List<RoleType> roles = new List<RoleType>();
+				foreach (int val in cfg.GetIntList(key))
+				{
+					roles.Add((RoleType)Enum.Parse(typeof(RoleType), val.ToString()));
+				}
+				return roles;
+			}
+			catch (Exception e)
+			{
+				Log.Add("YamlConfig", e);
+				return new List<RoleType>();
+			}
+		}
+
+		public static List<TeamType> GetTeams(this YamlConfig cfg, string key)
+		{
+			try
+			{
+				List<TeamType> teams = new List<TeamType>();
+				foreach (int val in cfg.GetIntList(key))
+				{
+					teams.Add((TeamType)Enum.Parse(typeof(TeamType), val.ToString()));
+				}
+				return teams;
+			}
+			catch (Exception e)
+			{
+				Log.Add("YamlConfig", e);
+				return new List<TeamType>();
+			}
+		}
+
+		public static Dictionary<int, int> GetIntDictionary(this YamlConfig cfg, string key)
+		{
+			Dictionary<string, string> stringDictionary = cfg.GetStringDictionary(key);
+			if (stringDictionary.Count == 0)
+				return new Dictionary<int, int>();
+			Dictionary<int, int> dictionary = new Dictionary<int, int>();
+			foreach (KeyValuePair<string, string> keyValuePair in stringDictionary)
+			{
+				int k;
+				int value;
+				if (int.TryParse(keyValuePair.Key, out k) && int.TryParse(keyValuePair.Value, out value))
+				{
+					dictionary.Add(k, value);
+				}
+			}
+			return dictionary;
+		}
+	}
+
+	public static class ItemExtensions
+    {
+		public static WeaponType GetWeaponType(this ItemType item)
+        {
+			if (item == ItemType.GunCOM15)
+				return WeaponType.Com15;
+			if (item == ItemType.GunE11SR)
+				return WeaponType.Epsilon11;
+			if (item == ItemType.GunLogicer)
+				return WeaponType.Logicer;
+			if (item == ItemType.GunMP7)
+				return WeaponType.MP7;
+			if (item == ItemType.GunProject90)
+				return WeaponType.Project90;
+			if (item == ItemType.GunUSP)
+				return WeaponType.USP;
+			if (item == ItemType.MicroHID)
+				return WeaponType.MicroHID;
+			return WeaponType.None;
+        }
+
+		public static GrenadeType GetGrenadeType(this ItemType item)
+        {
+			if (item == ItemType.GrenadeFlash)
+				return GrenadeType.FlashGrenade;
+			if (item == ItemType.GrenadeFrag)
+				return GrenadeType.FragGrenade;
+			if (item == ItemType.SCP018)
+				return GrenadeType.Scp018;
+			return GrenadeType.None;
+        }
+
+		public static InventoryCategory CreateCategory(bool hideWarning, ItemCategory itemCategory, string label, byte maxItems)
+        {
+			InventoryCategory category = new InventoryCategory()
+			{
+				hideWarning = hideWarning,
+				itemType = itemCategory,
+				maxItems = maxItems,
+				label = label
+			};
+			return category;
+        }
+
+		public static bool IsWeapon(this ItemType item) => item.GetWeaponType() != WeaponType.None;
+		public static bool IsAmmo(this ItemType item) => item == ItemType.Ammo556 || item == ItemType.Ammo9mm || item == ItemType.Ammo762;
+		public static bool IsSCP(this ItemType type) => type == ItemType.SCP018 || type == ItemType.SCP500 || type == ItemType.SCP268 || type == ItemType.SCP207;
+		public static bool IsThrowable(this ItemType type) => type == ItemType.SCP018 || type == ItemType.GrenadeFrag || type == ItemType.GrenadeFlash;
+		public static bool IsMedical(this ItemType type) => type == ItemType.Painkillers || type == ItemType.Medkit || type == ItemType.SCP500 || type == ItemType.Adrenaline;
+		public static bool IsUtility(this ItemType type) => type == ItemType.Disarmer || type == ItemType.Flashlight || type == ItemType.Radio || type == ItemType.WeaponManagerTablet;
+		public static bool IsKeycard(this ItemType type) => type == ItemType.KeycardChaosInsurgency || type == ItemType.KeycardContainmentEngineer || type == ItemType.KeycardFacilityManager || type == ItemType.KeycardGuard || type == ItemType.KeycardJanitor || type == ItemType.KeycardNTFCommander || type == ItemType.KeycardNTFLieutenant || type == ItemType.KeycardO5 || type == ItemType.KeycardScientist || type == ItemType.KeycardScientistMajor || type == ItemType.KeycardSeniorGuard || type == ItemType.KeycardZoneManager;
+	}
+
+	public static class LogExtensions
+    {
+		public static ConsoleColor GetColor(this LogType type)
+		{
+			if (type == LogType.Debug)
+				return ConsoleColor.Cyan;
+			if (type == LogType.Error)
+				return ConsoleColor.DarkRed;
+			if (type == LogType.Info)
+				return ConsoleColor.Green;
+			if (type == LogType.Warn)
+				return ConsoleColor.DarkYellow;
+			else
+				return ConsoleColor.White;
 		}
 	}
 }
