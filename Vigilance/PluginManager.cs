@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Harmony;
+using Microsoft.SqlServer.Server;
 
 namespace Vigilance
 {
@@ -49,9 +50,9 @@ namespace Vigilance
                                 Plugin plugin = (Plugin)Activator.CreateInstance(type);
                                 try
                                 {
-                                    if (!File.Exists(Paths.GetPluginConfigPath(plugin)))
-                                        File.Create(Paths.GetPluginConfigPath(plugin));
-                                    plugin.Config = new YamlConfig(Paths.GetPluginConfigPath(plugin));
+                                    string cfgPath = Paths.GetPluginConfigPath(plugin);
+                                    Paths.CheckFile(cfgPath);
+                                    plugin.Config = new YamlConfig(cfgPath);
                                     plugin.Config?.Reload();
                                     plugin.Enable();
                                     _plugins.Add(plugin);

@@ -8,7 +8,7 @@ namespace Vigilance
     {
         public static void Add(string message, LogType type)
         {
-            string tag = Assembly.GetExecutingAssembly().GetName().Name;
+            string tag = Assembly.GetCallingAssembly().GetName().Name;
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
@@ -24,7 +24,7 @@ namespace Vigilance
 
         public static void Add(Exception e)
         {
-            string tag = Assembly.GetExecutingAssembly().GetName().Name;
+            string tag = Assembly.GetCallingAssembly().GetName().Name;
             Add($"[ERROR] [{tag}]: {e}", ConsoleColor.DarkRed);
         }
 

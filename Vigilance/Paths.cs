@@ -18,7 +18,9 @@ namespace Vigilance
 		public static string Dependencies => $"{Vigilance}/Dependencies";
 		public static string Plugins => $"{Vigilance}/Plugins";
 		public static string NewtonsoftJson => $"{Managed}/Newtonsoft.Json.dll";
-		public static string ConfigPath => $"{Vigilance}/Config-{Server.Port}.yml";
+		public static string ConfigPath => $"{ConfigsPath}/{Server.Port}.yml";
+		public static string ConfigsPath => $"{Vigilance}/Configs";
+		public static string PluginConfigsPath => $"{ConfigsPath}/Plugins/{Server.Port}";
 		public static string HarmonyDownloadURL => "https://github.com/DrGaster17/Vigilance/releases/download/v4.1.2/0Harmony.dll";
 
 		public static DirectoryInfo Create(string directory)
@@ -27,6 +29,17 @@ namespace Vigilance
 			Log.Add("Paths", $"Creating directory {directory}", LogType.Debug);
 			return info;
 		}
+
+		public static FileStream CreateFile(string path)
+        {
+			if (!File.Exists(path))
+            {
+				Log.Add("Paths", $"Creating file {path}", LogType.Debug);
+				FileStream stream = File.Create(path);
+				return stream;
+            }
+			return File.Open(path, FileMode.Open);
+        }
 
 		public static void Delete(string directory)
 		{
@@ -38,14 +51,23 @@ namespace Vigilance
 		{
 			if (!Directory.Exists(directory))
 			{
-				Log.Add("Paths", $"Directory {directory} does not exist, creating", LogType.Debug);
+				Log.Add("Paths", $"Directory {directory} does not exist", LogType.Debug);
 				Create(directory);
 			}
 		}
 
+		public static void CheckFile(string path)
+        {
+			if (!File.Exists(path))
+            {
+				Log.Add("Paths", $"File {path} does not exist", LogType.Debug);
+				CreateFile(path);
+            }
+        }
+
 		public static string GetPluginConfigPath(Plugin plugin)
         {
-			return $"{Vigilance}/Plugins/{plugin.Name}/{Server.Port}.yml";
+			return $"{PluginConfigsPath}/{plugin.Name}.yml";
         }
 
 		public static void CheckDirectories()
@@ -56,6 +78,8 @@ namespace Vigilance
 			Check(Vigilance);
 			Check(Dependencies);
 			Check(Plugins);
+			Check(ConfigsPath);
+			Check(PluginConfigsPath);
 			if (!File.Exists(ConfigPath))
 				File.Create(ConfigPath);
 		}

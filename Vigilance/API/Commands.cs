@@ -28,7 +28,7 @@ namespace Vigilance.Registered
 				ItemType item = ItemType.None;
 				foreach (Pickup pickup in Map.Pickups)
 				{
-					if ((int)pickup.ItemId == int.Parse(args[1]))
+					if ((int)pickup.ItemId == int.Parse(args[0]))
 					{
 						pickup.Delete();
 						item = pickup.ItemId;
@@ -69,7 +69,9 @@ namespace Vigilance.Registered
 		{
 			if (args.Length < 1)
 				return Usage;
-			ItemType item = (ItemType)int.Parse(args[1]);
+			if (!int.TryParse(args[0], out int id))
+				return "Please specify a valid ItemID!";
+			ItemType item = (ItemType)id;
 			foreach (Player player in Server.Players)
 			{
 				player.Hub.inventory.AddNewItem(item);
@@ -225,7 +227,7 @@ namespace Vigilance.Registered
 		{
 			if (args.Length < 1)
 				return Usage;
-			if (args[1].ToLower() == "*")
+			if (args[0].ToLower() == "*")
 			{
 				foreach (Player player in Server.Players)
 				{
@@ -233,7 +235,7 @@ namespace Vigilance.Registered
 				}
 				return $"Succesfully spawned a frag grenade at all players.";
 			}
-			Player player1 = args[1].GetPlayer();
+			Player player1 = args[0].GetPlayer();
 			Map.SpawnGrenade(player1, GrenadeType.FragGrenade);
 			return $"Succesfully spawned a frag grenade at {player1.Nick}";
 		}
@@ -338,7 +340,7 @@ namespace Vigilance.Registered
 			if (!float.TryParse(args[2], out float x) || !float.TryParse(args[3], out float y) || !float.TryParse(args[4], out float z))
 				return "Please specify a valid size!";
 			RoleType role = (RoleType)roleId;
-			if (args[1] == "*")
+			if (args[0] == "*")
 			{
 				foreach (Player player in Server.Players)
 				{

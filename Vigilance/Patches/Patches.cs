@@ -202,137 +202,6 @@ namespace Vigilance.Patches
         }
     }
 
-    /*
-    [HarmonyPatch(typeof(FlashGrenade), nameof(FlashGrenade.ServersideExplosion))]
-    public static class FlashGrenadeExplosionPatch
-    {
-        private static bool Prefix(FlashGrenade __instance)
-        {
-            try
-            {
-                Environment.OnFlashExplode(__instance.throwerGameObject, __instance.gameObject, true, out bool allow);
-                if (!allow)
-                    return false;
-                foreach (GameObject gameObject in PlayerManager.players)
-                {
-                    Vector3 position = __instance.transform.position;
-                    ReferenceHub hub = ReferenceHub.GetHub(gameObject);
-                    Flashed effect = hub.playerEffectsController.GetEffect<Flashed>();
-                    Deafened effect2 = hub.playerEffectsController.GetEffect<Deafened>();
-                    if (effect != null && !(__instance.thrower == null) && (__instance._friendlyFlash || effect.Flashable(ReferenceHub.GetHub(__instance.thrower.gameObject), position, __instance._ignoredLayers)))
-                    {
-                        float num = __instance.powerOverDistance.Evaluate(Vector3.Distance(gameObject.transform.position, position) / ((position.y > 900f) ? __instance.distanceMultiplierSurface : __instance.distanceMultiplierFacility)) * __instance.powerOverDot.Evaluate(Vector3.Dot(hub.PlayerCameraReference.forward, (hub.PlayerCameraReference.position - position).normalized));
-                        byte b = (byte)Mathf.Clamp(Mathf.RoundToInt(num * 10f * __instance.maximumDuration), 1, 255);
-                        if (b >= effect.Intensity && num > 0f)
-                        {
-                            hub.playerEffectsController.ChangeEffectIntensity<Flashed>(b);
-                            if (effect2 != null)
-                            {
-                                if (PluginManager.Config.GetBool("enable_flash_deafened_effect"))
-                                    hub.playerEffectsController.EnableEffect(effect2, num * __instance.maximumDuration, true);
-                            }
-                        }
-                    }
-                }
-                Transform transform = __instance.transform;
-                UnityEngine.Object.Instantiate(__instance.serverGrenadeEffect, transform.position, transform.rotation);
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("FlashGrenade", e);
-                return true;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(FragGrenade), nameof(FragGrenade.ServersideExplosion))]
-    public static class FragGrenadeExplosionPatch
-    {
-        private static bool Prefix(FragGrenade __instance)
-        {
-            try
-            {
-                EffectGrenade effectGrenade = __instance;
-                effectGrenade.ServersideExplosion();
-                Environment.OnFragExplode(__instance.throwerGameObject, __instance.gameObject, true, out bool allow);
-                if (!allow)
-                    return false;
-                Vector3 position = __instance.transform.position;
-                int num = 0;
-                foreach (Collider collider in Physics.OverlapSphere(position, __instance.chainTriggerRadius, __instance.damageLayerMask))
-                {
-                    BreakableWindow component = collider.GetComponent<BreakableWindow>();
-                    if (component != null)
-                    {
-                        if ((component.transform.position - position).sqrMagnitude <= __instance.sqrChainTriggerRadius)
-                        {
-                            component.ServerDamageWindow(500f);
-                        }
-                    }
-                    else
-                    {
-                        Door componentInParent = collider.GetComponentInParent<Door>();
-                        if (componentInParent != null)
-                        {
-                            if (!componentInParent.GrenadesResistant && !componentInParent.commandlock && !componentInParent.decontlock && !componentInParent.lockdown && (componentInParent.transform.position - position).sqrMagnitude <= __instance.sqrChainTriggerRadius)
-                            {
-                                componentInParent.DestroyDoor(true);
-                            }
-                        }
-                        else if ((__instance.chainLengthLimit == -1 || __instance.chainLengthLimit > __instance.currentChainLength) && (__instance.chainConcurrencyLimit == -1 || __instance.chainConcurrencyLimit > num))
-                        {
-                            Pickup componentInChildren = collider.GetComponentInChildren<Pickup>();
-                            if (componentInChildren != null && __instance.ChangeIntoGrenade(componentInChildren))
-                            {
-                                num++;
-                            }
-                        }
-                    }
-                }
-                foreach (GameObject gameObject in PlayerManager.players)
-                {
-                    if (ServerConsole.FriendlyFire || !(gameObject != __instance.thrower.gameObject) || gameObject.GetComponent<WeaponManager>().GetShootPermission(__instance.throwerTeam, false))
-                    {
-                        PlayerStats component2 = gameObject.GetComponent<PlayerStats>();
-                        if (!(component2 == null) && component2.ccm.InWorld)
-                        {
-                            float num2 = __instance.damageOverDistance.Evaluate(Vector3.Distance(position, component2.transform.position)) * (component2.ccm.IsHuman() ? ConfigFile.ServerConfig.GetFloat("human_grenade_multiplier", 0.7f) : ConfigFile.ServerConfig.GetFloat("scp_grenade_multiplier", 1f));
-                            if (num2 > __instance.absoluteDamageFalloff)
-                            {
-                                foreach (Transform transform in component2.grenadePoints)
-                                {
-                                    if (!Physics.Linecast(position, transform.position, __instance.hurtLayerMask))
-                                    {
-                                        component2.HurtPlayer(new PlayerStats.HitInfo(num2, (__instance.thrower != null) ? __instance.thrower.hub.LoggedNameFromRefHub() : "(UNKNOWN)", DamageTypes.Grenade, __instance.thrower.hub.queryProcessor.PlayerId), gameObject, false);
-                                        break;
-                                    }
-                                }
-                                if (!component2.ccm.IsAnyScp())
-                                {
-                                    ReferenceHub hub = ReferenceHub.GetHub(gameObject);
-                                    float duration = __instance.statusDurationOverDistance.Evaluate(Vector3.Distance(position, component2.transform.position));
-                                    if (PluginManager.Config.GetBool("enable_grenade_effects"))
-                                    {
-                                        hub.playerEffectsController.EnableEffect(hub.playerEffectsController.GetEffect<Burned>(), duration, false);
-                                        hub.playerEffectsController.EnableEffect(hub.playerEffectsController.GetEffect<Concussed>(), duration, false);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("FragGrenade", e);
-                return true;
-            }
-        }
-    }
-    */
-
     [HarmonyPatch(typeof(Generator079), nameof(Generator079.CheckFinish))]
     public static class GeneratorFinishPatch
     {
@@ -1617,6 +1486,8 @@ namespace Vigilance.Patches
             }
             __instance.OnInteract();
             Environment.OnDoorInteract(true, component, __instance.gameObject, out bool allow);
+            if (!allow)
+                return false;
             if (__instance._sr.BypassMode)
             {
                 component.ChangeState(true);
@@ -1783,41 +1654,6 @@ namespace Vigilance.Patches
             }
         }
     }
-
-    /*
-    [HarmonyPatch(typeof(Intercom), nameof(Intercom.RequestTransmission))]
-    public static class IntercomSpeakPatch
-    {
-        public static bool Prefix(Intercom __instance, GameObject spk)
-        {
-            if (spk == null)
-            {
-                __instance.Networkspeaker = null;
-                return false;
-            }
-
-            try
-            {
-                if ((__instance.remainingCooldown <= 0f && !__instance._inUse) || (spk.GetComponent<ServerRoles>().BypassMode && !__instance.speaking))
-                {
-                    Environment.OnIntercomSpeak(spk, true, out bool allow);
-                    if (!allow)
-                        return false;
-                    __instance.speaking = true;
-                    __instance.remainingCooldown = -1f;
-                    __instance._inUse = true;
-                    Timing.RunCoroutine(__instance._StartTransmitting(spk), Segment.FixedUpdate);
-                }
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Intercom", e);
-                return true;
-            }
-        }
-    }
-    */
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdDropItem))]
     public static class DropItemPatch
