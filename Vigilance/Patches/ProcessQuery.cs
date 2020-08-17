@@ -35,6 +35,8 @@ namespace Vigilance.Patches
 		{
 			try
 			{
+				if (sender == null)
+					sender = ServerConsole._scs;
 				string[] query = q.Split(' ');
 				string logName = sender.LogName;
 				PlayerCommandSender playerCommandSender = sender as PlayerCommandSender;
@@ -94,8 +96,8 @@ namespace Vigilance.Patches
 					case "ENRAGE":
 						if (CheckPermissions(sender, query[0], new PlayerPermissions[2]
 						{
-					PlayerPermissions.ForceclassSelf,
-					PlayerPermissions.ForceclassWithoutRestrictions
+							PlayerPermissions.ForceclassSelf,
+							PlayerPermissions.ForceclassWithoutRestrictions
 						}))
 						{
 							PlayableScpsController component4;
@@ -211,9 +213,9 @@ namespace Vigilance.Patches
 							}
 							if ((num4 == 0 && !CheckPermissions(sender, query[0].ToUpper(), new PlayerPermissions[3]
 							{
-						PlayerPermissions.KickingAndShortTermBanning,
-						PlayerPermissions.BanningUpToDay,
-						PlayerPermissions.LongTermBanning
+								PlayerPermissions.KickingAndShortTermBanning,
+								PlayerPermissions.BanningUpToDay,
+								PlayerPermissions.LongTermBanning
 							})) || (num4 > 0 && num4 <= 3600 && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.KickingAndShortTermBanning)) || (num4 > 3600 && num4 <= 86400 && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.BanningUpToDay)) || (num4 > 86400 && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.LongTermBanning)))
 							{
 								break;
@@ -2878,7 +2880,7 @@ namespace Vigilance.Patches
 					case "QUIT":
 					case "EXIT":
 						IdleMode.SetIdleMode(state: false);
-						AddLog("The server is about to restart, goodbye!", new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue));
+						AddLog("The server is about to restart, please wait!", new Color32(255, 0, 0, 1));
 						__instance.Invoke("QuitGame", 1f);
 						break;
 					case "HELP":

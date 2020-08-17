@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Harmony;
-using Microsoft.SqlServer.Server;
 
 namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.0.0";
+        public static string Version => "5.0.1";
         public static List<Plugin> Plugins => _plugins;
         public static List<Assembly> Dependencies => _dependencies;
         public static YamlConfig Config => _config;
@@ -70,6 +69,7 @@ namespace Vigilance
                 catch (Exception e)
                 {
                     Log.Add("PluginManager", e);
+                    API.Server.Restart(true);
                 }
 
                 try
@@ -87,6 +87,7 @@ namespace Vigilance
                 {
                     Log.Add("PluginManager", e);
                 }
+                ReloadPluginConfigs();
                 Log.Add("PluginManager", "Succesfully loaded!", LogType.Info);
             }
             catch (Exception e)
@@ -128,6 +129,8 @@ namespace Vigilance
                     Log.Add("PluginManager", e);
                 }
             }
+            _plugins.Clear();
+            _dependencies.Clear();
         }
 
         public static void ReloadPluginConfigs()

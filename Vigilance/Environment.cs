@@ -443,20 +443,20 @@ namespace Vigilance
             }
         }
 
-        public static void OnBan(GameObject issuer, GameObject ply, string res, long ticks, bool all, out long newTicks, out bool allow)
+        public static void OnBan(GameObject issuer, GameObject ply, string res, long issuance, long expiery, bool all, out long newExpiery, out bool allow)
         {
             try
             {
-                BanEvent ev = new BanEvent(ply, issuer, res, ticks, all);
+                BanEvent ev = new BanEvent(ply, issuer, res.GetBanReason(), issuance, expiery, all);
                 EventManager.Trigger<BanEventHandler>(ev);
                 allow = ev.Allow;
-                newTicks = ev.Expiration.Ticks;
+                newExpiery = ev.Expiration.Ticks;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
                 allow = all;
-                newTicks = ticks;
+                newExpiery = expiery;
             }
         }
 

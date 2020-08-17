@@ -19,8 +19,6 @@ using PlayableScps;
 using PlayableScps.Interfaces;
 using Respawning;
 using MEC;
-using Searching;
-using Hints;
 using Console = GameCore.Console;
 using Scp914;
 using Cryptography;
@@ -322,8 +320,7 @@ namespace Vigilance.Patches
                         string originalName = string.IsNullOrEmpty(targetPlayer.Nick) ? "(no nick)" : targetPlayer.Nick;
                         long issuanceTime = TimeBehaviour.CurrentTimestamp();
                         long banExpieryTime = TimeBehaviour.GetBanExpieryTime((uint)duration);
-                        Environment.OnBan(issuerPlayer.GameObject, user, reason, banExpieryTime, true, out long expiery, out bool allow);
-                        banExpieryTime = expiery;
+                        Environment.OnBan(issuerPlayer.GameObject, targetPlayer.GameObject, reason.GetBanReason(), issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
                         if (!allow)
                             return false;
                         try
@@ -532,100 +529,6 @@ namespace Vigilance.Patches
             catch (Exception e)
             {
                 Log.Add("ServerRoles", e);
-                return true;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.SetPlayersClass))]
-    public static class SetClassPatch
-    {
-        private static bool Prefix(CharacterClassManager __instance, ref RoleType classid, GameObject ply, bool lite = false, bool escape = false)
-        {
-            try
-            {
-                if (!NetworkServer.active)
-                    return false;
-                ReferenceHub hub = ReferenceHub.GetHub(ply);
-                if (hub.isDedicatedServer || !hub.isReady)
-                    return false;
-                hub.characterClassManager.SetClassIDAdv(classid, lite, escape);
-                ply.GetComponent<FirstPersonController>().ModifyStamina(100f);
-                hub.playerStats.SetHPAmount(__instance.Classes.SafeGet(classid).maxHP);
-                if (lite)
-                    return false;
-                Inventory inventory = hub.inventory;
-                List<Inventory.SyncItemInfo> list = ListPool<Inventory.SyncItemInfo>.Shared.Rent();
-                if (escape && __instance.KeepItemsAfterEscaping)
-                {
-                    foreach (Inventory.SyncItemInfo item in inventory.items)
-                    {
-                        list.Add(item);
-                    }
-                }
-
-                inventory.items.Clear();
-                foreach (ItemType id in __instance.Classes.SafeGet(classid).startItems)
-                {
-                    inventory.AddNewItem(id, -4.6566467E+11f, 0, 0, 0);
-                }
-
-                if (escape && __instance.KeepItemsAfterEscaping)
-                {
-                    foreach (Inventory.SyncItemInfo syncItemInfo in list)
-                    {
-                        if (__instance.PutItemsInInvAfterEscaping)
-                        {
-                            Item itemByID = inventory.GetItemByID(syncItemInfo.id);
-                            bool flag = false;
-                            InventoryCategory[] categories = __instance._search.categories;
-                            int i = 0;
-                            while (i < categories.Length)
-                            {
-                                InventoryCategory inventoryCategory = categories[i];
-                                if (inventoryCategory.itemType == itemByID.itemCategory && itemByID.itemCategory != ItemCategory.None)
-                                {
-                                    int num = 0;
-                                    foreach (Inventory.SyncItemInfo syncItemInfo2 in inventory.items)
-                                    {
-                                        if (inventory.GetItemByID(syncItemInfo2.id).itemCategory == itemByID.itemCategory)
-                                        {
-                                            num++;
-                                        }
-                                    }
-                                    if (num >= (int)inventoryCategory.maxItems)
-                                    {
-                                        flag = true;
-                                        break;
-                                    }
-                                    break;
-                                }
-                                else
-                                {
-                                    i++;
-                                }
-                            }
-                            if (inventory.items.Count >= 8 || flag)
-                            {
-                                inventory.SetPickup(syncItemInfo.id, syncItemInfo.durability, __instance._pms.RealModelPosition, Quaternion.Euler(__instance._pms.Rotations.x, __instance._pms.Rotations.y, 0f), syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
-                            }
-                            else
-                            {
-                                inventory.AddNewItem(syncItemInfo.id, syncItemInfo.durability, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
-                            }
-                        }
-                        else
-                        {
-                            inventory.SetPickup(syncItemInfo.id, syncItemInfo.durability, __instance._pms.RealModelPosition, Quaternion.Euler(__instance._pms.Rotations.x, __instance._pms.Rotations.y, 0f), syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
-                        }
-                    }
-                }
-                ListPool<Inventory.SyncItemInfo>.Shared.Return(list);
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("CharacterClassManager", e);
                 return true;
             }
         }
@@ -1655,38 +1558,6 @@ namespace Vigilance.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdDropItem))]
-    public static class DropItemPatch
-    {
-        public static bool Prefix(Inventory __instance, int itemInventoryIndex)
-        {
-            if (!__instance._iawRateLimit.CanExecute(true) || itemInventoryIndex < 0 || itemInventoryIndex >= __instance.items.Count || __instance._amnesia.Enabled)
-            {
-                return false;
-            }
-
-            try
-            {
-                Inventory.SyncItemInfo syncItemInfo = __instance.items[itemInventoryIndex];
-                if (__instance.items[itemInventoryIndex].id != syncItemInfo.id)
-                {
-                    return false;
-                }
-                Environment.OnDropItem(__instance.GetItemByID(syncItemInfo.id), __instance.gameObject, true, out bool allow);
-                if (!allow)
-                    return false;
-                __instance.SetPickup(syncItemInfo.id, __instance.items[itemInventoryIndex].durability, __instance.transform.position, __instance.camera.transform.rotation, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
-                __instance.items.RemoveAt(itemInventoryIndex);
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Inventory", e);
-                return true;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(NicknameSync), nameof(NicknameSync.SetNick))]
     public static class PlayerJoinPatch
     {
@@ -1768,79 +1639,6 @@ namespace Vigilance.Patches
             catch (Exception e)
             {
                 Log.Add("ReferenceHub", e);
-                return true;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(ItemSearchCompletor), nameof(ItemSearchCompletor.Complete))]
-    public static class PickupItemPatch
-    {
-        public static bool Prefix(ItemSearchCompletor __instance)
-        {
-            try
-            {
-                Environment.OnPickupItem(__instance.TargetItem, __instance.TargetItem.id, __instance.Hub.gameObject, true, out ItemType change, out bool allow);
-                if (!allow)
-                    return false;
-                if (__instance.TargetPickup.weaponMods.Present)
-                {
-                    Pickup.WeaponModifiers weaponModifiers = new Pickup.WeaponModifiers(false, 0, 0, 0);
-                    foreach (WeaponManager.Weapon weapon in __instance.Hub.weaponManager.weapons)
-                    {
-                        if (weapon.inventoryID == __instance.TargetPickup.itemId)
-                        {
-                            weaponModifiers = new Pickup.WeaponModifiers(true, Mathf.Clamp(__instance.TargetPickup.weaponMods.Sight, 0, weapon.mod_sights.Length - 1), Mathf.Clamp(__instance.TargetPickup.weaponMods.Barrel, 0, weapon.mod_barrels.Length - 1), Mathf.Clamp(__instance.TargetPickup.weaponMods.Other, 0, weapon.mod_others.Length - 1));
-                        }
-                    }
-                    __instance.Hub.inventory.AddNewItem(__instance.TargetPickup.itemId, __instance.TargetPickup.durability, weaponModifiers.Sight, weaponModifiers.Barrel, weaponModifiers.Other);
-                }
-                else
-                {
-                    __instance.Hub.inventory.AddNewItem(__instance.TargetPickup.itemId, __instance.Hub.inventory.GetItemByID(__instance.TargetPickup.itemId).durability, 0, 0, 0);
-                }
-                __instance.TargetPickup.Delete();
-
-                if (__instance._category != null && !__instance._category.hideWarning && __instance.CategoryCount >= __instance._category.maxItems)
-                {
-                    __instance.Hub.hints.Show(new TranslationHint(HintTranslations.MaxItemCategoryReached, new HintParameter[]
-                    {
-                        new ItemCategoryHintParameter(__instance._category.itemType),
-                        new ByteHintParameter(__instance._category.maxItems)
-                    }, HintEffectPresets.FadeInAndOut(0.25f, 1f, 0f), 1.5f));
-                }
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("ItemSearchCompletor", e);
-                return true;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.CallCmdReload))]
-    public static class WeaponReloadPatch
-    {
-        public static bool Prefix(WeaponManager __instance, bool animationOnly)
-        {
-            try
-            {
-                if (!__instance._iawRateLimit.CanExecute(false))
-                    return false;
-                int itemIndex = __instance._hub.inventory.GetItemIndex();
-                if (itemIndex < 0 || itemIndex >= __instance._hub.inventory.items.Count ||
-                    (__instance.curWeapon < 0 || __instance._hub.inventory.curItem !=
-                        __instance.weapons[__instance.curWeapon].inventoryID) ||
-                    __instance._hub.inventory.items[itemIndex].durability >=
-                    (double)__instance.weapons[__instance.curWeapon].maxAmmo)
-                    return false;
-                Environment.OnReload(__instance._hub.gameObject, animationOnly, true, 0, out animationOnly, out bool allow, out int ammo);
-                return allow;
-            }
-            catch (Exception e)
-            {
-                Log.Add("WeaponManager", e);
                 return true;
             }
         }
@@ -2145,126 +1943,15 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.ApplyProperties))]
     public static class SpawnPatch
     {
-        public static bool Prefix(CharacterClassManager __instance, bool lite = false, bool escape = false)
+        public static void Postfix(CharacterClassManager __instance, bool lite = false, bool escape = false)
         {
             try
             {
-                Role curRole = __instance.CurRole;
-                if (!__instance._wasAnytimeAlive && __instance.CurClass != RoleType.Spectator && __instance.CurClass != RoleType.None)
-                {
-                    __instance._wasAnytimeAlive = true;
-                }
-                __instance.InitSCPs();
-                __instance.AliveTime = 0f;
-                switch (curRole.team)
-                {
-                    case Team.MTF:
-                        if (__instance.isLocalPlayer)
-                        {
-                            AchievementManager.Achieve("arescue", true);
-                        }
-                        break;
-                    case Team.CHI:
-                        if (__instance.isLocalPlayer)
-                        {
-                            AchievementManager.Achieve("chaos", true);
-                        }
-                        break;
-                    case Team.RSC:
-                    case Team.CDP:
-                        __instance.EscapeStartTime = (int)Time.realtimeSinceStartup;
-                        break;
-                }
-                Inventory inventory = __instance._hub.inventory;
-
-                try
-                {
-                    __instance._hub.footstepSync.SetLoudness(curRole.team, curRole.roleId.Is939());
-                }
-                catch (Exception e)
-                {
-                    Log.Add("FootstepSync", e);
-                }
-
-                if (NetworkServer.active)
-                {
-                    Handcuffs handcuffs = __instance._hub.handcuffs;
-                    handcuffs.ClearTarget();
-                    handcuffs.NetworkCufferId = -1;
-                    SpawnableTeamType spawnableTeamType;
-                    string[] array;
-                    if (curRole.roleId != RoleType.Spectator && RespawnManager.CurrentSequence() != RespawnManager.RespawnSequencePhase.SpawningSelectedTeam && UnitNamingManager.RolesWithEnforcedDefaultName.TryGetValue(curRole.roleId, out spawnableTeamType) && RespawnManager.Singleton.NamingManager.TryGetAllNamesFromGroup((byte)spawnableTeamType, out array) && array.Length != 0)
-                    {
-                        __instance.NetworkCurSpawnableTeamType = (byte)spawnableTeamType;
-                        __instance.NetworkCurUnitName = array[0];
-                    }
-                    else if (__instance.CurSpawnableTeamType != 0)
-                    {
-                        __instance.NetworkCurSpawnableTeamType = 0;
-                        __instance.NetworkCurUnitName = string.Empty;
-                    }
-                }
-
-                if (curRole.team != Team.RIP)
-                {
-                    if (NetworkServer.active && !lite)
-                    {
-                        Vector3 constantRespawnPoint = NonFacilityCompatibility.currentSceneSettings.constantRespawnPoint;
-                        if (constantRespawnPoint != Vector3.zero)
-                        {
-                            __instance._pms.OnPlayerClassChange(constantRespawnPoint, 0f);
-                            __instance._pms.IsAFK = true;
-                        }
-                        else
-                        {
-                            GameObject randomPosition = CharacterClassManager._spawnpointManager.GetRandomPosition(__instance.CurClass);
-                            if (randomPosition != null)
-                            {
-                                __instance._pms.OnPlayerClassChange(randomPosition.transform.position, randomPosition.transform.rotation.eulerAngles.y);
-                                __instance._pms.IsAFK = true;
-                                AmmoBox component = __instance.GetComponent<AmmoBox>();
-                                if (escape && __instance.KeepItemsAfterEscaping)
-                                {
-                                    Inventory component2 = PlayerManager.localPlayer.GetComponent<Inventory>();
-                                    for (ushort num = 0; num < 3; num += 1)
-                                    {
-                                        if (component[(int)num] >= 15U)
-                                        {
-                                            component2.SetPickup(component.types[(int)num].inventoryID, component[(int)num], randomPosition.transform.position, randomPosition.transform.rotation, 0, 0, 0);
-                                        }
-                                    }
-                                }
-                                component.ResetAmmo();
-                            }
-                            else
-                            {
-                                __instance._pms.OnPlayerClassChange(__instance.DeathPosition, 0f);
-                            }
-                        }
-                        if (!__instance.SpawnProtected && __instance.EnableSP && __instance.SProtectedTeam.Contains((int)curRole.team))
-                        {
-                            __instance.GodMode = true;
-                            __instance.SpawnProtected = true;
-                            __instance.ProtectedTime = Time.time;
-                        }
-                    }
-                    if (!__instance.isLocalPlayer)
-                    {
-                        __instance._hub.playerStats.maxHP = curRole.maxHP;
-                    }
-                }
-                __instance.Scp0492.iAm049_2 = (__instance.CurClass == RoleType.Scp0492);
-                __instance.Scp106.iAm106 = (__instance.CurClass == RoleType.Scp106);
-                __instance.Scp173.iAm173 = (__instance.CurClass == RoleType.Scp173);
-                __instance.Scp939.iAm939 = __instance.CurClass.Is939();
-                __instance.RefreshPlyModel(RoleType.None);
-                Environment.OnSpawn(__instance.gameObject, __instance.transform.position, curRole.roleId, true, out Vector3 location, out RoleType role, out bool allow);
-                return false;
+                Environment.OnSpawn(__instance.gameObject, __instance.transform.position, __instance.CurClass, true, out Vector3 pos, out RoleType role, out bool allow);
             }
             catch (Exception e)
             {
                 Log.Add("CharacterClassManager", e);
-                return true;
             }
         }
     }

@@ -534,14 +534,16 @@ namespace Vigilance.Events
         public Player Issuer { get; }
         public string Reason { get; }
         public TimeSpan Expiration { get; set; }
+        public TimeSpan Issuance { get; set; }
         public bool Allow { get; set; }
 
-        public BanEvent(GameObject ply, GameObject issuer, string reason, long ticks, bool allow)
+        public BanEvent(GameObject ply, GameObject issuer, string reason, long issuance, long expiery, bool allow)
         {
             Player = ply?.GetPlayer();
             Issuer = issuer?.GetPlayer();
             Reason = reason.IsEmpty() ? "No reason provided." : reason;
-            Expiration = TimeSpan.FromTicks(ticks);
+            Expiration = TimeSpan.FromTicks(expiery);
+            Issuance = TimeSpan.FromTicks(issuance);
             Allow = allow;
         }
 

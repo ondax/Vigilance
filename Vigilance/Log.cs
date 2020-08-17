@@ -25,7 +25,7 @@ namespace Vigilance
         public static void Add(Exception e)
         {
             string tag = Assembly.GetCallingAssembly().GetName().Name;
-            Add($"[ERROR] [{tag}]: {e}", ConsoleColor.DarkRed);
+            Add($"[EXCEPTION] [{tag}]: {e}", ConsoleColor.DarkRed);
         }
 
         public static void Add(Assembly assembly, string message, LogType type)

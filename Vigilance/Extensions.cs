@@ -402,6 +402,12 @@ namespace Vigilance.Extensions
 			return TimeSpan.FromTicks(banDetails.Expires);
 		}
 
+		public static string GetDurationString(this TimeSpan expiery, TimeSpan issuance)
+		{
+			TimeSpan time = expiery - issuance;
+			return $"{time.Days}d {time.Hours}h {time.Minutes}m"; ;
+		}
+
 		public static int GetDuration(this BanDetails banDetails)
 		{
 			return banDetails.GetExpirationTime().Seconds;
@@ -424,10 +430,7 @@ namespace Vigilance.Extensions
 
 		public static string GetDurationString(this BanDetails banDetails)
 		{
-			int minutes = banDetails.GetDuration() / 60;
-			int hours = minutes / 60;
-			int days = hours / 24;
-			return $"{days}d {hours}h {minutes}m";
+			return GetDurationString(TimeSpan.FromTicks(banDetails.Expires), TimeSpan.FromTicks(banDetails.IssuanceTime));
 		}
 
 		public static string GetDurationString(this int seconds)

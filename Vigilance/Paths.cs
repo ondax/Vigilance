@@ -30,15 +30,14 @@ namespace Vigilance
 			return info;
 		}
 
-		public static FileStream CreateFile(string path)
+		public static void CreateFile(string path)
         {
 			if (!File.Exists(path))
             {
 				Log.Add("Paths", $"Creating file {path}", LogType.Debug);
 				FileStream stream = File.Create(path);
-				return stream;
+				stream.Close();
             }
-			return File.Open(path, FileMode.Open);
         }
 
 		public static void Delete(string directory)
@@ -80,8 +79,7 @@ namespace Vigilance
 			Check(Plugins);
 			Check(ConfigsPath);
 			Check(PluginConfigsPath);
-			if (!File.Exists(ConfigPath))
-				File.Create(ConfigPath);
+			CheckFile(ConfigPath);
 		}
 
 		public static List<Assembly> GetAssemblies(string path)
@@ -143,7 +141,6 @@ namespace Vigilance
 				Download(HarmonyDownloadURL, HarmonyFile);
             }
         }
-
 
 		public static void Download(string url, string fileName)
         {
