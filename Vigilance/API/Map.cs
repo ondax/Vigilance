@@ -9,30 +9,105 @@ using Vigilance.Extensions;
 using Object = UnityEngine.Object;
 using RemoteAdmin;
 using MEC;
+using Scp914;
+using scp = Scp914.Scp914Machine;
 
 namespace Vigilance.API
 {
 	public static class Map
 	{
-		public static List<Ragdoll> Ragdolls => Object.FindObjectsOfType<Ragdoll>().ToList();
-		public static List<FlickerableLight> FlickerableLights => Object.FindObjectsOfType<FlickerableLight>().ToList();
+		private static List<Ragdoll> _ragdolls;
+		private static List<FlickerableLight> _lights;
+		private static List<BlastDoor> _blastDoors;
+		private static List<Door> _doors;
+		private static List<Lift> _lifts;
+		private static List<TeslaGate> _gate;
+		private static List<Room> _rooms;
+
+		public static List<Ragdoll> Ragdolls
+		{
+			get
+			{
+				if (_ragdolls == null)
+					_ragdolls = Object.FindObjectsOfType<Ragdoll>().ToList();
+				return _ragdolls;
+			}
+		}
+		public static List<FlickerableLight> FlickerableLights
+		{
+			get
+			{
+				if (_lights == null)
+					_lights = Object.FindObjectsOfType<FlickerableLight>().ToList();
+				return _lights;
+			}
+		}
+
+		public static List<Room> Rooms
+		{
+			get
+			{
+				if (_rooms == null || _rooms.Count == 0)
+				{
+					_rooms = new List<Room>();
+					_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
+					const string surfaceRoomName = "Root_*&*Outside Cams";
+					var surfaceTransform = GameObject.Find(surfaceRoomName).transform;
+					_rooms.Add(new Room(surfaceRoomName, surfaceTransform, surfaceTransform.position));
+				}
+				return _rooms;
+			}
+		}
+
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
-		public static AudioSource AudioSource => GameObject.Find("GameManager")?.GetComponent<AudioSource>();
-		public static List<BlastDoor> BlastDoors => Object.FindObjectsOfType<BlastDoor>().ToList();
+		public static List<BlastDoor> BlastDoors1
+		{
+			get
+			{
+				if (_blastDoors == null)
+					_blastDoors = Object.FindObjectsOfType<BlastDoor>().ToList();
+				return _blastDoors;
+			}
+		}
 		public static List<Camera079> Cameras => Scp079PlayerScript.allCameras.ToList();
-		public static List<Door> Doors => Object.FindObjectsOfType<Door>().ToList();
-		public static List<Lift> Lifts => Object.FindObjectsOfType<Lift>().ToList();
+		public static List<Door> Doors
+		{
+			get
+			{
+				if (_doors == null)
+					_doors = Object.FindObjectsOfType<Door>().ToList();
+				return _doors;
+			}
+		}
+		public static List<Lift> Lifts
+		{
+			get
+			{
+				if (_lifts == null)
+					_lifts = Object.FindObjectsOfType<Lift>().ToList();
+				return _lifts;
+			}
+		}
 		public static List<Lift.Elevator> Elevators => Lifts[0].elevators.ToList();
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
 		public static List<Pickup> Pickups => Object.FindObjectsOfType<Pickup>().ToList();
 		public static string Seed => Server.Host.GetComponent<RandomSeedSync>().seed.ToString();
-		public static List<TeslaGate> TeslaGates => Object.FindObjectsOfType<TeslaGate>().ToList();
+		public static bool TeslaGatesDisabled { get => Vigilance.Patches.TeslaTriggerPatch.GatesDisabled; set => Vigilance.Patches.TeslaTriggerPatch.GatesDisabled = value; }
+		public static List<TeslaGate> TeslaGates
+		{
+			get
+			{
+				if (_gate == null)
+					_gate = Object.FindObjectsOfType<TeslaGate>().ToList();
+				return _gate;
+			}
+		}
 		public static List<Generator079> Generators => Generator079.Generators;
 		public static RespawnEffectsController Respawn => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
 
 		public static void Broadcast(string message, int duration)
 		{
-			foreach (Player player in Server.Players)
+			foreach (Player player in Server.PlayerList.PlayersDict.Values)
 			{
 				player.Broadcast(message, duration);
 			}
@@ -44,6 +119,26 @@ namespace Vigilance.API
 			{
 				player.ClearBroadcasts();
 			}
+		}
+
+		public static Room GetRoom(RoomType roomType)
+		{
+			foreach (Room room in Rooms)
+			{
+				if (room.Type == roomType)
+					return room;
+			}
+			return null;
+		}
+
+		public static Room GetRoom(string name)
+		{
+			foreach (Room room in Rooms)
+			{
+				if (room.Name.ToLower() == name.ToLower() || room.Name.ToLower().Contains(name.ToLower()))
+					return room;
+			}
+			return null;
 		}
 
 		public static Camera079 GetCamera(int cameraId)
@@ -113,7 +208,7 @@ namespace Vigilance.API
 			return component3;
 		}
 
-		public static void SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
+		public static GameObject SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
 		{
 			GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
 			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
@@ -126,9 +221,10 @@ namespace Vigilance.API
 			obj.transform.position = position;
 			obj.transform.rotation = rotation;
 			NetworkServer.Spawn(obj);
+			return obj;
 		}
 
-		public static void SpawnWorkbench(Vector3 position, Vector3 rotation, Vector3 size)
+		public static GameObject SpawnWorkbench(Vector3 position, Vector3 rotation, Vector3 size)
 		{
 			GameObject bench = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.Find(p => p.gameObject.name == "Work Station"));
 			Offset offset = new Offset();
@@ -139,6 +235,7 @@ namespace Vigilance.API
 			NetworkServer.Spawn(bench);
 			bench.GetComponent<WorkStation>().Networkposition = offset;
 			bench.AddComponent<WorkStationUpgrader>();
+			return bench;
 		}
 
 		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player, role, count));
@@ -147,10 +244,7 @@ namespace Vigilance.API
 		{
 			for (int i = 0; i < count; i++)
 			{
-				player.GameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.Position + Vector3.up * 5,
-					Quaternion.identity, Vector3.zero, role,
-					new PlayerStats.HitInfo(1000f, player.UserId, DamageTypes.Falldown,
-						player.PlayerId), false, "SCP-343", "SCP-343", 0);
+				player.GameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.Position + Vector3.up * 5, Quaternion.identity, Vector3.zero, role, new PlayerStats.HitInfo(1000f, player.UserId, DamageTypes.Falldown, player.PlayerId), false, "SCP-343", "SCP-343", 0);
 				yield return Timing.WaitForSeconds(0.15f);
 			}
 		}
@@ -161,6 +255,7 @@ namespace Vigilance.API
 			public static int TimeToDetonation { get => (int)AlphaWarheadController.Host.NetworktimeToDetonation; set => AlphaWarheadController.Host.NetworktimeToDetonation = (float)value; }
 			public static bool IsInProgress { get => AlphaWarheadController.Host.NetworkinProgress; set => AlphaWarheadController.Host.NetworkinProgress = value; }
 			public static bool IsResumed => AlphaWarheadController.Host.NetworksyncResumeScenario > 0;
+			public static AudioSource AudioSource => Server.GameManager.GetComponent<AudioSource>();
 
 			public static void Prepare() => AlphaWarheadController.Host.InstantPrepare();
 			public static void Start() => AlphaWarheadController.Host.StartDetonation();
@@ -173,11 +268,40 @@ namespace Vigilance.API
 			}
 		}
 
+		public static class Scp914
+		{
+			public static scp Singleton => scp.singleton;
+			public static List<Player> Players => Singleton.players.GetPlayers();
+			public static List<Pickup> Items => Singleton.items;
+			public static Vector3 Position => Singleton.transform.position;
+			public static Scp914Knob KnobState { get => Singleton.knobState; set => Singleton.SetKnobState(value); }
+			public static Scp914Mode Mode => Singleton.configMode.Value;
+			public static List<Scp914Recipe> Recipes { get => Singleton.recipes.ToList(); set => Singleton.recipes = value.ToArray(); }
+			public static Dictionary<ItemType, Dictionary<Scp914Knob, ItemType[]>> RecipesDict { get => Singleton.recipesDict; set => Singleton.recipesDict = value; }
+
+			public static void Process() => Singleton.MoveObjects(Items, Singleton.players);
+			public static void Process(List<Pickup> items, List<Player> players) => Singleton.MoveObjects(items, players.Select(h => h.Hub.characterClassManager).ToList());
+		}
+
 		public static class Intercom
 		{
 			public static bool AdminSpeaking => global::Intercom.AdminSpeaking;
 			public static Player Speaker { get => global::Intercom.host.Networkspeaker?.GetPlayer(); set => global::Intercom.host.Networkspeaker = value.GameObject; }
 			public static string Text { get => global::Intercom.host.NetworkintercomText; set => global::Intercom.host.NetworkintercomText = value; }
+
+			public static void Timeout() => global::Intercom.host.speechRemainingTime = -1f;
+			public static void ResetCooldown() => global::Intercom.host.remainingCooldown = -1f;
+		}
+
+		public static class Decontamination
+		{
+			public static bool HasBegun => LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun;
+			public static bool IsDecontaminated => LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating;
+			public static AudioSource AudioSource => LightContainmentZoneDecontamination.DecontaminationController.Singleton.AnnouncementAudioSource;
+			public static double RoundStartTime => LightContainmentZoneDecontamination.DecontaminationController.Singleton.NetworkRoundStartTime;
+			public static bool IsDisabled { get => Vigilance.Patches.DecontaminationPatch.DecontDisabled; set => Vigilance.Patches.DecontaminationPatch.DecontDisabled = true; }
+
+			public static void Decontaminate() => LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
 		}
 	}
 }

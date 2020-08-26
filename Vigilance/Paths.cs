@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using System.Net;
 using Vigilance.API;
+using System.Reflection;
 
 namespace Vigilance
 {
@@ -39,6 +40,14 @@ namespace Vigilance
 				stream.Close();
             }
         }
+
+		public static void CheckMainConfig()
+		{
+			if (!Directory.Exists(ConfigsPath))
+				Directory.CreateDirectory(ConfigsPath);
+			if (!File.Exists(ConfigPath))
+				File.Create(ConfigPath).Close();
+		}
 
 		public static void Delete(string directory)
 		{
@@ -89,11 +98,13 @@ namespace Vigilance
 				List<Assembly> assemblies = new List<Assembly>();
 				if (string.IsNullOrEmpty(path))
 					return assemblies;
+				if (!Directory.Exists(path))
+					return assemblies;
+				Log.Add("Paths", $"Loading assemblies in {path}", LogType.Debug);
 				foreach (string f in Directory.GetFiles(path))
 				{
 					if (f.EndsWith(".dll"))
 					{
-						Log.Add("Paths", $"Loading assemblies in {path}", LogType.Debug);
 						Assembly a = Assembly.LoadFrom(f);
 						assemblies.Add(a);
 					}
@@ -142,13 +153,74 @@ namespace Vigilance
             }
         }
 
-		public static void Download(string url, string fileName)
+		public static void DownloadPlugin(string url, string pluginName)
+		{
+			Log.Add("Paths", $"Downloading \"{pluginName}\" from \"{url}\"", LogType.Debug);
+			if (!pluginName.EndsWith(".dll"))
+				pluginName += ".dll";
+			string path = $"{Plugins}/{pluginName}";
+			try
+			{
+				Download(url, path);
+				if (File.Exists(path))
+				{
+					Assembly assembly = Assembly.LoadFrom(path);
+					foreach (Type type in assembly.GetTypes())
+					{
+						if (type.IsSubclassOf(typeof(Plugin)))
+						{
+							Plugin plugin = (Plugin)Activator.CreateInstance(type);
+							try
+							{
+								string cfgPath = GetPluginConfigPath(plugin);
+								CheckFile(cfgPath);
+								plugin.Config = new YamlConfig(cfgPath);
+								plugin.Config?.Reload();
+								plugin.Enable();
+								PluginManager.Plugins.Add(plugin, assembly);
+								Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
+							}
+							catch (Exception e)
+							{
+								Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while enabling.", LogType.Error);
+								Log.Add("PluginManager", e);
+							}
+						}
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				Log.Add("Paths", e);
+			}
+		}
+
+		public static void DownloadDependency(string url, string name)
+		{
+			Log.Add("Paths", $"Downloading \"{name}\" from \"{url}\"", LogType.Debug);
+			if (!name.EndsWith(".dll"))
+				name += ".dll";
+			string path = $"{Dependencies}/{name}";
+			try
+			{
+				Download(url, path);
+				Assembly assemly = Assembly.LoadFrom(path);
+				PluginManager.Dependencies.Add(assemly);
+				Log.Add("PluginManager", $"Succesfully loaded dependency \"{assemly.GetName().Name}\"", LogType.Info);
+			}
+			catch (Exception e)
+			{
+				Log.Add("Paths", e);
+			}
+		}
+
+		public static void Download(string url, string path)
         {
 			try
 			{
 				using (WebClient client = new WebClient())
 				{
-					client.DownloadFile(url, fileName);
+					client.DownloadFile(url, path);
 				}
 			}
 			catch (Exception e)

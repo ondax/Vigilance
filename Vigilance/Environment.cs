@@ -150,7 +150,21 @@ namespace Vigilance
         {
             try
             {
-                ConsoleCommandEvent ev = new ConsoleCommandEvent(cmd, ply, all);
+                string[] args = cmd.Split(' ');
+                foreach (string arg in args)
+                {
+                    if (arg == args[0])
+                        arg.Replace(".", "");
+                }
+                string command = "";
+                foreach (string arg in args)
+                {
+                    if (arg == args[0])
+                        command += arg;
+                    else
+                        command += $" {arg}";
+                }
+                ConsoleCommandEvent ev = new ConsoleCommandEvent(command, ply, all);
                 EventManager.Trigger<ConsoleCommandHandler>(ev);
                 reply = ev.Reply;
                 color = ev.Color.ToLower();
@@ -1183,6 +1197,7 @@ namespace Vigilance
         {
             try
             {
+                RoundSummary.Kills++;
                 PlayerDieEvent ev = new PlayerDieEvent(target, ply, info, all);
                 EventManager.Trigger<PlayerDieEventHandler>(ev);
                 hitInfo = ev.HitInfo;

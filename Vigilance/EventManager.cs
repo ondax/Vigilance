@@ -1,5 +1,4 @@
-﻿using Harmony;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Vigilance
@@ -25,6 +24,7 @@ namespace Vigilance
 				}
 				catch (Exception e)
 				{
+					Log.Add("EventManager", $"An error occured while handling {ev.GetType().Name}", LogType.Error);
 					Log.Add("EventManager", e);
 				}
 			}

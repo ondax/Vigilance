@@ -20,11 +20,7 @@ using Vigilance.Extensions;
 using Console = GameCore.Console;
 using static GameCore.Console;
 using Cryptography;
-using MEC;
-using Org.BouncyCastle.Crypto;
-using System.IO;
-using System.Threading;
-using UnityEngine.SceneManagement;
+using Vigilance.API;
 
 namespace Vigilance.Patches
 {
@@ -35,8 +31,6 @@ namespace Vigilance.Patches
 		{
 			try
 			{
-				if (sender == null)
-					sender = ServerConsole._scs;
 				string[] query = q.Split(' ');
 				string logName = sender.LogName;
 				PlayerCommandSender playerCommandSender = sender as PlayerCommandSender;
@@ -2454,7 +2448,7 @@ namespace Vigilance.Patches
 						{
 							try
 							{
-								ConfigFile.ReloadGameConfigs();
+								Server.ReloadConfigs();
 								sender.RaReply(query[0].ToUpper() + "#Reloaded all configs!", success: true, logToConsole: true, "");
 							}
 							catch (Exception arg3)
@@ -2496,6 +2490,11 @@ namespace Vigilance.Patches
 						break;
 					default:
 						CommandHandler handler = CommandManager.GetCommandHandler(query[0]);
+						if (handler == null)
+						{
+							sender.RaReply("SERVER#Unknown command!", false, true, "");
+							return false;
+						}
 						string response = $"{query[0].ToUpper()}#{handler.Execute(sender.GetPlayer(), query.SkipCommand())}";
 						sender.RaReply(response, true, true, "");
 						break;

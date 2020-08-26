@@ -6,14 +6,28 @@ namespace Vigilance
 {
     public static class Log
     {
+        public static bool Debug => PluginManager.Config.GetBool("debug");
+
         public static void Add(string message, LogType type)
         {
             string tag = Assembly.GetCallingAssembly().GetName().Name;
+            if (type == LogType.Debug)
+            {
+                if (Debug)
+                    Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
+				return;
+            }
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
         public static void Add(string tag, string message, LogType type)
         {
+            if (type == LogType.Debug)
+            {
+                if (Debug)
+                    Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
+				return;
+            }
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
@@ -30,6 +44,12 @@ namespace Vigilance
 
         public static void Add(Assembly assembly, string message, LogType type)
         {
+            if (type == LogType.Debug)
+            {
+                if (Debug)
+                    Add($"[{type.ToString().ToUpper()}] [{assembly.GetName().Name}]: {message}", type.GetColor());
+				return;
+            }
             Add(assembly.GetName().Name, message, type);
         }
 

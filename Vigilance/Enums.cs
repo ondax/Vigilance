@@ -84,7 +84,59 @@
 		Unspecified
 	}
 
-	public enum RespawnEffectType : byte
+    public enum RoomType
+    {
+        Unknown,
+        LczArmory,
+        LczCurve,
+        LczStraight,
+        Lcz012,
+        Lcz914,
+        LczCrossing,
+        LczTCross,
+        LczCafe,
+        LczPlants,
+        LczToilets,
+        LczAirlock,
+        Lcz173,
+        LczClassDSpawn,
+        LczCheckpointB,
+        LczGlassBox,
+        LczCheckpointA,
+        Hcz079,
+        HczEzCheckpoint,
+        HczArmory,
+        Hcz939,
+        HczHid,
+        Hcz049,
+        HczCheckpointA,
+        HczCrossing,
+        Hcz106,
+        HczNuke,
+        HczTesla,
+        HczServers,
+        HczCheckpointB,
+        HczTCross,
+        HczCurve,
+        Hcz096,
+        EzVent,
+        EzIntercom,
+        EzGateA,
+        EzDownstairsPcs,
+        EzCurve,
+        EzPcs,
+        EzCrossing,
+        EzCollapsedTunnel,
+        EzConference,
+        EzStraight,
+        EzCafeteria,
+        EzUpstairsPcs,
+        EzGateB,
+        EzShelter,
+        Surface
+    }
+
+    public enum RespawnEffectType : byte
 	{
 		PlayChaosInsurgencyMusic = 0,
 		SummonChaosInsurgencyVan = 128,
@@ -102,4 +154,12 @@
 		MP7,
 		None
     }
+
+	public enum AmmoType
+	{
+		Nato_5mm,
+		Nato_7mm,
+		Nato_9mm,
+		None
+	}
 }

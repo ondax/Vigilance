@@ -33,6 +33,8 @@ namespace Vigilance.Patches
         {
             try
             {
+                if (AnnounceNTFEntrancePatch.CassieDisabled)
+                    return false;
                 Environment.OnAnnounceDecontamination(hard, __instance._nextPhase, true, out hard, out __instance._nextPhase, out bool allow);
                 if (!allow)
                     return false;
@@ -55,10 +57,14 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(NineTailedFoxNamingRule), nameof(NineTailedFoxNamingRule.PlayEntranceAnnouncement))]
     public static class AnnounceNTFEntrancePatch
     {
+        public static bool CassieDisabled = false;
+
         private static bool Prefix(NineTailedFoxNamingRule __instance, string regular)
         {
             try
             {
+                if (CassieDisabled)
+                    return false;
                 string cassieUnitName = __instance.GetCassieUnitName(regular);
                 int num = Server.Players.Where(p => p.IsSCP).Count();
                 StringBuilder stringBuilder = StringBuilderPool.Shared.Rent();
@@ -116,6 +122,8 @@ namespace Vigilance.Patches
         {
             try
             {
+                if (AnnounceNTFEntrancePatch.CassieDisabled)
+                    return false;
                 Environment.OnAnnounceSCPTermination(hit.GetAttacker().GameObject, scp, hit, hit.Attacker, true, out bool allow);
                 if (!allow)
                     return false;
@@ -153,6 +161,8 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.FinishDecontamination))]
     public static class DecontaminationPatch
     {
+        public static bool DecontDisabled = false;
+
         private static bool Prefix(DecontaminationController __instance)
         {
             try
@@ -160,7 +170,7 @@ namespace Vigilance.Patches
                 if (NetworkServer.active)
                 {
                     Environment.OnDecontamination(true, out bool allow);
-                    if (!allow)
+                    if (!allow || !DecontDisabled)
                         return false;
                     foreach (Lift lift in Lift.Instances)
                     {
@@ -1570,7 +1580,6 @@ namespace Vigilance.Patches
                     Debug.LogWarning("[Server] function 'System.Void NicknameSync::SetNick(System.String)' called on client");
                     return false;
                 }
-
                 __instance.MyNick = nick;
                 if (__instance.isLocalPlayer && ServerStatic.IsDedicated || __instance == null || string.IsNullOrEmpty(nick))
                     return false;
@@ -1579,7 +1588,11 @@ namespace Vigilance.Patches
                 if (ServerGuard.VPNShield.CheckIP(__instance.hub.GetPlayer()))
                     return false;
                 Environment.OnPlayerJoin(__instance.hub.gameObject);
-
+                if (!Server.PlayerList.PlayersDict.TryGetValue(__instance.hub.gameObject, out Player player))
+                {
+                    player = new Player(ReferenceHub.GetHub(__instance.gameObject));
+                    Server.PlayerList.Add(player);
+                }
                 ServerConsole.AddLog(string.Concat(new string[]
                 {
                     "Nickname of ",
@@ -1621,6 +1634,7 @@ namespace Vigilance.Patches
         {
             try
             {
+                Server.PlayerList.Remove(__instance.gameObject.GetPlayer());
                 Environment.OnPlayerLeave(__instance.gameObject);
                 ReferenceHub.Hubs.Remove(__instance.gameObject);
                 ReferenceHub.HubIds.Remove(__instance.queryProcessor.PlayerId);
@@ -2085,13 +2099,15 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(TeslaGate), nameof(TeslaGate.PlayerInRange))]
     public static class TeslaTriggerPatch
     {
+        public static bool GatesDisabled = false;
+
         public static bool Prefix(TeslaGate __instance, ReferenceHub player)
         {
             try
             {
                 if (Vector3.Distance(__instance.transform.position, player.playerMovementSync.RealModelPosition) < __instance.sizeOfTrigger)
                 {
-                    if (PluginManager.Config.GetRoles("tesla_triggerable_roles").Contains(player.characterClassManager.CurClass))
+                    if (PluginManager.Config.GetRoles("tesla_triggerable_roles").Contains(player.characterClassManager.CurClass) && !GatesDisabled)
                     {
                         Environment.OnTriggerTesla(player.gameObject, __instance, true, out bool allow);
                         return allow;
@@ -2792,8 +2808,6 @@ namespace Vigilance.Patches
             {
                 if (!__instance._commandRateLimit.CanExecute(true))
                     return false;
-                if (reason == null)
-                    return false;
                 float num = Time.time - __instance._lastReport;
                 if (num < 2f)
                 {
@@ -2815,6 +2829,11 @@ namespace Vigilance.Patches
                 if (__instance.GetComponent<QueryProcessor>().PlayerId == playerId)
                 {
                     __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] You can't report yourself!", "red");
+                    return false;
+                }
+                if (!reason.IsEmpty())
+                {
+                    __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] Please provide a valid report reason!", "red");
                     return false;
                 }
                 ReferenceHub referenceHub;
@@ -3049,6 +3068,8 @@ namespace Vigilance.Patches
                 Environment.OnWaitingForPlayers();
             if (q.StartsWith("Round finished! Anomalies:"))
                 Environment.OnRoundEnd(RoundSummary.LeadingTeam.Draw, RoundSummary.singleton.classlistStart, 10, true, out bool allow);
+            if (q.StartsWith("The round is about to restart!"))
+                Environment.OnRoundRestart();
         }
     }
 
@@ -3161,6 +3182,16 @@ namespace Vigilance.Patches
                 Log.Add("AlphaWarheadController", e);
                 return true;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerStats), nameof(PlayerStats.Roundrestart))]
+    public static class RoundRestartPatch
+    {
+        public static void Postfix(PlayerStats __instance)
+        {
+            Server.PlayerList.Reset();
+            Environment.OnRoundRestart();
         }
     }
 }

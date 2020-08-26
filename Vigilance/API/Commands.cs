@@ -90,7 +90,7 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			string str = $"Players ({Server.Players.Count}):\n";
+			string str = $"Players ({Server.Players.Count()}):\n";
 			foreach (Player player in Server.Players)
 			{
 				str += $"\n {player.ToString()}";
@@ -141,7 +141,7 @@ namespace Vigilance.Registered
 				return Usage;
 			Player player = args[0].GetPlayer();
 			int time = int.Parse(args[1]);
-			player.Broadcast($"<b><color=red>[Personal]</b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", time);
+			player.Broadcast($"<b><color=red>[Personal]</color></b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", time);
 			return $"Success!\nDuration: {time}\nMessage: {args.SkipWords(2)}\nPlayer: {player.Nick} ({player.UserId})";
 		}
 	}
@@ -160,7 +160,7 @@ namespace Vigilance.Registered
 				return Usage;
 			foreach (Player admin in Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin))
 			{
-				admin.Broadcast($"<b><color=red>[AdminChat]</color></b>\n</b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", int.Parse(args[1]));
+				admin.Broadcast($"<b><color=red>[AdminChat]</color></b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", int.Parse(args[1]));
 			}
 			return $"Success! Your message has been delivered to {Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin).Count()} online administrators!\nMessage: {args.SkipWords(2)}\nDuration: {int.Parse(args[1])} seconds.";
 		}
@@ -456,4 +456,40 @@ namespace Vigilance.Registered
 			return $"Succesfully changed unit of {player.Nick}";
         }
     }
+
+	public class CommandDownloadPlugin : CommandHandler
+	{
+		public string Command => "downloadplugin";
+		public string Usage => "Missing arguments!\nUsage: downloadplugin <name> <url>";
+		public string Aliases => "dp";
+
+		public string Execute(Player sender, string[] args)
+		{
+			if (args.Length < 2)
+				return Usage;
+			string name = args[0];
+			string url = args[1];
+			sender.RemoteAdminMessage($"Starting download of \"{name}\" from \"{url}\"");
+			Paths.DownloadPlugin(url, name);
+			return $"Succesfully downloaded and loaded \"{name}\" from \"{url}\"";
+		}
+	}
+
+	public class CommandDownloadDependency : CommandHandler
+	{
+		public string Command => "downloaddep";
+		public string Usage => "Missing arguments!\nUsage: downloaddep <name> <url>";
+		public string Aliases => "dd";
+
+		public string Execute(Player sender, string[] args)
+		{
+			if (args.Length < 2)
+				return Usage;
+			string name = args[0];
+			string url = args[1];
+			sender.RemoteAdminMessage($"Starting download of \"{name}\" from \"{url}\"");
+			Paths.DownloadDependency(url, name);
+			return $"Succesfully downloaded and loaded \"{name}\" from \"{url}\"";
+		}
+	}
 }

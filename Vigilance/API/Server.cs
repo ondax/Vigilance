@@ -2,21 +2,28 @@
 using System.Collections.Generic;
 using MEC;
 using Vigilance.Enums;
-using Vigilance.Extensions;
 using GameCore;
 using UnityEngine;
+using Vigilance.Extensions;
 
 namespace Vigilance.API
 {
     public static class Server
     {
+        public static string Version => CustomNetworkManager.CompatibleVersions[0];
         public static GameObject Host => ReferenceHub.LocalHub.gameObject;
+        public static GameObject GameManager => GameObject.Find("GameManager");
         public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
-        public static List<Player> Players => PlayerManager.players.GetPlayers();
+        public static IEnumerable<Player> Players => PlayerList.PlayersDict.Values;
         public static int Port => ServerStatic.ServerPortSet ? ServerStatic.ServerPort : 7777;
         public static bool RoundLock { get => RoundSummary.RoundLock; set => RoundSummary.RoundLock = value; }
         public static bool LobbyLock { get => RoundStart.LobbyLock; set => RoundStart.LobbyLock = value; }
-        public static string Name { get => ServerConsole._serverName; set => ServerConsole._serverName = value; }
+        public static string Name { get => ServerConsole._serverName;
+            set
+            {
+                ServerConsole._serverName = value;
+            }
+        }
         public static string IpAddress { get => ServerConsole.Ip; set => ServerConsole.Ip = value; }
 
         public static void Restart(bool safeRestart = true)
@@ -175,6 +182,144 @@ namespace Vigilance.API
         public static string RunCommand(string command)
         {
             return ServerConsole.EnterCommand(command, out ConsoleColor color, new ConsoleCommandSender());
+        }
+
+        public static class PlayerList
+        {
+            public static Dictionary<GameObject, Player> PlayersDict { get; set; } = new Dictionary<GameObject, Player>();
+            public static Dictionary<string, Player> UserIdCache { get; set; } = new Dictionary<string, Player>();
+            public static Dictionary<int, Player> PlayerIdCache { get; set; } = new Dictionary<int, Player>();
+            public static Player Local { get; set; } = new Player(ReferenceHub.LocalHub);
+            public static Player Host { get; set; } = new Player(ReferenceHub.HostHub);
+
+            public static void Reset()
+            {
+                Log.Add("PlayerList", "Resetting PlayerList", LogType.Debug);
+                PlayersDict.Clear();
+                UserIdCache.Clear();
+                PlayerIdCache.Clear();
+            }
+
+            public static void Add(Player player)
+            {
+                Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has joined, adding to list.", LogType.Debug);
+                PlayersDict.Add(player.GameObject, player);
+                UserIdCache.Add(player.UserId, player);
+                PlayerIdCache.Add(player.PlayerId, player);
+            }
+
+            public static void Remove(Player player)
+            {
+                Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has disconnected, removing from list.", LogType.Debug);
+                PlayersDict.Remove(player.GameObject);
+                UserIdCache.Remove(player.UserId);
+                PlayerIdCache.Remove(player.PlayerId);
+            }
+
+            public static List<Player> GetPlayers(RoleType role)
+            {
+                List<Player> players = new List<Player>();
+                foreach (Player player in PlayersDict.Values)
+                {
+                    if (player.Role == role)
+                        players.Add(player);
+                }
+                return players;
+            }
+
+            public static List<Player> GetPlayers(TeamType team)
+            {
+                List<Player> players = new List<Player>();
+                foreach (Player player in PlayersDict.Values)
+                {
+                    if (player.Team == team)
+                        players.Add(player);
+                }
+                return players;
+            }
+
+            public static Player GetPlayer(GameObject gameObject)
+            {
+                if (gameObject == null)
+                    return Local;
+                if (!PlayersDict.TryGetValue(gameObject, out Player player))
+                    player = new Player(ReferenceHub.GetHub(gameObject));
+                return player;
+            }
+
+            public static Player GetPlayer(ReferenceHub hub)
+            {
+                return GetPlayer(hub.gameObject);
+            }
+
+            public static Player GetPlayer(int playerId)
+            {
+                return PlayerIdCache[playerId];
+            }
+
+            public static Player GetPlayer(string args)
+            {
+                try
+                {
+                    Player playerFound = null;
+
+                    foreach (string userId in UserIdCache.Keys)
+                    {
+                        if (userId == args)
+                            return UserIdCache[userId];
+                    }
+
+                    if (int.TryParse(args, out int id))
+                    {
+                        return PlayerIdCache[id];
+                    }
+
+                    if (args.EndsWith("@steam") || args.EndsWith("@discord") || args.EndsWith("@northwood") || args.EndsWith("@patreon"))
+                    {
+                        foreach (Player player in PlayersDict.Values)
+                        {
+                            if (player.UserId == args)
+                            {
+                                playerFound = player;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (args == "WORLD" || args == "SCP-018" || args == "SCP-575" || args == "SCP-207")
+                            return null;
+                        int maxNameLength = 31, lastnameDifference = 31;
+                        string firstString = args.ToLower();
+                        foreach (Player player in PlayersDict.Values)
+                        {
+                            if (!player.Nick.ToLower().Contains(args.ToLower()))
+                                continue;
+                            if (firstString.Length < maxNameLength)
+                            {
+                                int x = maxNameLength - firstString.Length;
+                                int y = maxNameLength - player.Nick.Length;
+                                string secondString = player.Nick;
+                                for (int i = 0; i < x; i++)
+                                    firstString += "z";
+                                for (int i = 0; i < y; i++)
+                                    secondString += "z";
+                                int nameDifference = firstString.GetDistance(secondString);
+                                if (nameDifference < lastnameDifference)
+                                {
+                                    lastnameDifference = nameDifference;
+                                    playerFound = player;
+                                }
+                            }
+                        }
+                    }
+                    return playerFound;
+                }
+                catch (Exception exception)
+                {
+                    Log.Add("PlayerList", exception);
+                    return null;
+                }
+            }
         }
     }
 }

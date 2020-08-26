@@ -176,14 +176,12 @@ namespace Vigilance.Extensions
 
 		public static Player GetPlayer(this GameObject gameObject)
 		{
-			if (gameObject == null)
-				return ReferenceHub.LocalHub.GetPlayer();
-			return ReferenceHub.GetHub(gameObject).GetPlayer();
+			return Server.PlayerList.GetPlayer(gameObject);
 		}
 
 		public static Player GetPlayer(this ReferenceHub hub)
 		{
-			return new Player(hub);
+			return Server.PlayerList.GetPlayer(hub);
 		}
 
 		public static Player GetPlayer(this CharacterClassManager ccm)
@@ -218,47 +216,35 @@ namespace Vigilance.Extensions
 
 		public static Player GetPlayer(this CommandSender sender)
 		{
-			PlayerCommandSender pcs = sender as PlayerCommandSender;
-			if (pcs == null)
+			foreach (ReferenceHub player in ReferenceHub.GetAllHubs().Values)
 			{
-				return ReferenceHub.LocalHub.GetPlayer();
+				if (player.characterClassManager.UserId == sender.SenderId)
+					return player.GetPlayer();
 			}
-			return pcs?.CCM.GetPlayer();
+			return ReferenceHub.LocalHub.GetPlayer();
+		}
+
+		public static List<Player> ToList(IEnumerable<Player> players)
+		{
+			return new List<Player>(players);
 		}
 
 		public static List<Player> GetPlayers(this RoleType role)
 		{
-			List<Player> players = new List<Player>();
-			foreach (Player player in Server.Players)
-			{
-				if (player.Role == role)
-				{
-					players.Add(player);
-				}
-			}
-			return players;
+			return Server.PlayerList.GetPlayers(role);
 		}
 
 		public static List<Player> GetPlayers(this TeamType team)
 		{
-			List<Player> players = new List<Player>();
-			foreach (Player player in Server.Players)
-			{
-				if (player.Team == team)
-				{
-					players.Add(player);
-				}
-			}
-			return players;
+			return Server.PlayerList.GetPlayers(team);
 		}
 
 		public static List<Player> GetPlayers(this List<GameObject> gameObjects)
 		{
 			List<Player> list = new List<Player>(gameObjects.Count);
-			foreach (GameObject @object in gameObjects)
+			foreach (GameObject obj in gameObjects)
 			{
-				if (!@object.GetComponent<CharacterClassManager>().IsHost || !string.IsNullOrEmpty(@object.GetComponent<CharacterClassManager>().UserId))
-					list.Add(new Player(ReferenceHub.GetHub(@object)));
+				list.Add(obj.GetPlayer());
 			}
 			return list;
 		}
@@ -266,7 +252,7 @@ namespace Vigilance.Extensions
 		public static List<Player> GetPlayers(this List<ReferenceHub> hubs)
 		{
 			List<Player> list = new List<Player>();
-			foreach (ReferenceHub referenceHub in hubs.Where(h => !h.characterClassManager.IsHost && !string.IsNullOrEmpty(h.characterClassManager.UserId)))
+			foreach (ReferenceHub referenceHub in hubs)
 			{
 				list.Add(new Player(referenceHub));
 			}
@@ -276,7 +262,7 @@ namespace Vigilance.Extensions
 		public static List<GameObject> GetGameObjects(this List<CharacterClassManager> ccms)
         {
 			List<GameObject> objects = new List<GameObject>();
-			foreach (CharacterClassManager ccm in ccms.Where(c => !c.IsHost && !c.UserId.IsEmpty()))
+			foreach (CharacterClassManager ccm in ccms)
             {
 				objects.Add(ccm.gameObject);
             }
@@ -286,7 +272,7 @@ namespace Vigilance.Extensions
 		public static List<GameObject> GetGameObjects(this List<ReferenceHub> hubs)
         {
 			List<GameObject> objects = new List<GameObject>();
-			foreach (ReferenceHub hub in hubs.Where(h => !h.characterClassManager.IsHost && !h.characterClassManager.UserId.IsEmpty()))
+			foreach (ReferenceHub hub in hubs)
             {
 				objects.Add(hub.gameObject);
             }
@@ -297,82 +283,12 @@ namespace Vigilance.Extensions
 
 		public static Player GetPlayer(this int playerId)
 		{
-			foreach (Player player in Server.Players)
-			{
-				if (player.PlayerId == playerId)
-					return player;
-			}
-			return null;
+			return Server.PlayerList.GetPlayer(playerId);
 		}
 
 		public static Player GetPlayer(this string args)
 		{
-			try
-			{
-				Player playerFound = null;
-				Dictionary<string, Player> userIds = new Dictionary<string, Player>();
-
-				foreach (Player player in Server.Players)
-				{
-					userIds.Add(player.UserId, player);
-				}
-
-				foreach (string userId in userIds.Keys)
-				{
-					if (userId == args)
-						return userIds[userId];
-				}
-
-				if (int.TryParse(args, out int id))
-				{
-					return id.GetPlayer();
-				}
-
-				if (args.EndsWith("@steam") || args.EndsWith("@discord") || args.EndsWith("@northwood") || args.EndsWith("@patreon"))
-				{
-					foreach (Player player in Server.Players)
-					{
-						if (player.UserId == args)
-						{
-							playerFound = player;
-						}
-					}
-				}
-				else
-				{
-					if (args == "WORLD" || args == "SCP-018" || args == "SCP-575" || args == "SCP-207")
-						return null;
-					int maxNameLength = 31, lastnameDifference = 31;
-					string firstString = args.ToLower();
-					foreach (Player player in Server.Players)
-					{
-						if (!player.Nick.ToLower().Contains(args.ToLower()))
-							continue;
-						if (firstString.Length < maxNameLength)
-						{
-							int x = maxNameLength - firstString.Length;
-							int y = maxNameLength - player.Nick.Length;
-							string secondString = player.Nick;
-							for (int i = 0; i < x; i++)
-								firstString += "z";
-							for (int i = 0; i < y; i++)
-								secondString += "z";
-							int nameDifference = firstString.GetDistance(secondString);
-							if (nameDifference < lastnameDifference)
-							{
-								lastnameDifference = nameDifference;
-								playerFound = player;
-							}
-						}
-					}
-				}
-				return playerFound;
-			}
-			catch (Exception exception)
-			{
-				Log.Add("Extensions", exception);
-				return null;
-			}
+			return Server.PlayerList.GetPlayer(args);
 		}
 
 		public static bool Compare(this Player player, Player playerTwo)
@@ -449,7 +365,7 @@ namespace Vigilance.Extensions
 			string str = "";
 			foreach (string s in array.SkipCommand())
 			{
-				if (s == array[1])
+				if (s == array[0])
 					str += s;
 				else
 					str += $" {s}";
@@ -462,7 +378,7 @@ namespace Vigilance.Extensions
 			string str = "";
 			foreach (string s in array.Skip(amount))
 			{
-				if (s == array[1])
+				if (s == array[0])
 					str += s;
 				else
 					str += $" {s}";
@@ -529,11 +445,11 @@ namespace Vigilance.Extensions
 				case RoleType.FacilityGuard:
 					return "Facility Guard";
 				case RoleType.None:
-					return "Unspecified";
+					return "None";
 				case RoleType.NtfCadet:
 					return "NTF Cadet";
 				case RoleType.NtfCommander:
-					return "NTF Commnder";
+					return "NTF Commander";
 				case RoleType.NtfLieutenant:
 					return "NTF Lieutenant";
 				case RoleType.NtfScientist:
@@ -661,6 +577,32 @@ namespace Vigilance.Extensions
 			}
 		}
 
+		public static Vector3 GetVector(this YamlConfig cfg, string key)
+		{
+			Vector3 vector = Vector3.zero;
+			string[] args = cfg.GetString(key).Split('=');
+			if (float.TryParse(args[0], out float x) && float.TryParse(args[1], out float y) && float.TryParse(args[2], out float z))
+			{
+				vector = new Vector3(x, y, z);
+			}
+			return vector;
+		}
+
+		public static List<Vector3> GetVectorList(this YamlConfig cfg, string key)
+		{
+			List<Vector3> vectors = new List<Vector3>();
+			foreach (string val in cfg.GetStringList(key))
+			{
+				string[] args = val.Split('=');
+				if (float.TryParse(args[0], out float x) && float.TryParse(args[1], out float y) && float.TryParse(args[2], out float z))
+				{
+					Vector3 vector = new Vector3(x, y, z);
+					vectors.Add(vector);
+				}
+			}
+			return vectors;
+		}
+
 		public static Dictionary<int, int> GetIntDictionary(this YamlConfig cfg, string key)
 		{
 			Dictionary<string, string> stringDictionary = cfg.GetStringDictionary(key);
@@ -701,6 +643,23 @@ namespace Vigilance.Extensions
 			return WeaponType.None;
         }
 
+		public static AmmoType GetWeaponAmmoType(this WeaponType weapon)
+		{
+			if (weapon == WeaponType.Com15)
+				return AmmoType.Nato_9mm;
+			if (weapon == WeaponType.Epsilon11)
+				return AmmoType.Nato_5mm;
+			if (weapon == WeaponType.Logicer)
+				return AmmoType.Nato_7mm;
+			if (weapon == WeaponType.MP7)
+				return AmmoType.Nato_7mm;
+			if (weapon == WeaponType.Project90)
+				return AmmoType.Nato_9mm;
+			if (weapon == WeaponType.USP)
+				return AmmoType.Nato_9mm;
+			return AmmoType.None;
+		}
+
 		public static GrenadeType GetGrenadeType(this ItemType item)
         {
 			if (item == ItemType.GrenadeFlash)
@@ -738,13 +697,13 @@ namespace Vigilance.Extensions
 		public static ConsoleColor GetColor(this LogType type)
 		{
 			if (type == LogType.Debug)
-				return ConsoleColor.Cyan;
+				return ConsoleColor.DarkCyan;
 			if (type == LogType.Error)
 				return ConsoleColor.DarkRed;
 			if (type == LogType.Info)
-				return ConsoleColor.Green;
-			if (type == LogType.Warn)
 				return ConsoleColor.DarkYellow;
+			if (type == LogType.Warn)
+				return ConsoleColor.Red;
 			else
 				return ConsoleColor.White;
 		}

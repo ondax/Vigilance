@@ -37,6 +37,8 @@ namespace Vigilance
             RegisterCommand(new CommandRocket());
             RegisterCommand(new CommandScale());
             RegisterCommand(new CommandChangeUnit());
+            RegisterCommand(new CommandDownloadPlugin());
+            RegisterCommand(new CommandDownloadDependency());
         }
 
         public static bool CallGameCommand(string query, CommandSender sender, out string reply)
