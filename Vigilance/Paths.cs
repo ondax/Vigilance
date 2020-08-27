@@ -5,7 +5,6 @@ using UnityEngine;
 using System;
 using System.Net;
 using Vigilance.API;
-using System.Reflection;
 
 namespace Vigilance
 {

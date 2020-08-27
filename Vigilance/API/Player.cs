@@ -28,6 +28,23 @@ namespace Vigilance.API
         public string RankColor { get => _hub.serverRoles.Group.BadgeColor; set => _hub.serverRoles.SetColor(value.ToLower()); }
         public UserGroup UserGroup { get => _hub.serverRoles.Group; set => _hub.serverRoles.SetGroup(value, false); }
         public string IpAddress { get => _hub.queryProcessor._ipAddress; set => _hub.queryProcessor._ipAddress = value; }
+        public bool IsInPocketDimension 
+        {
+            get
+            {
+                if (Vector3.Distance(Position, Map.PocketDimension) < 5f || Position.y == Map.PocketDimension.y)
+                    return true;
+                else
+                    return false;
+            }
+            set
+            {
+                if (value)
+                    Teleport(Map.PocketDimension);
+                else
+                    Teleport(Map.GetRandomSpawnpoint(RoleType.ClassD));
+            }
+        }
         public PlayerCommandSender PlayerCommandSender => _hub.queryProcessor._sender;
         public CommandSender CommandSender => PlayerCommandSender;
         public bool IsHost => _hub.characterClassManager.IsHost;

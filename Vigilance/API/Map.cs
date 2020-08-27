@@ -23,6 +23,7 @@ namespace Vigilance.API
 		private static List<Lift> _lifts;
 		private static List<TeslaGate> _gate;
 		private static List<Room> _rooms;
+		private static Vector3 _pd;
 
 		public static List<Ragdoll> Ragdolls
 		{
@@ -60,7 +61,16 @@ namespace Vigilance.API
 		}
 
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
-		public static List<BlastDoor> BlastDoors1
+		public static Vector3 PocketDimension
+		{
+			get
+			{
+				if (_pd == null || _pd == Vector3.zero || _pd.y != -1998f)
+					_pd = new Vector3(0f, -1998f, 0f);
+				return _pd;
+			}
+		}
+		public static List<BlastDoor> BlastDoors
 		{
 			get
 			{

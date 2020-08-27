@@ -8,26 +8,31 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using Vigilance.API;
 using Vigilance.Enums;
+using Vigilance.Extensions;
 
 namespace Vigilance
 {
 
     public static class ServerGuard
     {
+        private static List<string> _modules;
         public static bool IsEnabled => PluginManager.Config.GetBool("guard_enabled", false);
         public static List<string> EnabledModules
         {
             get
             {
-                List<string> modules = new List<string>();
-                foreach (string str in PluginManager.Config.GetStringList("guard_enabled_modules"))
+                if (_modules == null)
                 {
-                    if (str.ToLower() == "vpn" || str.ToLower() == "vpnshield")
-                        modules.Add("vpn");
-                    if (str.ToLower() == "steam" || str.ToLower() == "steamshield")
-                        modules.Add("steam");
+                    _modules = new List<string>();
+                    foreach (string str in PluginManager.Config.GetStringList("guard_enabled_modules"))
+                    {
+                        if (str.ToLower() == "vpn" || str.ToLower() == "vpnshield")
+                            _modules.Add("vpn");
+                        if (str.ToLower() == "steam" || str.ToLower() == "steamshield")
+                            _modules.Add("steam");
+                    }
                 }
-                return modules;
+                return _modules;
             }
         }
 
@@ -124,7 +129,7 @@ namespace Vigilance
             {
                 if (!IsEnabled)
                     return false;
-                if (player.UserIdType == UserIdType.Discord)
+                if (!player.UserId.Contains("@steam") || !player.UserIdType.IsSteam() | player.UserIdType != UserIdType.Steam)
                     return false;
                 ServicePointManager.ServerCertificateValidationCallback = SSLValidation;
                 HttpWebResponse response = null;

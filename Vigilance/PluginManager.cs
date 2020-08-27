@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using Harmony;
 
@@ -8,7 +7,7 @@ namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.0.5";
+        public static string Version => "5.0.7";
         public static Dictionary<Plugin, Assembly> Plugins => _plugins;
         public static List<Assembly> Dependencies => _dependencies;
         public static YamlConfig Config => _config;
@@ -114,30 +113,28 @@ namespace Vigilance
 
             try
             {
-                foreach (string a in Directory.GetFiles(Paths.Dependencies))
+                foreach (Assembly assembly in Paths.GetAssemblies(Paths.Dependencies))
                 {
-                    if (a.EndsWith(".dll"))
-                    {
-                        Assembly assembly = Assembly.LoadFrom(a);
-                        _dependencies.Add(assembly);
-                    }
+                    _dependencies.Add(assembly);
+                    Log.Add("PluginManager", $"Succesfully loaded dependency ¸\"{assembly.GetName().Name}\"", LogType.Info);
                 }
             }
             catch (Exception e)
             {
+                Log.Add("PluginManager", "An error occured while loading dependencies", LogType.Error);
                 Log.Add("PluginManager", e);
             }
         }
 
         public static void Reload()
         {
-            Log.Add("PluginManager", "Reloading plugins", LogType.Info);
+            Log.Add("PluginManager", "Reloading plugins", LogType.Debug);
             Load();
         }
 
         public static void Disable()
         {
-            Log.Add("PluginManager", "Disabling plugins", LogType.Info);
+            Log.Add("PluginManager", "Disabling plugins", LogType.Debug);
             foreach (Plugin plugin in _plugins.Keys)
             {
                 Disable(plugin);
@@ -150,7 +147,15 @@ namespace Vigilance
         {
             foreach (Plugin plugin in _plugins.Keys)
             {
-                plugin.Config?.Reload();
+                try
+                {
+                    plugin.Config?.Reload();
+                }
+                catch (Exception e)
+                {
+                    Log.Add("PluginManager", $"YamlConfig of {plugin.Name} caused an exception while reloading", LogType.Error);
+                    Log.Add("PluginManager", e);
+                }
             }
         }
 
