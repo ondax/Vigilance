@@ -23,6 +23,10 @@ using Console = GameCore.Console;
 using Scp914;
 using Cryptography;
 using System.Threading;
+using System.Reflection;
+using System.Reflection.Emit;
+using Vigilance.Events;
+using Searching;
 
 namespace Vigilance.Patches
 {
@@ -3066,10 +3070,6 @@ namespace Vigilance.Patches
             Environment.OnConsoleAddLog(q);
             if (q == "Waiting for players...")
                 Environment.OnWaitingForPlayers();
-            if (q.StartsWith("Round finished! Anomalies:"))
-                Environment.OnRoundEnd(RoundSummary.LeadingTeam.Draw, RoundSummary.singleton.classlistStart, 10, true, out bool allow);
-            if (q.StartsWith("The round is about to restart!"))
-                Environment.OnRoundRestart();
         }
     }
 
@@ -3192,6 +3192,388 @@ namespace Vigilance.Patches
         {
             Server.PlayerList.Reset();
             Environment.OnRoundRestart();
+        }
+    }
+
+
+    // Added in v5.0.9
+
+    [HarmonyPatch(typeof(RoundSummary), nameof(RoundSummary.Start))]
+    public static class RoundEndPatch
+    {
+        private static readonly MethodInfo CustomProcess = SymbolExtensions.GetMethodInfo(() => Process(null));
+
+        private static IEnumerator<float> Process(RoundSummary instance)
+        {
+            RoundSummary roundSummary = instance;
+            while (roundSummary != null)
+            {
+                while (RoundSummary.RoundLock || !RoundSummary.RoundInProgress() || (roundSummary._keepRoundOnOne && PlayerManager.players.Count < 2))
+                    yield return 0.0f;
+                yield return 0.0f;
+                RoundSummary.SumInfo_ClassList newList = default;
+                foreach (GameObject player in PlayerManager.players)
+                {
+                    if (!(player == null))
+                    {
+                        CharacterClassManager component = player.GetComponent<CharacterClassManager>();
+                        if (component.Classes.CheckBounds(component.CurClass))
+                        {
+                            switch (component.Classes.SafeGet(component.CurClass).team)
+                            {
+                                case Team.SCP:
+                                    if (component.CurClass == RoleType.Scp0492)
+                                    {
+                                        ++newList.zombies;
+                                        continue;
+                                    }
+                                    ++newList.scps_except_zombies;
+                                    continue;
+                                case Team.MTF:
+                                    ++newList.mtf_and_guards;
+                                    continue;
+                                case Team.CHI:
+                                    ++newList.chaos_insurgents;
+                                    continue;
+                                case Team.RSC:
+                                    ++newList.scientists;
+                                    continue;
+                                case Team.CDP:
+                                    ++newList.class_ds;
+                                    continue;
+                                default:
+                                    continue;
+                            }
+                        }
+                    }
+                }
+                newList.warhead_kills = AlphaWarheadController.Host.detonated ? AlphaWarheadController.Host.warheadKills : -1;
+                yield return float.NegativeInfinity;
+                newList.time = (int)Time.realtimeSinceStartup;
+                yield return float.NegativeInfinity;
+                RoundSummary.roundTime = newList.time - roundSummary.classlistStart.time;
+                int num1 = newList.mtf_and_guards + newList.scientists;
+                int num2 = newList.chaos_insurgents + newList.class_ds;
+                int num3 = newList.scps_except_zombies + newList.zombies;
+                float num4 = roundSummary.classlistStart.class_ds == 0 ? 0.0f : (RoundSummary.escaped_ds + newList.class_ds) / roundSummary.classlistStart.class_ds;
+                float num5 = roundSummary.classlistStart.scientists == 0 ? 1f : (RoundSummary.escaped_scientists + newList.scientists) / roundSummary.classlistStart.scientists;
+
+                if (newList.class_ds == 0 && num1 == 0)
+                {
+                    roundSummary._roundEnded = true;
+                }
+                else
+                {
+                    int num6 = 0;
+                    if (num1 > 0)
+                        ++num6;
+                    if (num2 > 0)
+                        ++num6;
+                    if (num3 > 0)
+                        ++num6;
+                    if (num6 <= 1)
+                    {
+                        roundSummary._roundEnded = true;
+                    }
+                }
+                CheckRoundEndEvent ev = new CheckRoundEndEvent(roundSummary._roundEnded, RoundSummary.LeadingTeam.Draw);
+                if (num1 > 0)
+                {
+                    if (RoundSummary.escaped_ds == 0 && RoundSummary.escaped_scientists != 0)
+                        ev.LeadingTeam = RoundSummary.LeadingTeam.FacilityForces;
+                }
+                else
+                {
+                    ev.LeadingTeam = RoundSummary.escaped_ds != 0 ? RoundSummary.LeadingTeam.ChaosInsurgency : RoundSummary.LeadingTeam.Anomalies;
+                }
+
+                Environment.OnCheckRoundEnd(ev, out CheckRoundEndEvent checkRoundEndEvent);
+                roundSummary._roundEnded = checkRoundEndEvent.Allow;
+
+                if (roundSummary._roundEnded)
+                {
+                    FriendlyFireConfig.PauseDetector = true;
+                    string str = "Round finished! Anomalies: " + num3 + " | Chaos: " + num2 + " | Facility Forces: " + num1 + " | D escaped percentage: " + num4 + " | S escaped percentage: : " + num5;
+                    Console.AddLog(str, Color.gray, false);
+                    ServerLogs.AddLog(ServerLogs.Modules.Logger, str, ServerLogs.ServerLogType.GameEvent);
+                    byte i1;
+                    for (i1 = 0; i1 < 75; ++i1)
+                        yield return 0.0f;
+                    int timeToRoundRestart = Mathf.Clamp(ConfigFile.ServerConfig.GetInt("auto_round_restart_time", 10), 5, 1000);
+                    if (roundSummary != null)
+                    {
+                        newList.scps_except_zombies -= newList.zombies;
+                        Environment.OnRoundEnd(checkRoundEndEvent.LeadingTeam, newList, timeToRoundRestart, true, out timeToRoundRestart, out RoundSummary.SumInfo_ClassList classListEnd, out bool allow);
+                        if (!allow)
+                            yield return 0.0f;
+                        Environment.OnShowSummary(Round.Info.ClassListOnStart, classListEnd, checkRoundEndEvent.LeadingTeam, true, out bool all);
+                        if (!all)
+                            yield return 0.0f;
+                        roundSummary.RpcShowRoundSummary(roundSummary.classlistStart, classListEnd, checkRoundEndEvent.LeadingTeam, RoundSummary.escaped_ds, RoundSummary.escaped_scientists, RoundSummary.kills_by_scp, timeToRoundRestart);
+                    }
+
+                    for (int i2 = 0; i2 < 50 * (timeToRoundRestart - 1); ++i2)
+                        yield return 0.0f;
+                    roundSummary.RpcDimScreen();
+                    for (i1 = 0; i1 < 50; ++i1)
+                        yield return 0.0f;
+                    PlayerManager.localPlayer.GetComponent<PlayerStats>().Roundrestart();
+                    yield break;
+                }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (CodeInstruction instruction in instructions)
+            {
+                if (instruction.opcode == OpCodes.Call)
+                {
+                    if (instruction.operand != null
+                        && instruction.operand is MethodBase methodBase
+                        && methodBase.Name != nameof(RoundSummary._ProcessServerSideCode))
+                    {
+                        yield return instruction;
+                    }
+                    else
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, CustomProcess);
+                    }
+                }
+                else
+                {
+                    yield return instruction;
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Intercom), nameof(Intercom.CallCmdSetTransmit))]
+    public static class IntercomSpeakPatch
+    {
+        private static bool Prefix(Intercom __instance, bool player)
+        {
+            try
+            {
+                if (!__instance._interactRateLimit.CanExecute(true) || Intercom.AdminSpeaking)
+                    return false;
+                if (player)
+                {
+                    if (!__instance.ServerAllowToSpeak())
+                        return false;
+                    Environment.OnIntercomSpeak(__instance.gameObject, true, out bool allow);
+                    if (!allow)
+                        return false;
+                    Intercom.host.RequestTransmission(__instance.gameObject);
+                }
+                else
+                {
+                    if (!(Intercom.host.Networkspeaker == __instance.gameObject))
+                        return false;
+                    Environment.OnIntercomSpeak(__instance.gameObject, true, out bool allow);
+                    if (!allow)
+                        return false;
+                    Intercom.host.RequestTransmission(null);
+                }
+
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Intercom", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdDropItem))]
+    public static class ItemDropPatch
+    {
+        private static bool Prefix(Inventory __instance, int itemInventoryIndex)
+        {
+            try
+            {
+                if (!__instance._iawRateLimit.CanExecute(true) || itemInventoryIndex < 0 ||
+                    itemInventoryIndex >= __instance.items.Count)
+                    return false;
+                Inventory.SyncItemInfo syncItemInfo = __instance.items[itemInventoryIndex];
+                if (__instance.items[itemInventoryIndex].id != syncItemInfo.id)
+                    return false;
+                Environment.OnDropItem(syncItemInfo, __instance._hub.gameObject, true, out syncItemInfo, out bool allow);
+                if (!allow)
+                    return false;
+                Pickup droppedPickup = __instance.SetPickup(syncItemInfo.id, syncItemInfo.durability, __instance.transform.position, __instance.camera.transform.rotation, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
+                __instance.items.RemoveAt(itemInventoryIndex);
+                Environment.OnDroppedItem(droppedPickup, __instance._hub.gameObject);
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Inventory", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdSetUnic))]
+    public static class ChangeItemPatch
+    {
+        private static void Prefix(Inventory __instance, int i)
+        {
+            try
+            {
+                if (__instance.itemUniq == i)
+                    return;
+                int oldItemIndex = __instance.GetItemIndex();
+                if (oldItemIndex == -1 && i == -1)
+                    return;
+                Inventory.SyncItemInfo oldItem = oldItemIndex == -1 ? new Inventory.SyncItemInfo() { id = ItemType.None } : __instance.GetItemInHand();
+                Inventory.SyncItemInfo newItem = new Inventory.SyncItemInfo() { id = ItemType.None };
+
+                foreach (Inventory.SyncItemInfo item in __instance.items)
+                {
+                    if (item.uniq == i)
+                        newItem = item;
+                }
+                Environment.OnChangeItem(oldItem, newItem, __instance._hub.gameObject, true, out newItem, out bool allow);
+                if (!allow)
+                    return;
+                oldItemIndex = __instance.GetItemIndex();
+                if (oldItemIndex != -1)
+                    __instance.items[oldItemIndex] = oldItem;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Inventory", e);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(ItemSearchCompletor), nameof(ItemSearchCompletor.Complete))]
+    public static class PickupItemPatch
+    {
+        private static bool Prefix(ItemSearchCompletor __instance)
+        {
+            try
+            {
+                Environment.OnPickupItem(__instance.TargetPickup, __instance.Hub.gameObject, true, out bool allow);
+                return allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("ItemSearchCompletor", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.CallCmdReload))]
+    public static class WeaponReloadPatch
+    {
+        private static bool Prefix(WeaponManager __instance, bool animationOnly)
+        {
+            try
+            {
+                if (!__instance._iawRateLimit.CanExecute(false))
+                    return false;
+                int itemIndex = __instance._hub.inventory.GetItemIndex();
+                if (itemIndex < 0 || itemIndex >= __instance._hub.inventory.items.Count || (__instance.curWeapon < 0 || __instance._hub.inventory.curItem != __instance.weapons[__instance.curWeapon].inventoryID) || __instance._hub.inventory.items[itemIndex].durability >= (double)__instance.weapons[__instance.curWeapon].maxAmmo)
+                    return false;
+                Environment.OnReload(__instance._hub.gameObject, animationOnly, true, out animationOnly, out bool allow);
+                return allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("WeaponManager", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.SetPlayersClass))]
+    public static class SetClassPatch
+    {
+        public static void Postfix(CharacterClassManager __instance, RoleType classid, GameObject ply, bool lite = false, bool escape = false)
+        {
+            try
+            {
+                Environment.OnSetClass(ply, classid, true, out RoleType roleType, out bool allow);
+            }
+            catch (Exception e)
+            {
+                Log.Add("CharacterClassManager", e);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.CallCmdRegisterEscape))]
+    public static class CheckEscapePatch
+    {
+        public static bool Prefix(CharacterClassManager __instance)
+        {
+            try
+            {
+                if (!__instance._interactRateLimit.CanExecute(true))
+                    return false;
+                if (Vector3.Distance(__instance.transform.position, __instance.GetComponent<Escape>().worldPosition) >= (float)(Escape.radius * 2))
+                    return false;
+                bool flag = false;
+                Handcuffs handcuffs = __instance._hub.handcuffs;
+
+                if (handcuffs.CufferId >= 0 && CharacterClassManager.CuffedChangeTeam)
+                {
+                    CharacterClassManager characterClassManager = ReferenceHub.GetHub(handcuffs.GetCuffer(handcuffs.CufferId)).characterClassManager;
+                    if (__instance.CurClass == RoleType.Scientist && (characterClassManager.CurClass == RoleType.ChaosInsurgency || characterClassManager.CurClass == RoleType.ClassD))
+                    {
+                        flag = true;
+                    }
+                    if (__instance.CurClass == RoleType.ClassD && (characterClassManager.CurRole.team == Team.MTF || characterClassManager.CurClass == RoleType.Scientist))
+                    {
+                        flag = true;
+                    }
+                }
+                Environment.OnCheckEscape(__instance.gameObject, true, out bool allow);
+                if (!allow)
+                    return false;
+                RespawnTickets singleton = RespawnTickets.Singleton;
+                Team team = __instance.CurRole.team;
+                if (team != Team.RSC)
+                {
+                    if (team == Team.CDP)
+                    {
+                        if (flag)
+                        {
+                            __instance.SetPlayersClass(RoleType.NtfCadet, __instance.gameObject, false, true);
+                            RoundSummary.escaped_scientists++;
+                            singleton.GrantTickets(SpawnableTeamType.NineTailedFox, ConfigFile.ServerConfig.GetInt("respawn_tickets_mtf_classd_cuffed_count", 1), false);
+                            return false;
+                        }
+                        __instance.SetPlayersClass(RoleType.ChaosInsurgency, __instance.gameObject, false, true);
+                        RoundSummary.escaped_ds++;
+                        singleton.GrantTickets(SpawnableTeamType.ChaosInsurgency, ConfigFile.ServerConfig.GetInt("respawn_tickets_ci_classd_count", 1), false);
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (flag)
+                    {
+                        __instance.SetPlayersClass(RoleType.ChaosInsurgency, __instance.gameObject, false, true);
+                        RoundSummary.escaped_ds++;
+                        singleton.GrantTickets(SpawnableTeamType.ChaosInsurgency, ConfigFile.ServerConfig.GetInt("respawn_tickets_ci_scientist_cuffed_count", 2), false);
+                        return false;
+                    }
+                    __instance.SetPlayersClass(RoleType.NtfScientist, __instance.gameObject, false, true);
+                    RoundSummary.escaped_scientists++;
+                    singleton.GrantTickets(SpawnableTeamType.NineTailedFox, ConfigFile.ServerConfig.GetInt("respawn_tickets_mtf_scientist_count", 1), false);
+                }
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("CharacterClassManager", e);
+                return true;
+            }
         }
     }
 }

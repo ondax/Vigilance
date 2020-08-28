@@ -1,6 +1,9 @@
 ﻿using Vigilance.Enums;
 using System.Linq;
 using System;
+using Respawning;
+using Respawning.NamingRules;
+using System.Collections.Generic;
 
 namespace Vigilance.API
 {
@@ -23,6 +26,16 @@ namespace Vigilance.API
         public static void End() => RoundSummary.singleton.ForceEnd();
         public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassListBuilder.Build(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
         public static void Restart() => Server.Host.GetComponent<PlayerStats>().Roundrestart();
+
+        public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)
+        {
+            SyncUnit syncUnit = new SyncUnit()
+            {
+                SpawnableTeam = (byte)teamType,
+                UnitName = unit
+            };
+            RespawnManager.Singleton.NamingManager.AllUnitNames.Add(syncUnit);
+        }
     }
 
     public class RoundInfo
@@ -44,6 +57,7 @@ namespace Vigilance.API
         public int ChangedToZombies => RoundSummary.changed_into_zombies;
         public int EscapedClassDs => RoundSummary.escaped_ds;
         public int EscapedScientists => RoundSummary.escaped_scientists;
+        public List<SyncUnit> SyncUnits => RespawnManager.Singleton.NamingManager.AllUnitNames.ToList();
 
         public int CountTeam(TeamType team) => Server.PlayerList.GetPlayers(team).Count;
         public int CountRole(RoleType role) => Server.PlayerList.GetPlayers(role).Count;

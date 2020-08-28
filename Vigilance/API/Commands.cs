@@ -492,4 +492,23 @@ namespace Vigilance.Registered
 			return $"Succesfully downloaded and loaded \"{name}\" from \"{url}\"";
 		}
 	}
+
+	public class CommandAddUnit : CommandHandler
+	{
+		public string Command => "addunit";
+
+		public string Usage => "Missing arguments!\nUsage: addunit <name>";
+
+		public string Aliases => "au";
+
+		public string Execute(Player sender, string[] args)
+		{
+			if (args.Length < 1)
+				return Usage;
+			string name = args.Combine();
+			Round.AddUnit(name, Respawning.SpawnableTeamType.ChaosInsurgency);
+			Round.AddUnit(name, Respawning.SpawnableTeamType.NineTailedFox);
+			return $"Succefully added unit \"{name}\"";
+		}
+	}
 }

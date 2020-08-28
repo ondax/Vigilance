@@ -131,18 +131,18 @@ namespace Vigilance
             }
         }
 
-        public static void OnCheckRoundEnd(bool all, out bool allow)
+
+        public static void OnCheckRoundEnd(CheckRoundEndEvent ev, out CheckRoundEndEvent even)
         {
             try
             {
-                CheckRoundEndEvent ev = new CheckRoundEndEvent(all);
                 EventManager.Trigger<CheckRoundEndHandler>(ev);
-                allow = ev.Allow;
+                even = ev;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
-                allow = all;
+                even = ev;
             }
         }
 
@@ -209,18 +209,33 @@ namespace Vigilance
             }
         }
 
-        public static void OnDropItem(Item item, GameObject ply, bool all, out bool allow)
+        public static void OnDropItem(Inventory.SyncItemInfo sync, GameObject ply, bool all, out Inventory.SyncItemInfo itemInfo, out bool allow)
         {
             try
             {
-                DropItemEvent ev = new DropItemEvent(item, ply, all);
+                DropItemEvent ev = new DropItemEvent(sync, ply, all);
                 EventManager.Trigger<DropItemHandler>(ev);
+                itemInfo = ev.Item;
                 allow = ev.Allow;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
+                itemInfo = sync;
                 allow = all;
+            }
+        }
+
+        public static void OnDroppedItem(Pickup pickup, GameObject ply)
+        {
+            try
+            {
+                DroppedItemEvent ev = new DroppedItemEvent(pickup, ply);
+                EventManager.Trigger<DroppedItemHandler>(ev);
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment", e);
             }
         }
 
@@ -374,13 +389,13 @@ namespace Vigilance
             }
         }
 
-        public static void OnChangeItem(ItemType item, ItemType newItem, GameObject ply, bool all, out ItemType changeTo, out bool allow)
+        public static void OnChangeItem(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, GameObject ply, bool all, out Inventory.SyncItemInfo changeTo, out bool allow)
         {
             try
             {
-                ChangeItemEvent ev = new ChangeItemEvent(item, newItem, ply, all);
+                ChangeItemEvent ev = new ChangeItemEvent(oldItem, newItem, ply, all);
                 EventManager.Trigger<ChangeItemHandler>(ev);
-                changeTo = ev.ChangeTo;
+                changeTo = ev.NewItem;
                 allow = ev.Allow;
             }
             catch (Exception e)
@@ -406,19 +421,17 @@ namespace Vigilance
             }
         }
 
-        public static void OnPickupItem(Item it, ItemType type, GameObject ply, bool all, out ItemType item, out bool allow)
+        public static void OnPickupItem(Pickup it, GameObject ply, bool all, out bool allow)
         {
             try
             {
                 PickupItemEvent ev = new PickupItemEvent(it, ply, all);
                 EventManager.Trigger<PickupItemHandler>(ev);
-                item = ev.ItemType;
                 allow = ev.Allow;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
-                item = type;
                 allow = all;
             }
         }
@@ -562,23 +575,21 @@ namespace Vigilance
             }
         }
 
-        public static void OnReload(GameObject ply, bool anim, bool all, int amount, out bool animOnly, out bool allow, out int ammo)
+        public static void OnReload(GameObject ply, bool anim, bool all, out bool animOnly, out bool allow)
         {
             try
             {
                 Player player = ply?.GetPlayer();
-                WeaponReloadEvent ev = new WeaponReloadEvent(ply, player.Hub.inventory.curItem.GetWeaponType(), anim, all, amount);
+                WeaponReloadEvent ev = new WeaponReloadEvent(ply, player.Hub.inventory.curItem.GetWeaponType(), anim, all);
                 EventManager.Trigger<WeaponReloadHandler>(ev);
                 animOnly = ev.AnimationOnly;
                 allow = ev.Allow;
-                ammo = ev.Ammo;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
                 animOnly = anim;
                 allow = all;
-                ammo = amount;
             }
         }
 
@@ -669,17 +680,21 @@ namespace Vigilance
             }
         }
 
-        public static void OnRoundEnd(RoundSummary.LeadingTeam leadingTeam, RoundSummary.SumInfo_ClassList startList, int timeToRestart, bool all, out bool allow)
+        public static void OnRoundEnd(RoundSummary.LeadingTeam leadingTeam, RoundSummary.SumInfo_ClassList endList, int timeToRestart, bool all, out int toRestart, out RoundSummary.SumInfo_ClassList classListOnEnd, out bool allow)
         {
             try
             {
-                RoundEndEvent ev = new RoundEndEvent(leadingTeam, startList, timeToRestart, all);
+                RoundEndEvent ev = new RoundEndEvent(leadingTeam, endList, timeToRestart, all);
                 EventManager.Trigger<RoundEndHandler>(ev);
+                toRestart = ev.TimeToRestart;
+                classListOnEnd = ev.ClassList;
                 allow = ev.Allow;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
+                toRestart = timeToRestart;
+                classListOnEnd = endList;
                 allow = all;
             }
         }
@@ -1037,36 +1052,6 @@ namespace Vigilance
             {
                 Log.Add("Environment", e);
                 timeToDetonation = timeLeft;
-                allow = all;
-            }
-        }
-
-        public static void OnFlashExplode(GameObject ply, GameObject grenade, bool all, out bool allow)
-        {
-            try
-            {
-                FlashExplosionEvent ev = new FlashExplosionEvent(ply, grenade, all);
-                EventManager.Trigger<FlashExplodeHandler>(ev);
-                allow = ev.Allow;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Environment", e);
-                allow = all;
-            }
-        }
-
-        public static void OnFragExplode(GameObject ply, GameObject grenade, bool all, out bool allow)
-        {
-            try
-            {
-                FragExplosionEvent ev = new FragExplosionEvent(ply, grenade, all);
-                EventManager.Trigger<FragExplodeHandler>(ev);
-                allow = ev.Allow;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Environment", e);
                 allow = all;
             }
         }

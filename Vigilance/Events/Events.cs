@@ -161,10 +161,13 @@ namespace Vigilance.Events
     public class CheckRoundEndEvent : Event
     {
         public bool Allow { get; set; }
+        public RoundSummary.LeadingTeam LeadingTeam { get; set; }
 
-        public CheckRoundEndEvent(bool allow)
+
+        public CheckRoundEndEvent(bool allow, RoundSummary.LeadingTeam leadingTeam)
         {
             Allow = allow;
+            LeadingTeam = leadingTeam;
         }
 
         public override void Execute(EventHandler handler)
@@ -227,14 +230,13 @@ namespace Vigilance.Events
 
     public class DropItemEvent : Event
     {
-        public Item Item { get; }
-        public ItemType ItemType => Item.id;
+        public Inventory.SyncItemInfo Item { get; set; }
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public DropItemEvent(Item item, GameObject ply, bool allow)
+        public DropItemEvent(Inventory.SyncItemInfo itemInfo, GameObject ply, bool allow)
         {
-            Item = item;
+            Item = itemInfo;
             Player = ply?.GetPlayer();
             Allow = allow;
         }
@@ -242,6 +244,23 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((DropItemHandler)handler).OnDropItem(this);
+        }
+    }
+
+    public class DroppedItemEvent : Event
+    {
+        public Pickup Item { get; set; }
+        public Player Player { get; }
+
+        public DroppedItemEvent(Pickup item, GameObject ply)
+        {
+            Item = item;
+            Player = ply?.GetPlayer();
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((DroppedItemHandler)handler).OnItemDropped(this);
         }
     }
 
@@ -434,15 +453,15 @@ namespace Vigilance.Events
 
     public class ChangeItemEvent : Event
     {
-        public ItemType Item { get; }
-        public ItemType ChangeTo { get; set; }
+        public Inventory.SyncItemInfo OldItem { get; }
+        public Inventory.SyncItemInfo NewItem { get; set; }
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public ChangeItemEvent(ItemType item, ItemType change, GameObject ply, bool allow)
+        public ChangeItemEvent(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, GameObject ply, bool allow)
         {
-            Item = item;
-            ChangeTo = change;
+            OldItem = oldItem;
+            NewItem = newItem;
             Player = ply?.GetPlayer();
             Allow = allow;
         }
@@ -474,15 +493,13 @@ namespace Vigilance.Events
 
     public class PickupItemEvent : Event
     {
-        public Item Item { get; }
-        public ItemType ItemType { get; set; }
+        public Pickup Item { get; }
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public PickupItemEvent(Item item, GameObject ply, bool allow)
+        public PickupItemEvent(Pickup item, GameObject ply, bool allow)
         {
             Item = item;
-            ItemType = item.id;
             Player = ply?.GetPlayer();
             Allow = allow;
         }
@@ -683,15 +700,13 @@ namespace Vigilance.Events
         public WeaponType Weapon { get; }
         public bool AnimationOnly { get; set; }
         public bool Allow { get; set; }
-        public int Ammo { get; set; }
 
-        public WeaponReloadEvent(GameObject ply, WeaponType weapon, bool anim, bool allow, int ammo)
+        public WeaponReloadEvent(GameObject ply, WeaponType weapon, bool anim, bool allow)
         {
             Player = ply?.GetPlayer();
             Weapon = weapon;
             AnimationOnly = anim;
             Allow = allow;
-            Ammo = ammo;
         }
 
         public override void Execute(EventHandler handler)
@@ -781,8 +796,8 @@ namespace Vigilance.Events
     public class RoundEndEvent : Event
     {
         public RoundSummary.LeadingTeam LeadingTeam { get; }
-        public RoundSummary.SumInfo_ClassList ClassList { get; }
-        public int TimeToRestart { get; }
+        public RoundSummary.SumInfo_ClassList ClassList { get; set; }
+        public int TimeToRestart { get; set; }
         public bool Allow { get; set; }
 
         public RoundEndEvent(RoundSummary.LeadingTeam team, RoundSummary.SumInfo_ClassList classList, int toRestart, bool allow)
@@ -1226,44 +1241,6 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((WarheadKeycardAccessHandler)handler).OnAccess(this);
-        }
-    }
-
-    public class FlashExplosionEvent : Event
-    {
-        public Player Player { get; }
-        public bool Allow { get; set; }
-        public GameObject Grenade { get; }
-
-        public FlashExplosionEvent(GameObject ply, GameObject nade, bool allow)
-        {
-            Player = ply?.GetPlayer();
-            Grenade = nade;
-            Allow = allow;
-        }
-
-        public override void Execute(EventHandler handler)
-        {
-            ((FlashExplodeHandler)handler).OnFlashExplode(this);
-        }
-    }
-
-    public class FragExplosionEvent : Event
-    {
-        public Player Player { get; }
-        public bool Allow { get; set; }
-        public GameObject Grenade { get; }
-
-        public FragExplosionEvent(GameObject ply, GameObject nade, bool allow)
-        {
-            Player = ply?.GetPlayer();
-            Grenade = nade;
-            Allow = allow;
-        }
-
-        public override void Execute(EventHandler handler)
-        {
-            ((FragExplodeHandler)handler).OnFragExplode(this);
         }
     }
 

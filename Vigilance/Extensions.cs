@@ -430,6 +430,19 @@ namespace Vigilance.Extensions
 			else
 				return false;
 		}
+
+		public static string Combine(this string[] array)
+		{
+			string str = "";
+			foreach (string s in array)
+			{
+				if (s == array[0])
+					str += s;
+				else
+					str += $" {s}";
+			}
+			return str;
+		}
 	}
 
 	public static class RoleExtensions

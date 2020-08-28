@@ -322,16 +322,6 @@ namespace Vigilance.EventHandlers
         void OnStart(WarheadStartEvent ev);
     }
 
-    public interface FlashExplodeHandler : EventHandler
-    {
-        void OnFlashExplode(FlashExplosionEvent ev);
-    }
-
-    public interface FragExplodeHandler : EventHandler
-    {
-        void OnFragExplode(FragExplosionEvent ev);
-    }
-
     public interface WarheadKeycardAccessHandler : EventHandler
     {
         void OnAccess(WarheadKeycardAccessEvent ev);
@@ -375,5 +365,10 @@ namespace Vigilance.EventHandlers
     public interface PlayerDieEventHandler : EventHandler
     {
         void OnPlayerDie(PlayerDieEvent ev);
+    }
+
+    public interface DroppedItemHandler : EventHandler
+    {
+        void OnItemDropped(DroppedItemEvent ev);
     }
 }
