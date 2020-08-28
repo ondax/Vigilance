@@ -35,6 +35,12 @@ namespace Vigilance.Patches
 				string logName = sender.LogName;
 				PlayerCommandSender playerCommandSender = sender as PlayerCommandSender;
 				QueryProcessor queryProcessor = playerCommandSender?.Processor;
+				Environment.OnRemoteAdminCommand(sender, q, true, out bool allow, out string reply);
+				if (!allow)
+				{
+					sender.RaReply($"SERVER#{reply}", true, true, "");
+					return false;
+				}
 				if (q.StartsWith("@", StringComparison.Ordinal))
 				{
 					if (!CheckPermissions(sender, "Admin Chat", PlayerPermissions.AdminChat, string.Empty))
@@ -73,12 +79,6 @@ namespace Vigilance.Patches
 				if (gameCommandHandler != null)
 				{
 					sender.RaReply($"SERVER#{gameCommandHandler.Execute(sender.GetPlayer(), query.SkipCommand())}", true, true, "");
-					return false;
-				}
-				Environment.OnRemoteAdminCommand(sender, q, true, out bool allow, out string reply);
-				if (!allow)
-				{
-					sender.RaReply($"SERVER#{reply}", true, true, "");
 					return false;
 				}
 				int failures;

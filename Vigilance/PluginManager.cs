@@ -7,7 +7,7 @@ namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.0.8";
+        public static string Version => "5.0.9";
         public static Dictionary<Plugin, Assembly> Plugins => _plugins;
         public static List<Assembly> Dependencies => _dependencies;
         public static YamlConfig Config => _config;

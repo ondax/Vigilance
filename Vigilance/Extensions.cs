@@ -318,10 +318,37 @@ namespace Vigilance.Extensions
 			return TimeSpan.FromTicks(banDetails.Expires);
 		}
 
+		public static string ToString(this TimeSpan expiery)
+		{
+			DateTime dateTime = new DateTime(expiery.Ticks);
+			return dateTime.ToString("dd.MM.yy [HH:mm:ss]");
+		}
+
 		public static string GetDurationString(this TimeSpan expiery, TimeSpan issuance)
 		{
 			TimeSpan time = expiery - issuance;
-			return $"{time.Days}d {time.Hours}h {time.Minutes}m"; ;
+			int seconds = time.Seconds;
+			int minutes = time.Minutes;
+			int hours = time.Hours;
+			int days = time.Days;
+			int months = days / 30;
+
+			if (months > 0)
+				return $" {months.GetString(DurationType.Months)}";
+			if (days > 0)
+				return $" {days.GetString(DurationType.Days)}";
+			if (hours > 0)
+				return $" {hours.GetString(DurationType.Hours)}";
+			if (minutes > 0)
+				return $" {minutes.GetString(DurationType.Minutes)}";
+			if (seconds > 0)
+				return $" {seconds.GetString(DurationType.Seconds)}";
+			return $"{months.GetString(DurationType.Months)} | {days.GetString(DurationType.Days)} | {hours.GetString(DurationType.Hours)} | {minutes.GetString(DurationType.Minutes)} | {seconds.GetString(DurationType.Seconds)}";
+		}
+
+		public static string GetString(this int duration, DurationType durationType)
+		{
+			return durationType.GetDurationTypeString(duration);
 		}
 
 		public static int GetDuration(this BanDetails banDetails)
@@ -378,7 +405,7 @@ namespace Vigilance.Extensions
 			string str = "";
 			foreach (string s in array.Skip(amount))
 			{
-				if (s == array[0])
+				if (s == array[amount - 1])
 					str += s;
 				else
 					str += $" {s}";
@@ -388,7 +415,7 @@ namespace Vigilance.Extensions
 
 		public static string DiscordSanitize(this string str)
 		{
-			return str.Replace('@', ' ').Replace('_', ' ').Replace('*', ' ').Replace('<', ' ').Replace('`', ' ');
+			return str.Replace('@', ' ').Replace('_', ' ').Replace('*', ' ').Replace('<', ' ').Replace('`', ' ').Replace('>', ' ');
 		}
 
 		public static string[] SkipCommand(this string[] array)
@@ -442,6 +469,122 @@ namespace Vigilance.Extensions
 					str += $" {s}";
 			}
 			return str;
+		}
+
+		public static string[] ToStringArray(this char[] arr)
+		{
+			List<string> strings = new List<string>();
+			foreach (char s in arr)
+			{
+				strings.Add(s.ToString());
+			}
+			return strings.ToArray();
+		}
+
+		public static string RemoveNumbers(this string str)
+		{
+			return str.Where(s => !s.IsNumber()).ToArray().ToStringArray().Combine();
+		}
+
+		public static bool IsNumber(this char ch) => int.TryParse(ch.ToString(), out int idk);
+		public static bool IsNumber(this string str) => int.TryParse(str, out int idk);
+
+		public static DurationType GetDurationTypeWithDuration(this string str)
+		{
+			if (str.IsNumber())
+				return DurationType.Hours;
+			str = str.RemoveNumbers();
+			if (str == "s")
+				return DurationType.Seconds;
+			if (str == "m")
+				return DurationType.Minutes;
+			if (str == "h")
+				return DurationType.Hours;
+			if (str == "d")
+				return DurationType.Days;
+			if (str == "M")
+				return DurationType.Months;
+			if (str == "y")
+				return DurationType.Years;
+			return DurationType.Hours;
+		}
+
+		public static DurationType GetDurationType(this string str)
+		{
+			if (str == "s")
+				return DurationType.Seconds;
+			if (str == "m")
+				return DurationType.Minutes;
+			if (str == "h")
+				return DurationType.Hours;
+			if (str == "d")
+				return DurationType.Days;
+			if (str == "M")
+				return DurationType.Months;
+			if (str == "y")
+				return DurationType.Years;
+			return DurationType.Hours;
+		}
+
+		public static UserIdType GetIdType(this ulong id)
+		{
+			if (id.ToString().Length == 17)
+				return UserIdType.Steam;
+			if (id.ToString().Length == 18)
+				return UserIdType.Discord;
+			return UserIdType.Unspecified;
+		}
+
+		public static string GetDurationTypeString(this DurationType durationType, int dur)
+		{
+			if (durationType == DurationType.Days)
+			{
+				if (dur == 1)
+					return "1 day";
+				else
+					return $"{dur} days";
+			}
+
+			if (durationType == DurationType.Hours)
+			{
+				if (dur == 1)
+					return "1 hour";
+				else
+					return $"{dur} hours";
+			}
+
+			if (durationType == DurationType.Minutes)
+			{
+				if (dur == 1)
+					return "1 minute";
+				else
+					return $"{dur} minutes";
+			}
+
+			if (durationType == DurationType.Months)
+			{
+				if (dur == 1)
+					return "1 month";
+				else
+					return $"{dur} months";
+			}
+
+			if (durationType == DurationType.Seconds)
+			{
+				if (dur == 1)
+					return "1 second";
+				else
+					return $"{dur} seconds";
+			}
+
+			if (durationType == DurationType.Years)
+			{
+				if (dur == 1)
+					return "1 year";
+				else
+					return $"{dur} years";
+			}
+			return $"{dur} {durationType}";
 		}
 	}
 

@@ -1076,13 +1076,11 @@ namespace Vigilance.Events
 
     public class SpawnRagdollEvent : Event
     {
-        public Player Owner { get; }
         public Ragdoll Ragdoll { get; }
         public bool Allow { get; set; }
 
         public SpawnRagdollEvent(Ragdoll ragdoll, bool allow)
         {
-            Owner = ragdoll?.GetOwner();
             Ragdoll = ragdoll;
             Allow = allow;
         }

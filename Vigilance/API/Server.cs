@@ -16,14 +16,10 @@ namespace Vigilance.API
         public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
         public static IEnumerable<Player> Players => PlayerList.PlayersDict.Values;
         public static int Port => ServerStatic.ServerPortSet ? ServerStatic.ServerPort : 7777;
+        public static int MaxPlayers => ConfigFile.ServerConfig.GetInt("max_players", 20);
         public static bool RoundLock { get => RoundSummary.RoundLock; set => RoundSummary.RoundLock = value; }
         public static bool LobbyLock { get => RoundStart.LobbyLock; set => RoundStart.LobbyLock = value; }
-        public static string Name { get => ServerConsole._serverName;
-            set
-            {
-                ServerConsole._serverName = value;
-            }
-        }
+        public static string Name { get => ServerConsole._serverName; set => ServerConsole._serverName = value; }
         public static string IpAddress { get => ServerConsole.Ip; set => ServerConsole.Ip = value; }
 
         public static void Restart(bool safeRestart = true)
@@ -39,7 +35,7 @@ namespace Vigilance.API
         private static IEnumerator<float> SafeRestart()
         {
             Host.GetComponent<PlayerStats>().Roundrestart();
-            yield return Timing.WaitForSeconds(1.5f);
+            yield return Timing.WaitForSeconds(0.5f);
             Application.Quit();
         }
 
@@ -80,6 +76,11 @@ namespace Vigilance.API
 
         public static void IssueOfflineBan(DurationType type, int duration, string userId, string issuer, string reason)
         {
+            BanHandler.BanType banType;
+            if (userId.Contains("@steam") || userId.Contains("@discord"))
+                banType = BanHandler.BanType.UserId;
+            else
+                banType = BanHandler.BanType.IP;
             switch (type)
             {
                 case DurationType.Seconds:
@@ -93,7 +94,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 case DurationType.Minutes:
@@ -107,7 +108,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 case DurationType.Hours:
@@ -121,7 +122,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offfline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 case DurationType.Days:
@@ -135,7 +136,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 case DurationType.Months:
@@ -149,7 +150,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 case DurationType.Years:
@@ -163,7 +164,7 @@ namespace Vigilance.API
                             Issuer = issuer,
                             OriginalName = "Offline Player",
                             Reason = (string.IsNullOrEmpty(reason) ? "No reason specified." : reason)
-                        }, BanHandler.BanType.UserId);
+                        }, banType);
                         return;
                     }
                 default:
@@ -202,6 +203,10 @@ namespace Vigilance.API
 
             public static void Add(Player player)
             {
+                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
+                    return;
+                if (Contains(player))
+                    return;
                 Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has joined, adding to list.", LogType.Debug);
                 PlayersDict.Add(player.GameObject, player);
                 UserIdCache.Add(player.UserId, player);
@@ -210,10 +215,24 @@ namespace Vigilance.API
 
             public static void Remove(Player player)
             {
+                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
+                    return;
+                if (!Contains(player))
+                    return;
                 Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has disconnected, removing from list.", LogType.Debug);
                 PlayersDict.Remove(player.GameObject);
                 UserIdCache.Remove(player.UserId);
                 PlayerIdCache.Remove(player.PlayerId);
+            }
+
+            public static bool Contains(Player player)
+            {
+                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
+                    return false;
+                if (PlayersDict.ContainsValue(player) && UserIdCache.ContainsKey(player.UserId) && PlayerIdCache.ContainsKey(player.PlayerId))
+                    return true;
+                else
+                    return false;
             }
 
             public static List<Player> GetPlayers(RoleType role)
@@ -254,7 +273,24 @@ namespace Vigilance.API
 
             public static Player GetPlayer(int playerId)
             {
-                return PlayerIdCache[playerId];
+                if (!PlayerIdCache.TryGetValue(playerId, out Player player))
+                {
+                    foreach (Player ply in PlayersDict.Values)
+                        if (ply.PlayerId == playerId)
+                            player = ply;
+                }
+                return player;
+            }
+
+            public static Player GetPlayerByUserId(string id)
+            {
+                if (!UserIdCache.TryGetValue(id, out Player ply))
+                {
+                    foreach (Player player in PlayersDict.Values)
+                        if (player.UserId == id || player.ParsedUserId == id)
+                            ply = player;
+                }
+                return ply;
             }
 
             public static Player GetPlayer(string args)
@@ -271,18 +307,12 @@ namespace Vigilance.API
 
                     if (int.TryParse(args, out int id))
                     {
-                        return PlayerIdCache[id];
+                        return GetPlayer(id);
                     }
 
                     if (args.EndsWith("@steam") || args.EndsWith("@discord") || args.EndsWith("@northwood") || args.EndsWith("@patreon"))
                     {
-                        foreach (Player player in PlayersDict.Values)
-                        {
-                            if (player.UserId == args)
-                            {
-                                playerFound = player;
-                            }
-                        }
+                        playerFound = GetPlayerByUserId(args);
                     }
                     else
                     {

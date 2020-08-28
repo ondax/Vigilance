@@ -40,6 +40,9 @@ namespace Vigilance
             RegisterCommand(new CommandDownloadPlugin());
             RegisterCommand(new CommandDownloadDependency());
             RegisterCommand(new CommandAddUnit());
+
+            RegisterGameCommand(new UnbanCommand());
+            RegisterGameCommand(new OfflineBanCommand());
         }
 
         public static bool CallGameCommand(string query, CommandSender sender, out string reply)

@@ -1584,6 +1584,11 @@ namespace Vigilance.Patches
                     Debug.LogWarning("[Server] function 'System.Void NicknameSync::SetNick(System.String)' called on client");
                     return false;
                 }
+                if (!Server.PlayerList.PlayersDict.TryGetValue(__instance.hub.gameObject, out Player player))
+                {
+                    player = new Player(ReferenceHub.GetHub(__instance.gameObject));
+                    Server.PlayerList.Add(player);
+                }
                 __instance.MyNick = nick;
                 if (__instance.isLocalPlayer && ServerStatic.IsDedicated || __instance == null || string.IsNullOrEmpty(nick))
                     return false;
@@ -1592,11 +1597,6 @@ namespace Vigilance.Patches
                 if (ServerGuard.VPNShield.CheckIP(__instance.hub.GetPlayer()))
                     return false;
                 Environment.OnPlayerJoin(__instance.hub.gameObject);
-                if (!Server.PlayerList.PlayersDict.TryGetValue(__instance.hub.gameObject, out Player player))
-                {
-                    player = new Player(ReferenceHub.GetHub(__instance.gameObject));
-                    Server.PlayerList.Add(player);
-                }
                 ServerConsole.AddLog(string.Concat(new string[]
                 {
                     "Nickname of ",
@@ -3196,7 +3196,7 @@ namespace Vigilance.Patches
     }
 
 
-    // Added in v5.0.9
+    // Added in v5.0.8
 
     [HarmonyPatch(typeof(RoundSummary), nameof(RoundSummary.Start))]
     public static class RoundEndPatch

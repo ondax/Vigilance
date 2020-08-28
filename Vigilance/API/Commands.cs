@@ -3,6 +3,7 @@ using Vigilance.Extensions;
 using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Vigilance.Registered
 {
@@ -509,6 +510,110 @@ namespace Vigilance.Registered
 			Round.AddUnit(name, Respawning.SpawnableTeamType.ChaosInsurgency);
 			Round.AddUnit(name, Respawning.SpawnableTeamType.NineTailedFox);
 			return $"Succefully added unit \"{name}\"";
+		}
+	}
+
+	public class UnbanCommand : GameCommandHandler
+	{
+		public string Command => "unban";
+
+		public string Usage => "Missing arguments!\nUsage: unban <nick/userId>";
+
+		public string Aliases => "uban";
+
+		public string Execute(Player sender, string[] args)
+		{
+			if (args.Length < 1)
+				return Usage;
+			string nick = args[0].ToLower();
+			long expiery = 0;
+			List<BanDetails> IpBans = BanHandler.GetBans(BanHandler.BanType.IP);
+			List<BanDetails> UserIdBans = BanHandler.GetBans(BanHandler.BanType.UserId);
+
+			if (ulong.TryParse(nick, out ulong id))
+			{
+				string ply = "";
+				foreach (BanDetails ban in UserIdBans)
+				{
+					if (ban.Id == $"{id.ToString()}@steam" || ban.Id == $"{id.ToString()}@discord" || ban.Id.Contains(id.ToString()))
+					{
+						ply = ban.OriginalName;
+						expiery = ban.Expires;
+						BanHandler.RemoveBan(ban.Id, BanHandler.BanType.UserId);
+						Log.Add("SERVER", $"Removed UserIDBan:\nNick: {ban.OriginalName}\nUserID: {ban.Id}\nIssued by: {ban.Issuer}", LogType.Info);
+						sender.RemoteAdminMessage($"Succefully unbanned UserID: {ban.Id} [{ban.OriginalName}]");
+					}
+				}
+
+				foreach (BanDetails ip in IpBans)
+				{
+					if (ip.OriginalName == ply && ip.Expires == expiery || ip.Id == id.ToString() || ip.Id.Contains(id.ToString()) || ip.Id == $"{id}@steam" || ip.Id == $"{id}@discord")
+					{
+						BanHandler.RemoveBan(ip.Id, BanHandler.BanType.IP);
+						Log.Add("SERVER", $"Removed IPBan:\nNick: {ip.OriginalName}\nIP: {ip.Id}\nIssued by: {ip.Issuer}", LogType.Info);
+						sender.RemoteAdminMessage($"Succesfully unbanned IP: {ip.Id} [{ip.OriginalName}]");
+					}
+				}
+			}
+
+			foreach (BanDetails IpBan in IpBans)
+			{
+				if (IpBan.OriginalName == nick || IpBan.OriginalName.ToLower() == nick || IpBan.OriginalName.ToLower().Contains(nick))
+				{
+					nick = IpBan.OriginalName;
+					BanHandler.RemoveBan(IpBan.Id, BanHandler.BanType.IP);
+					Log.Add("SERVER", $"Removed IPBan:\nNick: {IpBan.OriginalName}\nIP: {IpBan.Id}\nIssued by: {IpBan.Issuer}", LogType.Info);
+					sender.RemoteAdminMessage($"Succesfully unbanned IP: {IpBan.Id} [{IpBan.OriginalName}]");
+				}
+			}
+
+			foreach (BanDetails UserIdBan in UserIdBans)
+			{
+				if (UserIdBan.OriginalName == nick || UserIdBan.OriginalName.ToLower() == nick || UserIdBan.OriginalName.ToLower().Contains(nick))
+				{
+					nick = UserIdBan.OriginalName;
+					BanHandler.RemoveBan(UserIdBan.Id, BanHandler.BanType.UserId);
+					Log.Add("SERVER", $"Removed UserIDBan:\nNick: {UserIdBan.OriginalName}\nUserID: {UserIdBan.Id}\nIssued by: {UserIdBan.Issuer}", LogType.Info);
+					return $"Succesfully unbanned UserID: {UserIdBan.Id} [{UserIdBan.OriginalName}]";
+				}
+			}
+			return $"";
+		}
+	}
+
+	public class OfflineBanCommand : GameCommandHandler
+	{
+		public string Command => "offlineban";
+
+		public string Usage => "oban <UserID/IP> <Duration> <DurationType> <Reason>";
+
+		public string Aliases => "oban";
+
+		public string Execute(Player sender, string[] args)
+		{
+			if (args.Length < 3)
+				return Usage;
+			string id = args[0];
+			if (!int.TryParse(args[1], out int duration))
+				return "Please provide a valid duration!";
+			DurationType durationType = args[2].GetDurationType();
+			string reason = args.SkipWords(3);
+			reason = string.IsNullOrEmpty(reason) ? "No reason provided." : reason;
+			UserIdType userIdType;
+			if (ulong.TryParse(id, out ulong userId))
+			{
+				userIdType = userId.GetIdType();
+				if (userIdType == UserIdType.Unspecified)
+					return "Provide a valid UserID.";
+				string Id = userIdType == UserIdType.Steam ? $"{id}@steam" : $"{id}@discord";
+				Server.IssueOfflineBan(durationType, duration, Id, sender.Nick, reason);
+				return $"Succesfully banned UserID: \"{Id}\" for {durationType.GetDurationTypeString(duration)}. Reason: {reason}";
+			}
+			else
+			{
+				Server.IssueOfflineBan(durationType, duration, id, sender.Nick, reason);
+				return $"Succesfully banned IP: \"{id}\" for {durationType.GetDurationTypeString(duration)}. Reason: {reason}";
+			}
 		}
 	}
 }
