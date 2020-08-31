@@ -3,6 +3,7 @@ using System;
 using Vigilance.API;
 using Vigilance.Extensions;
 using Vigilance.Registered;
+using System.Net;
 
 namespace Vigilance
 {
@@ -10,13 +11,16 @@ namespace Vigilance
     {
         private static List<CommandHandler> _commands;
         private static List<GameCommandHandler> _gameCommands;
+        private static List<ConsoleCommandHandler> _consoleCommands;
         public static List<CommandHandler> Commands => _commands;
         public static List<GameCommandHandler> GameCommands => _gameCommands;
+        public static List<ConsoleCommandHandler> ConsoleCommands => _consoleCommands;
 
         public static void Enable()
         {
             _commands = new List<CommandHandler>();
             _gameCommands = new List<GameCommandHandler>();
+            _consoleCommands = new List<ConsoleCommandHandler>();
 
             RegisterCommand(new CommandClean());
             RegisterCommand(new CommandDropAll());
@@ -40,6 +44,10 @@ namespace Vigilance
             RegisterCommand(new CommandDownloadPlugin());
             RegisterCommand(new CommandDownloadDependency());
             RegisterCommand(new CommandAddUnit());
+            RegisterCommand(new CommandPos());
+            RegisterCommand(new GhostCommand());
+            RegisterCommand(new TargetGhostCommand());
+            RegisterCommand(new CommandSpawnPrefab());
 
             RegisterGameCommand(new UnbanCommand());
             RegisterGameCommand(new OfflineBanCommand());
@@ -92,6 +100,21 @@ namespace Vigilance
             return null;
         }
 
+        public static ConsoleCommandHandler GetConsoleCommandHandler(string command)
+        {
+            foreach (ConsoleCommandHandler cch in _consoleCommands)
+            {
+                if (cch.Command.ToUpper() == command.ToUpper())
+                    return cch;
+                else
+                    if (!cch.Aliases.IsEmpty())
+                    foreach (string alias in GetAliases(cch))
+                        if (alias.ToUpper() == command.ToUpper())
+                            return cch;
+            }
+            return null;
+        }
+
         public static string CallCommand(string query, CommandSender sender)
         {
             try
@@ -122,6 +145,11 @@ namespace Vigilance
             return GetAliases(handler.Aliases);
         }
 
+        public static string[] GetAliases(ConsoleCommandHandler handler)
+        {
+            return GetAliases(handler.Aliases);
+        }
+
         public static void RegisterCommand(CommandHandler handler) => _commands.Add(handler);
         public static void RegisterGameCommand(GameCommandHandler handler) => _gameCommands.Add(handler);
     }
@@ -140,5 +168,13 @@ namespace Vigilance
         string Usage { get; }
         string Aliases { get; }
         string Execute(Player sender, string[] args);
+    }
+
+    public interface ConsoleCommandHandler
+    {
+        string Command { get; }
+        string Usage { get; }
+        string Aliases { get; }
+        string Execute(Player sender, string[] args, out string color);
     }
 }

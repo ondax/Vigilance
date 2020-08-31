@@ -223,7 +223,7 @@ namespace Vigilance.API
 			GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
 			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
 			ccm.CurClass = role;
-			ccm.RefreshPlyModel();
+			ccm.RefreshPlyModel(role);
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;

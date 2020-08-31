@@ -4,6 +4,7 @@ using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
+using Mirror;
 
 namespace Vigilance.Registered
 {
@@ -122,7 +123,7 @@ namespace Vigilance.Registered
 				}
 				return $"Succesfully teleported all players to {p.Nick}";
 			}
-			Player player = args[1].GetPlayer();
+			Player player = args[0].GetPlayer();
 			player.Teleport(teleportTo);
 			return $"Succesfully teleported {player.Nick} to {p.Nick}";
 		}
@@ -159,11 +160,13 @@ namespace Vigilance.Registered
 		{
 			if (args.Length < 2)
 				return Usage;
-			foreach (Player admin in Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin))
+			IEnumerable<Player> admins = Server.PlayerList.PlayersDict.Values.Where(h => h.RemoteAdmin);
+			string message = args.SkipWords(1);
+			foreach (Player admin in admins)
 			{
-				admin.Broadcast($"<b><color=red>[AdminChat]</color></b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", int.Parse(args[1]));
+				admin.Broadcast($"<b><color=red>[AdminChat]</color></b>\n<b>{sender.Nick}</b>:\n<i>{message}</i>", int.Parse(args[0]));
 			}
-			return $"Success! Your message has been delivered to {Server.Players.Where(h => h.Hub.serverRoles.RemoteAdmin).Count()} online administrators!\nMessage: {args.SkipWords(2)}\nDuration: {int.Parse(args[1])} seconds.";
+			return $"Success! Your message has been delivered to {admins.Count()} online administrators!\nMessage: {message}\nDuration: {int.Parse(args[0])} seconds.";
 		}
 	}
 
@@ -616,4 +619,159 @@ namespace Vigilance.Registered
 			}
 		}
 	}
+
+    public class CommandPos : CommandHandler
+    {
+		public string Command => "position";
+
+		public string Usage => "position <add/get/set> <player> <value>";
+
+		public string Aliases => "pos";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			if (args.Length == 1)
+            {
+				switch (args[0].ToLower())
+                {
+					case "get":
+						return $"Your position: \n[X: {sender.Position.x} | Y: {sender.Position.y} | Z: {sender.Position.z}]\nZone: {sender.CurrentRoom.Zone}\nRoom: {sender.CurrentRoom.Type}\nPocket Dimension?: {sender.IsInPocketDimension.ToString().ToLower()}";
+					case "set":
+						Vector3 pos = CommandPos.ParsePosition(args[1]);
+						sender.Teleport(pos);
+						return $"Succesfully updated your position. [X: {pos.x} | Y: {pos.y} | Z: {pos.z}]";
+					case "add":
+						Vector3 newPos = CommandPos.ParseAdd(args[1], sender);
+						sender.Hub.playerMovementSync.OverridePosition(newPos, sender.Hub.transform.position.y);
+						return $"Succesfully updated your position. [X: {newPos.x} | Y: {newPos.y} | Z: {newPos.z}]";
+					default:
+						return "Please specify a valid operation! [get/set/add]";
+                }
+            }
+			else
+            {
+				Player player = args[1].GetPlayer();
+				switch (args[0].ToLower())
+				{
+					case "get":
+						return $"Position of {player.Nick}: \n[X: {player.Position.x} | Y: {player.Position.y} | Z: {player.Position.z}]\nZone: {player.CurrentRoom.Zone}\nRoom: {player.CurrentRoom.Type}\nPocket Dimension?: {player.IsInPocketDimension.ToString().ToLower()}";
+					case "set":
+						Vector3 pos = CommandPos.ParsePosition(args[2]);
+						player.Teleport(pos);
+						return $"Succesfully updated {player.Nick}'s position. [X: {pos.x} | Y: {pos.y} | Z: {pos.z}]";
+					case "add":
+						Vector3 newPos = CommandPos.ParseAdd(args[2], player);
+						player.Hub.playerMovementSync.OverridePosition(newPos, sender.Hub.transform.position.y);
+						return $"Succesfully updated {player.Nick}'s position. [X: {newPos.x} | Y: {newPos.y} | Z: {newPos.z}]";
+					default:
+						return "Please specify a valid operation! [get/set/add]";
+				}
+			}
+        }
+
+		public static Vector3 ParsePosition(string s)
+        {
+			string[] args = s.Split('=');
+			return new Vector3(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]));
+        }
+
+		public static Vector3 ParseAdd(string s, Player player)
+        {
+			Vector3 curPos = player.Position;
+			string[] args = s.Split('=');
+			if (!float.TryParse(args[1], out float value))
+				return curPos;
+			if (args[0].ToLower() == "x")
+				curPos.x += value;
+			if (args[0].ToLower() == "y")
+				curPos.y += value;
+			if (args[0].ToLower() == "z")
+				curPos.z += value;
+			return curPos;
+        }
+    }
+
+    public class GhostCommand : CommandHandler
+    {
+		public string Command => "ghost";
+
+		public string Usage => "ghost <player>";
+
+		public string Aliases => "invis gh";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			Player player = args[0].GetPlayer();
+			bool value = !player.IsInvisible;
+			player.IsInvisible = value;
+			return $"Succesfully set ghostmode of {player.Nick} to {value.ToString().ToLower()}";
+        }
+    }
+
+    public class TargetGhostCommand : CommandHandler
+    {
+		public string Command => "targetghost";
+
+		public string Usage => "Missing arguments!\nUsage: targetghost <player> <playerThatFirstPlayerCannotSee>";
+
+		public string Aliases => "tghost targetinvis tinvis tg";
+
+        public string Execute(Player sender, string[] args)
+        {
+            if (args.Length < 2)
+				return Usage;
+			Player player = args[0].GetPlayer();
+			if (!Server.PlayerList.TargetGhosts.ContainsKey(player.UserId))
+				Server.PlayerList.TargetGhosts.Add(player.UserId, new List<int>());
+			Player two = args[1].GetPlayer();
+			if (Server.PlayerList.TargetGhosts[player.UserId].Contains(two.PlayerId))
+            {
+				Server.PlayerList.TargetGhosts[player.UserId].Remove(two.PlayerId);
+				return $"Succesfully removed {two.Nick} from {player.Nick}'s target ghosts.";
+            }
+			else
+            {
+				Server.PlayerList.TargetGhosts[player.UserId].Add(two.PlayerId);
+				return $"Succesfully added {two.Nick} to {player.Nick}'s target ghosts.";
+            }
+        }
+    }
+
+	public class CommandSpawnPrefab : CommandHandler
+    {
+		public string Command => "spawnprefab";
+
+		public string Usage => "spawnprefab <X=Y=Z> <name>";
+
+		public string Aliases => "sp";
+
+        public static GameObject FindPrefab(string name)
+        {
+			foreach (GameObject obj in NetworkManager.singleton.spawnPrefabs)
+            {
+				if (obj.name == name)
+					return obj;
+            }
+			return null;
+        }
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 2)
+				return Usage;
+			GameObject toSpawn = FindPrefab(args.SkipWords(1));
+			if (toSpawn == null)
+				return $"Cannot find an object with name {args.Combine()}!\nValid names: Player, PlaybackLobby, Pickup, Work Station, Ragdoll_0, Ragdoll_1, Ragdoll_3, Ragdoll_4, Ragdoll_6, Ragdoll_7, Ragdoll_8, SCP-096_Ragdoll, Ragdoll_10, Ragdoll_14, Ragdoll_16, Ragdoll_17, Grenade Flash, Grenade Frag, Grenade SCP-018";
+			GameObject obj = Object.Instantiate(toSpawn);
+			obj.transform.localScale = CommandPos.ParsePosition(args[1]);
+			obj.transform.position = sender.Position;
+			obj.transform.rotation = sender.RotationQuaternion;
+			NetworkServer.Spawn(obj);
+			return $"Succesfully spawned {obj.name}";
+        }
+    }
 }

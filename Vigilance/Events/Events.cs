@@ -193,7 +193,7 @@ namespace Vigilance.Events
 
         public override void Execute(EventHandler handler)
         {
-            ((ConsoleCommandHandler)handler).OnConsoleCommand(this);
+            ((Vigilance.EventHandlers.ConsoleCommandHandler)handler).OnConsoleCommand(this);
         }
     }
 
@@ -1391,6 +1391,52 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((PlayerDieEventHandler)handler).OnPlayerDie(this);
+        }
+    }
+
+    public class Scp096AddTargetEvent : Event
+    {
+        public Player Target { get; }
+        public bool Allow { get; set; }
+
+        public Scp096AddTargetEvent(GameObject target, bool allow)
+        {
+            Target = target?.GetPlayer();
+            Allow = allow;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((Scp096AddTargetHandler)handler).OnScp096AddTarget(this);
+        }
+    }
+
+    public class SpawnItemEvent : Event
+    {
+        public Pickup Pickup { get; }
+        public ItemType ItemId { get; set; }
+        public float Durability { get; set; }
+        public Player Owner { get; set; }
+        public Pickup.WeaponModifiers WeaponModifiers { get; set; }
+        public Vector3 Position { get; set; }
+        public Quaternion Rotation { get; set; }
+        public bool Allow { get; set; }
+
+        public SpawnItemEvent(Pickup pickup, ItemType id, float dur, GameObject ownr, Pickup.WeaponModifiers mods, Vector3 pos, Quaternion rot, bool allow)
+        {
+            Pickup = pickup;
+            ItemId = id;
+            Durability = dur;
+            Owner = ownr?.GetPlayer();
+            WeaponModifiers = mods;
+            Position = pos;
+            Rotation = rot;
+            Allow = allow;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((SpawnItemEventHandler)handler).OnSpawnItem(this);
         }
     }
 }

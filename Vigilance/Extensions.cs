@@ -299,6 +299,7 @@ namespace Vigilance.Extensions
 				return false;
 		}
 
+		public static Vector3 FindLookRotation(this Vector3 player, Vector3 target) => (target - player).normalized;
 		public static bool IsSteam(this UserIdType idType) => idType != UserIdType.Discord && idType != UserIdType.Unspecified;
 	}
 
@@ -389,32 +390,18 @@ namespace Vigilance.Extensions
 	{
 		public static string GetWords(this string[] array)
 		{
-			string str = "";
-			foreach (string s in array.SkipCommand())
-			{
-				if (s == array[0])
-					str += s;
-				else
-					str += $" {s}";
-			}
-			return str;
+			return array.SkipCommand().Combine();
 		}
 
 		public static string SkipWords(this string[] array, int amount)
 		{
-			string str = "";
-			foreach (string s in array.Skip(amount))
-			{
-				if (s == array[amount - 1])
-					str += s;
-				else
-					str += $" {s}";
-			}
-			return str;
+			return array.Skip(amount).ToArray().Combine();
 		}
 
 		public static string DiscordSanitize(this string str)
 		{
+			if (string.IsNullOrEmpty(str))
+				return "";
 			return str.Replace('@', ' ').Replace('_', ' ').Replace('*', ' ').Replace('<', ' ').Replace('`', ' ').Replace('>', ' ');
 		}
 
@@ -460,15 +447,7 @@ namespace Vigilance.Extensions
 
 		public static string Combine(this string[] array)
 		{
-			string str = "";
-			foreach (string s in array)
-			{
-				if (s == array[0])
-					str += s;
-				else
-					str += $" {s}";
-			}
-			return str;
+			return string.Join(" ", array);
 		}
 
 		public static string[] ToStringArray(this char[] arr)

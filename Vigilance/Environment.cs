@@ -165,7 +165,7 @@ namespace Vigilance
                         command += $" {arg}";
                 }
                 ConsoleCommandEvent ev = new ConsoleCommandEvent(command, ply, all);
-                EventManager.Trigger<ConsoleCommandHandler>(ev);
+                EventManager.Trigger<Vigilance.EventHandlers.ConsoleCommandHandler>(ev);
                 reply = ev.Reply;
                 color = ev.Color.ToLower();
                 allow = ev.Allow;
@@ -1192,6 +1192,48 @@ namespace Vigilance
             {
                 Log.Add("Environment", e);
                 hitInfo = info;
+                allow = all;
+            }
+        }
+
+        public static void OnScp096AddTarget(GameObject target, bool all, out bool allow)
+        {
+            try
+            {
+                Scp096AddTargetEvent ev = new Scp096AddTargetEvent(target, all);
+                EventManager.Trigger<Scp096AddTargetHandler>(ev);
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment", e);
+                allow = all;
+            }
+        }
+
+        public static void OnSpawnItem(Pickup pickup, ItemType id, float dur, GameObject ownr, Pickup.WeaponModifiers mods, Vector3 pos, Quaternion rot, bool all, out ItemType itemId, out float durability, out GameObject owner, out Pickup.WeaponModifiers modifiers, out Vector3 position, out Quaternion rotation, out bool allow)
+        {
+            try
+            {
+                SpawnItemEvent ev = new SpawnItemEvent(pickup, id, dur, ownr, mods, pos, rot, all);
+                EventManager.Trigger<SpawnItemEventHandler>(ev);
+                itemId = ev.ItemId;
+                durability = ev.Durability;
+                owner = ev.Owner.GameObject;
+                modifiers = ev.WeaponModifiers;
+                position = ev.Position;
+                rotation = ev.Rotation;
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment", e);
+                itemId = id;
+                durability = dur;
+                owner = ownr;
+                modifiers = mods;
+                position = pos;
+                rotation = rot;
                 allow = all;
             }
         }

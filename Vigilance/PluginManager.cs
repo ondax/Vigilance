@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using CommandSystem.Commands;
 using Harmony;
+using MEC;
+using Mirror;
+using Vigilance.Extensions;
 
 namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.0.9";
+        public static string Version => "5.1.1";
         public static Dictionary<Plugin, Assembly> Plugins => _plugins;
         public static List<Assembly> Dependencies => _dependencies;
         public static YamlConfig Config => _config;
@@ -49,6 +54,7 @@ namespace Vigilance
                     Log.Add("PluginManager", e);
                 }
                 CustomNetworkManager.Modded = _config.GetBool("mark_as_modded", true);
+                BuildInfoCommand.ModDescription = $"Vigilance v{Version} -> a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance v{Version}!", LogType.Info);
             }
             catch (Exception e)

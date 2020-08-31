@@ -90,7 +90,7 @@ namespace Vigilance
             {
                 if (!IsEnabled)
                     return false;
-                if (APIKey.IsEmpty())
+                if (APIKey.IsEmpty() || APIKey.ToLower() == "none")
                     return false;
                 string ipAddress = player.IpAddress.Replace("::ffff:", "");
                 HttpWebResponse response = null;

@@ -371,4 +371,14 @@ namespace Vigilance.EventHandlers
     {
         void OnItemDropped(DroppedItemEvent ev);
     }
+
+    public interface Scp096AddTargetHandler : EventHandler
+    {
+        void OnScp096AddTarget(Scp096AddTargetEvent ev);
+    }
+
+    public interface SpawnItemEventHandler : EventHandler
+    {
+        void OnSpawnItem(SpawnItemEvent ev);
+    }
 }

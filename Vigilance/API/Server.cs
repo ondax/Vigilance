@@ -190,6 +190,7 @@ namespace Vigilance.API
             public static Dictionary<GameObject, Player> PlayersDict { get; set; } = new Dictionary<GameObject, Player>();
             public static Dictionary<string, Player> UserIdCache { get; set; } = new Dictionary<string, Player>();
             public static Dictionary<int, Player> PlayerIdCache { get; set; } = new Dictionary<int, Player>();
+            public static Dictionary<string, List<int>> TargetGhosts { get; set; } = new Dictionary<string, List<int>>();
             public static Player Local { get; set; } = new Player(ReferenceHub.LocalHub);
             public static Player Host { get; set; } = new Player(ReferenceHub.HostHub);
 
@@ -199,6 +200,7 @@ namespace Vigilance.API
                 PlayersDict.Clear();
                 UserIdCache.Clear();
                 PlayerIdCache.Clear();
+                TargetGhosts.Clear();
             }
 
             public static void Add(Player player)
@@ -211,6 +213,7 @@ namespace Vigilance.API
                 PlayersDict.Add(player.GameObject, player);
                 UserIdCache.Add(player.UserId, player);
                 PlayerIdCache.Add(player.PlayerId, player);
+                TargetGhosts.Add(player.UserId, new List<int>());
             }
 
             public static void Remove(Player player)
@@ -223,6 +226,7 @@ namespace Vigilance.API
                 PlayersDict.Remove(player.GameObject);
                 UserIdCache.Remove(player.UserId);
                 PlayerIdCache.Remove(player.PlayerId);
+                TargetGhosts.Remove(player.UserId);
             }
 
             public static bool Contains(Player player)

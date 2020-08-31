@@ -12,6 +12,7 @@ namespace Vigilance.API
         private static RoundInfo _info;
         public static bool RoundLock { get => Server.RoundLock; set => Server.RoundLock = value; }
         public static bool LobbyLock { get => Server.LobbyLock; set => Server.LobbyLock = value; }
+        public static bool FriendlyFire { get => ServerConsole.FriendlyFire; set => ServerConsole.FriendlyFire = value; }
         public static RoundInfo Info
         {
             get

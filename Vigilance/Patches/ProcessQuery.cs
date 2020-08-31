@@ -2441,7 +2441,7 @@ namespace Vigilance.Patches
 						}
 						break;
 					case "VERSION":
-						sender.RaReply(query[0].ToUpper() + "#Server Version: " + CustomNetworkManager.CompatibleVersions[0] + " " + Application.buildGUID, success: true, logToConsole: true, "");
+						sender.RaReply(query[0].ToUpper() + $"#Server version: {Server.Version}\nBuildGUID: {Application.buildGUID}\nVigilance version: {PluginManager.Version}", success: true, logToConsole: true, "");
 						break;
 					case "RELOADCONFIG":
 						if (CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.ServerConfigs))
@@ -2510,7 +2510,7 @@ namespace Vigilance.Patches
     }
 
 	[HarmonyPatch(typeof(QueryProcessor), nameof(QueryProcessor.ProcessGameConsoleQuery))]
-	public static class ProcessConsoleQueryPatch
+	public static class ProcessGameConsoleQueryPatch
     {
 		public static bool Prefix(QueryProcessor __instance, string query, bool encrypted)
         {
@@ -2523,6 +2523,16 @@ namespace Vigilance.Patches
 					return false;
                 }
 				string[] array = query.Split(' ');
+				ConsoleCommandHandler handler = CommandManager.GetConsoleCommandHandler(array[0]);
+				if (handler != null)
+                {
+					string res = handler.Execute(__instance._hub.GetPlayer(), array.SkipCommand(), out string clr);
+					if (!string.IsNullOrEmpty(res))
+                    {
+						__instance.GCT.SendToClient(__instance.connectionToClient, res, clr.ToLower());
+						return false;
+                    }
+                }
 				if (QueryProcessor.DotCommandHandler.TryGetCommand(array[0], out ICommand command))
 				{
 					try

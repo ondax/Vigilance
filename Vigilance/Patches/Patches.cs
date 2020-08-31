@@ -71,8 +71,11 @@ namespace Vigilance.Patches
                     return false;
                 string cassieUnitName = __instance.GetCassieUnitName(regular);
                 int num = Server.Players.Where(p => p.IsSCP).Count();
+                string[] args = cassieUnitName.Replace("-", " ").Split(' ');
+                string u = args[0];
+                int n = int.Parse(args[1]);
                 StringBuilder stringBuilder = StringBuilderPool.Shared.Rent();
-                Environment.OnAnnounceNTFEntrace(num, cassieUnitName, int.Parse(cassieUnitName.Split('-')[1]), true, out int scps, out string unit, out int number, out bool allow);
+                Environment.OnAnnounceNTFEntrace(num, u, n, true, out num, out string unit, out int number, out bool allow);
                 cassieUnitName = $"{unit}-{number}";
                 if (!allow)
                     return false;
@@ -157,6 +160,34 @@ namespace Vigilance.Patches
             catch (Exception e)
             {
                 Log.Add("NineTailedFoxAnnouncer", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.Start))]
+    public static class PreventDeconPatch
+    {
+        public static bool Prefix(DecontaminationController __instance)
+        {
+            try
+            {
+                if (DecontaminationPatch.DecontDisabled)
+                {
+                    __instance.NetworkRoundStartTime = -1.0;
+                    __instance._stopUpdating = true;
+                    return false;
+                }
+                __instance._disableDecontamination = ConfigFile.ServerConfig.GetBool("disable_decontamination");
+                for (int i = 0; i < __instance.DecontaminationPhases.Length; i++)
+                {
+                    __instance.DecontaminationPhases[i].TimeTrigger *= 60f;
+                }
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("DecontaminationController", e);
                 return true;
             }
         }
@@ -2111,7 +2142,7 @@ namespace Vigilance.Patches
             {
                 if (Vector3.Distance(__instance.transform.position, player.playerMovementSync.RealModelPosition) < __instance.sizeOfTrigger)
                 {
-                    if (PluginManager.Config.GetRoles("tesla_triggerable_roles").Contains(player.characterClassManager.CurClass) && !GatesDisabled)
+                    if (PluginManager.Config.GetRoles("tesla_triggerable_roles").Contains(player.characterClassManager.CurClass) && !GatesDisabled && !player.characterClassManager.GodMode)
                     {
                         Environment.OnTriggerTesla(player.gameObject, __instance, true, out bool allow);
                         return allow;
@@ -3572,6 +3603,70 @@ namespace Vigilance.Patches
             catch (Exception e)
             {
                 Log.Add("CharacterClassManager", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Scp096), nameof(Scp096.AddTarget))]
+    public static class AddTargetPatch
+    { 
+        public static bool Prefix(Scp096 __instance, GameObject target)
+        {
+            try
+            {
+                if (!NetworkServer.active)
+                    throw new InvalidOperationException("Called AddTarget from client.");
+                ReferenceHub hub = ReferenceHub.GetHub(target);
+                if (!Scp096Properties.CanTutorialTriggerScp096 && hub.characterClassManager.CurClass == RoleType.Tutorial)
+                    return false;
+                Environment.OnScp096AddTarget(target, true, out bool allow);
+                if (!allow)
+                    return false;
+                if (__instance.CanReceiveTargets && !(hub == null) && !__instance._targets.Contains(hub))
+                {
+                    if (!__instance._targets.IsEmpty() && Scp096Properties.AddEnrageTimeWhenLooked)
+                        __instance.AddReset();
+                    __instance._targets.Add(hub);
+                    __instance.AdjustShield(Scp096Properties.ShieldPerPlayer);
+                }
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Scp096", e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Pickup), nameof(Pickup.SetupPickup))]
+    public static class SpawnItemPatch
+    {
+        public static bool Prefix(Pickup __instance, ItemType itemId, float durability, GameObject ownerPlayer, Pickup.WeaponModifiers mods, Vector3 pickupPosition, Quaternion pickupRotation)
+        {
+            try
+            {
+                ReferenceHub owner = ReferenceHub.GetHub(ownerPlayer) == null ? ReferenceHub.LocalHub : ReferenceHub.GetHub(ownerPlayer);
+                Environment.OnSpawnItem(__instance, itemId, durability, owner.gameObject, mods, pickupPosition, pickupRotation, true, out itemId, out durability, out ownerPlayer, out mods,
+                 out pickupPosition, out pickupRotation, out bool allow);
+                if (!allow)
+                    return false;
+                __instance.NetworkitemId = itemId;
+                __instance.Networkdurability = durability;
+                __instance.ownerPlayer = ownerPlayer;
+                __instance.NetworkweaponMods = mods;
+                __instance.Networkposition = pickupPosition;
+                __instance.Networkrotation = pickupRotation;
+                __instance.transform.position = pickupPosition;
+                __instance.transform.rotation = pickupRotation;
+                __instance.RefreshModel();
+                __instance.UpdatePosition();
+                return false;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Pickup", e);
                 return true;
             }
         }

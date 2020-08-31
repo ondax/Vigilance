@@ -24,15 +24,27 @@ namespace Vigilance.API
         public bool GodMode { get => _hub.characterClassManager.GodMode; set => _hub.characterClassManager.GodMode = value; }
         public int Health { get => (int)_hub.playerStats.Health; set => _hub.playerStats.SetHPAmount(value); }
         public int PlayerId { get => _hub.queryProcessor.PlayerId; set => _hub.queryProcessor.NetworkPlayerId = value; }
-        public string RankName { get => _hub.serverRoles.Group.BadgeText; set => _hub.serverRoles.SetText(value); }
-        public string RankColor { get => _hub.serverRoles.Group.BadgeColor; set => _hub.serverRoles.SetColor(value.ToLower()); }
-        public UserGroup UserGroup { get => _hub.serverRoles.Group; set => _hub.serverRoles.SetGroup(value, false); }
-        public string IpAddress { get => _hub.queryProcessor._ipAddress; set => _hub.queryProcessor._ipAddress = value; }
-        public bool IsInPocketDimension 
+        public string RankName
         {
             get
             {
-                if (Vector3.Distance(Position, Map.PocketDimension) < 5f || Position.y == Map.PocketDimension.y)
+                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local") || _hub.serverRoles.Group == null || _hub.serverRoles.Group.BadgeText.IsEmpty())
+                    return "Local";
+                return _hub.serverRoles.Group.BadgeText;
+            }
+            set
+            {
+                _hub.serverRoles.SetText(value);
+            }
+        }
+        public string RankColor { get => _hub.serverRoles.Group.BadgeColor; set => _hub.serverRoles.SetColor(value.ToLower()); }
+        public UserGroup UserGroup { get => _hub.serverRoles.Group; set => _hub.serverRoles.SetGroup(value, false); }
+        public string IpAddress { get => _hub.queryProcessor._ipAddress; set => _hub.queryProcessor._ipAddress = value; }
+        public bool IsInPocketDimension
+        {
+            get
+            {
+                if (Vector3.Distance(Position, Map.PocketDimension) < 100f || Vector3.Distance(new Vector3(0f, Position.y, 0f), Map.PocketDimension) < 100f || Map.PocketDimension.y == Position.y)
                     return true;
                 else
                     return false;
@@ -42,7 +54,12 @@ namespace Vigilance.API
                 if (value)
                     Teleport(Map.PocketDimension);
                 else
-                    Teleport(Map.GetRandomSpawnpoint(RoleType.ClassD));
+                {
+                    System.Random random = new System.Random();
+                    int rnd = random.Next(Map.Rooms.Count);
+                    Vector3 pos = Map.Rooms[rnd].Position;
+                    Teleport(pos);
+                }
             }
         }
         public PlayerCommandSender PlayerCommandSender => _hub.queryProcessor._sender;
@@ -65,13 +82,16 @@ namespace Vigilance.API
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
+        public bool IsFriendlyFireEnabled { get; set; }
+        public bool IsUsingStamina { get; set; } = true;
+        public bool IsInvisible { get; set; } = false;
         public ItemType ItemInHand { get => _hub.inventory.curItem; set => _hub.inventory.SetCurItem(value); }
         public int MaxHealth { get => _hub.playerStats.maxHP; set => _hub.playerStats.maxHP = value; }
         public string Nick { get => _hub.nicknameSync.Network_myNickSync; set => _hub.nicknameSync.Network_myNickSync = value; }
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
         public bool NoClip { get => _hub.characterClassManager.NetworkNoclipEnabled; set => _hub.characterClassManager.NetworkNoclipEnabled = value; }
-        public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.eulerAngles.magnitude); }
-        public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false);  }
+        public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
+        public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; set => _hub.characterClassManager.AuthTokenSerial = value; }
         public string UserId { get => _hub.characterClassManager.UserId; set => _hub.characterClassManager.UserId = value; }
         public string CustomUserId { get => _hub.characterClassManager.UserId2; set => _hub.characterClassManager.UserId2 = value; }
@@ -93,7 +113,15 @@ namespace Vigilance.API
         public bool IsNTF => Team == TeamType.NineTailedFox;
         public TeamType Team => Role.GetTeam();
 
-        public string ParsedUserId => UserId.Substring(0, UserId.LastIndexOf('@'));
+        public string ParsedUserId
+        {
+            get
+            {
+                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
+                    return "Local";
+                return UserId.Substring(0, UserId.LastIndexOf('@'));
+            }
+        }
 
         public UserIdType UserIdType
         {
@@ -101,22 +129,15 @@ namespace Vigilance.API
             {
                 if (string.IsNullOrEmpty(UserId))
                     return UserIdType.Unspecified;
-                int index = UserId.LastIndexOf('@');
-                if (index == -1)
-                    return UserIdType.Unspecified;
-                switch (UserId.Substring(index))
-                {
-                    case "steam":
-                        return UserIdType.Steam;
-                    case "discord":
-                        return UserIdType.Discord;
-                    case "northwood":
-                        return UserIdType.Northwood;
-                    case "patreon":
-                        return UserIdType.Patreon;
-                    default:
-                        return UserIdType.Unspecified;
-                }
+                if (UserId.Contains("@steam"))
+                    return UserIdType.Steam;
+                if (UserId.Contains("@discord"))
+                    return UserIdType.Discord;
+                if (UserId.Contains("@northwood"))
+                    return UserIdType.Northwood;
+                if (UserId.Contains("@patreon"))
+                    return UserIdType.Patreon;
+                return UserIdType.Unspecified;
             }
         }
 
@@ -154,7 +175,7 @@ namespace Vigilance.API
         public void RemoteAdminMessage(string message) => _hub.queryProcessor._sender.SendRemoteAdminMessage(message);
         public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "Server", DamageTypes.None, 0), this.GameObject);
         public void Kill() => Damage(100000);
-        public void Teleport(Vector3 pos) => _hub.playerMovementSync.OverridePosition(pos, _hub.PlayerCameraReference.position.magnitude);
+        public void Teleport(Vector3 pos) => _hub.playerMovementSync.OverridePosition(pos, _hub.PlayerCameraReference.rotation.y);
         public void Teleport(RoomType room) => Teleport(Map.GetRoom(room).Position);
         public void Teleport(string roomName) => Teleport(Map.GetRoom(roomName).Position);
         public void BlinkTag() => Timing.RunCoroutine(blinkTag());
@@ -287,6 +308,6 @@ namespace Vigilance.API
             yield return Timing.WaitForOneFrame;
             BadgeHidden = !BadgeHidden;
         }
-        public override string ToString() => $"N: {this.Nick};UID: {this.ParsedUserId};PID: {this.PlayerId};R: {this.Role}";
+        public override string ToString() => $"[{PlayerId}] {Nick} [{ParsedUserId}] [{Role.GetName()}]";
     }
 }
