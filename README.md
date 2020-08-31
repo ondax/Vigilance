@@ -3,10 +3,6 @@ Vigilance is a plugin loader and an API for the Megapatch 2 and Scopophobia upda
 For how to use/configure Vigilance, go to the [wiki](https://github.com/DrGaster17/Vigilance/wiki/Vigilance-%7C-Home)
 The latest release can be found here: [Release link](https://github.com/DrGaster17/Vigilance/releases)
 
-## Vigilance Installation:
-
-**For how to install Vigilance, please go to the [Installation](https://github.com/DrGaster17/Vigilance/wiki/Vigilance-%7C-Server-installation-guide) page of the Wiki.**
-
 ## Config Additions
 
 Vigilance adds a lot of new config entries so you can customize it's built-in features. They are added to the normal server config just like the vanilla config entries.
