@@ -48,26 +48,11 @@ namespace Vigilance
             RegisterCommand(new GhostCommand());
             RegisterCommand(new TargetGhostCommand());
             RegisterCommand(new CommandSpawnPrefab());
+            RegisterCommand(new CommandExplode());
+            RegisterCommand(new CommandDecontaminate());
 
             RegisterGameCommand(new UnbanCommand());
             RegisterGameCommand(new OfflineBanCommand());
-        }
-
-        public static bool CallGameCommand(string query, CommandSender sender, out string reply)
-        {
-            try
-            {
-                string command = query.Split(' ')[0].ToUpper();
-                GameCommandHandler handler = GetGameCommandHandler(command);
-                reply = handler == null ? "SERVER#Unknown command!" : $"SERVER#{handler.Execute(sender.GetPlayer(), query.Split(' ').SkipCommand())}";
-                return handler == null ? false : true;
-            }
-            catch (Exception e)
-            {
-                Log.Add("CommandManager", e);
-                reply = $"An error occured!\nStacktrace:\n {e.StackTrace}";
-                return false;
-            }
         }
 
         public static CommandHandler GetCommandHandler(string command)
@@ -115,21 +100,6 @@ namespace Vigilance
             return null;
         }
 
-        public static string CallCommand(string query, CommandSender sender)
-        {
-            try
-            {
-                string command = query.Split(' ')[0].ToUpper();
-                CommandHandler handler = GetCommandHandler(command);
-                return handler == null ? "SERVER#Unknown command!" : $"SERVER#{handler.Execute(sender.GetPlayer(), query.Split(' ').SkipCommand())}";
-            }
-            catch (Exception e)
-            {
-                Log.Add("CommandManager", e);
-                return $"SERVER#An error occured!\nStacktrace: \n{e.StackTrace}";
-            }
-        }
-
         public static string[] GetAliases(string str)
         {
             return str.Split(' ');
@@ -152,6 +122,7 @@ namespace Vigilance
 
         public static void RegisterCommand(CommandHandler handler) => _commands.Add(handler);
         public static void RegisterGameCommand(GameCommandHandler handler) => _gameCommands.Add(handler);
+        public static void RegisterConsoleCommand(ConsoleCommandHandler handler) => _consoleCommands.Add(handler);
     }
 
     public interface CommandHandler

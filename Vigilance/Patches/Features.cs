@@ -35,7 +35,6 @@ namespace Vigilance.Patches
 				{
 					return false;
 				}
-
 				__instance.cooldown = 1f;
 				__instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(65f, __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp939, __instance.GetComponent<QueryProcessor>().PlayerId), target, false);
 				__instance._hub.characterClassManager.RpcPlaceBlood(target.transform.position, 0, 2f);
@@ -72,25 +71,39 @@ namespace Vigilance.Patches
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.ParseVisionInformation))]
 	public static class Scp096TriggerPatch
 	{
-		public static List<Player> CannotTrigger096 { get; set; } = new List<Player>();
+		public static List<string> CannotTrigger096 { get; set; } = new List<string>();
+		public static VisionInformation LastVision { get; set; }
 
 		public static bool Prefix(Scp096 __instance, VisionInformation info)
 		{
 			try
 			{
+				if (__instance == null || info == null || info.Source == null || info.Target == null || info.RaycastResult.transform == null || info.RaycastResult.transform.gameObject == null)
+					return false;
 				PlayableScpsController playableScpsController = info.RaycastResult.transform.gameObject.GetComponent<PlayableScpsController>();
+				if (playableScpsController == null)
+					return false;
 				if (!info.Looking || !info.RaycastHit || playableScpsController == null || playableScpsController.CurrentScp == null || playableScpsController.CurrentScp != __instance)
 					return false;
 				CharacterClassManager ccm = info.Source.GetComponent<CharacterClassManager>();
+				if (ccm == null)
+					return false;
 				QueryProcessor qp = info.Source.GetComponent<QueryProcessor>();
-				Player player = info.Source.GetPlayer();
-				if (ccm == null || qp == null || player == null || CannotTrigger096.Contains(player) || (!PluginManager.Config.GetBool("can_tutorial_trigger_scp096", true) && ccm.CurClass == RoleType.Tutorial))
+				if (qp == null)
+					return false;
+				Player player = ccm.GetPlayer();
+				if (player == null)
+					return false;
+				if (CannotTrigger096.Contains(player.UserId))
+					return false;
+				if (!Scp096Properties.CanTutorialTriggerScp096 && player.Role == RoleType.Tutorial)
 					return false;
 				float delay = (1f - info.DotProduct) / 0.25f * (Vector3.Distance(info.Source.transform.position, info.Target.transform.position) * 0.1f);
 				if (!__instance.Calming)
 					__instance.AddTarget(info.Source);
 				if (__instance.CanEnrage && info.Source != null)
 					__instance.PreWindup(delay);
+				LastVision = info;
 				return false;
 			}
 			catch (Exception e)
@@ -265,6 +278,8 @@ namespace Vigilance.Patches
 			{
 				if (Scp096Properties.Scp096VisionParticles)
 					__instance._targetParticles.SetActive(value);
+				else
+					__instance._targetParticles.SetActive(false);
 				__instance._isTarget = value;
 				return false;
 			}
@@ -326,7 +341,7 @@ namespace Vigilance.Patches
 				{
 					Scp173PlayerScript component = player.GetComponent<Scp173PlayerScript>();
 					Player ply = player.GetPlayer();
-					if (ply.Role == RoleType.Tutorial && !PluginManager.Config.GetBool("can_tutorial_block_scp173", true))
+					if (ply != null && ply.Role == RoleType.Tutorial && !PluginManager.Config.GetBool("can_tutorial_block_scp173", true))
 					{
 						__instance.AllowMove = true;
 						return false;
@@ -342,6 +357,80 @@ namespace Vigilance.Patches
 			catch (Exception e)
             {
 				Log.Add("Scp096", e);
+				return true;
+            }
+		}
+    }
+
+	[HarmonyPatch(typeof(Lift), nameof(Lift.UseLift))]
+	public static class ElevatorMovementSpeedPatch
+	{
+		public static int MovingSpeed { get; set; } = PluginManager.Config.GetInt("elevator_moving_speed", 5);
+
+		public static void Prefix(Lift __instance)
+		{
+			__instance.movingSpeed = MovingSpeed;
+		}
+	}
+
+	[HarmonyPatch(typeof(Radio), nameof(Radio.UseBattery))]
+	public static class RadioUnlimitedBatteryPatch
+	{
+		public static bool UnlimitedBattery { get; set; } = PluginManager.Config.GetBool("unlimited_radio_battery", false);
+
+		public static bool Prefix(Radio __instance)
+		{
+			if (UnlimitedBattery)
+				return false;
+			else
+				return true;
+		}
+	}
+
+	[HarmonyPatch(typeof(Intercom), nameof(Intercom.UpdateText))]
+	public static class CustomTextPatch
+    {
+		public static GameObject LastSpeaker { get; set; }
+
+		public static bool Prefix(Intercom __instance)
+        {
+			try
+			{
+				if (!string.IsNullOrEmpty(__instance.CustomContent))
+					__instance._content = __instance.CustomContent;
+				else if (__instance.Muted)
+					__instance._content = Map.Intercom.Settings.MutedText;
+				else if (Intercom.AdminSpeaking)
+					__instance._content = Map.Intercom.Settings.AdminSpeakingText;
+				else if (__instance.remainingCooldown > 0f)
+					__instance._content = Map.Intercom.Settings.RestartingText;
+				else if (__instance.Networkspeaker != null)
+				{
+					LastSpeaker = __instance.ccm.gameObject;
+					if (__instance.speechRemainingTime == -77f)
+						__instance._content = Map.Intercom.Settings.TransmittingBypassModeText;
+					else
+						__instance._content = Map.Intercom.Settings.TransmittingText;
+				}
+				else
+					__instance._content = Map.Intercom.Settings.ReadyText;
+
+				if (__instance._contentDirty)
+				{
+					__instance.NetworkintercomText = __instance._content;
+					__instance._contentDirty = false;
+				}
+
+				if (Intercom.AdminSpeaking != Intercom.LastState)
+				{
+					Intercom.LastState = Intercom.AdminSpeaking;
+					__instance.RpcUpdateAdminStatus(Intercom.AdminSpeaking);
+				}
+				return false;
+			}
+			catch (Exception e)
+            {
+				Log.Add("Intercom", e);
 				return true;
             }
 		}

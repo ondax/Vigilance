@@ -131,7 +131,8 @@ namespace Vigilance.Patches
             {
                 if (AnnounceNTFEntrancePatch.CassieDisabled)
                     return false;
-                Environment.OnAnnounceSCPTermination(hit.GetAttacker().GameObject, scp, hit, hit.Attacker, true, out bool allow);
+                Player attacker = hit.GetAttacker();
+                Environment.OnAnnounceSCPTermination(attacker == null ? Server.PlayerList.Local.GameObject : attacker.GameObject, scp, hit, hit.Attacker, true, out bool allow);
                 if (!allow)
                     return false;
                 NineTailedFoxAnnouncer.singleton.scpListTimer = 0f;
@@ -165,23 +166,24 @@ namespace Vigilance.Patches
         }
     }
 
-    [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.Start))]
+    [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.ServersideSetup))]
     public static class PreventDeconPatch
     {
         public static bool Prefix(DecontaminationController __instance)
         {
             try
             {
-                if (DecontaminationPatch.DecontDisabled)
+                if (__instance.RoundStartTime == 0.0)
                 {
-                    __instance.NetworkRoundStartTime = -1.0;
-                    __instance._stopUpdating = true;
-                    return false;
-                }
-                __instance._disableDecontamination = ConfigFile.ServerConfig.GetBool("disable_decontamination");
-                for (int i = 0; i < __instance.DecontaminationPhases.Length; i++)
-                {
-                    __instance.DecontaminationPhases[i].TimeTrigger *= 60f;
+                    if (__instance._disableDecontamination || DecontaminationPatch.DecontDisabled)
+                    {
+                        __instance.NetworkRoundStartTime = -1.0;
+                        __instance._stopUpdating = true;
+                    }
+                    else if (RoundStart.singleton.Timer == -1)
+                    {
+                        __instance.NetworkRoundStartTime = NetworkTime.time;
+                    }
                 }
                 return false;
             }
@@ -342,7 +344,7 @@ namespace Vigilance.Patches
                 string address = user.GetComponent<NetworkIdentity>().connectionToClient.address;
                 Player targetPlayer = user.GetPlayer();
                 Player issuerPlayer = issuer.GetPlayer();
-                reason = reason.GetBanReason();
+                reason = string.IsNullOrEmpty(reason) ? "No reason provided." : reason;
                 try
                 {
                     if (ConfigFile.ServerConfig.GetBool("online_mode", false))
@@ -365,7 +367,7 @@ namespace Vigilance.Patches
                         string originalName = string.IsNullOrEmpty(targetPlayer.Nick) ? "(no nick)" : targetPlayer.Nick;
                         long issuanceTime = TimeBehaviour.CurrentTimestamp();
                         long banExpieryTime = TimeBehaviour.GetBanExpieryTime((uint)duration);
-                        Environment.OnBan(issuerPlayer.GameObject, targetPlayer.GameObject, reason.GetBanReason(), issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
+                        Environment.OnBan(issuerPlayer.GameObject, targetPlayer.GameObject, reason, issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
                         if (!allow)
                             return false;
                         try
@@ -647,6 +649,8 @@ namespace Vigilance.Patches
                 GameObject attacker = __instance.gameObject ?? ReferenceHub.LocalHub.gameObject;
                 GameObject target = go ?? ReferenceHub.LocalHub.gameObject;
                 Environment.OnHurt(target, attacker, info, true, out info, out bool allow);
+                if (!allow)
+                    return false;
                 bool flag4 = !noTeamDamage && info.IsPlayer && referenceHub != info.RHub && referenceHub.characterClassManager.Fraction == info.RHub.characterClassManager.Fraction;
                 if (flag4)
                 {
@@ -793,6 +797,8 @@ namespace Vigilance.Patches
                     bool flag6 = info.IsPlayer && referenceHub == info.RHub;
                     flag2 = flag4;
                     Environment.OnPlayerDie(attacker, target, info, true, out info, out bool allow2);
+                    if (!allow2)
+                        return false;
                     if (flag6)
                     {
                         ServerLogs.AddLog(ServerLogs.Modules.ClassChange, string.Concat(new string[]
@@ -1615,14 +1621,14 @@ namespace Vigilance.Patches
                     Debug.LogWarning("[Server] function 'System.Void NicknameSync::SetNick(System.String)' called on client");
                     return false;
                 }
+                __instance.MyNick = nick;
+                if (__instance.isLocalPlayer && ServerStatic.IsDedicated || __instance == null || string.IsNullOrEmpty(nick))
+                    return false;
                 if (!Server.PlayerList.PlayersDict.TryGetValue(__instance.hub.gameObject, out Player player))
                 {
                     player = new Player(ReferenceHub.GetHub(__instance.gameObject));
                     Server.PlayerList.Add(player);
                 }
-                __instance.MyNick = nick;
-                if (__instance.isLocalPlayer && ServerStatic.IsDedicated || __instance == null || string.IsNullOrEmpty(nick))
-                    return false;
                 if (ServerGuard.SteamShield.CheckAccount(__instance.hub.GetPlayer()))
                     return false;
                 if (ServerGuard.VPNShield.CheckIP(__instance.hub.GetPlayer()))
@@ -1669,8 +1675,10 @@ namespace Vigilance.Patches
         {
             try
             {
+                Environment.OnPlayerLeave(__instance.gameObject, out bool destroy);
+                if (!destroy)
+                    return false;
                 Server.PlayerList.Remove(__instance.gameObject.GetPlayer());
-                Environment.OnPlayerLeave(__instance.gameObject);
                 ReferenceHub.Hubs.Remove(__instance.gameObject);
                 ReferenceHub.HubIds.Remove(__instance.queryProcessor.PlayerId);
 
@@ -2258,6 +2266,8 @@ namespace Vigilance.Patches
                                 return false;
                             }
                             if (referenceHub.characterClassManager.CurClass != RoleType.Spectator)
+                                return false;
+                            if (!PluginManager.Config.GetBool("scp049_can_revive_not_killed_by_049", true) && component.owner.DeathCause.GetDamageName() != "SCP-049")
                                 return false;
                             Environment.OnRecall(__instance.Hub.gameObject, component, true, out bool allow);
                             if (!allow)
@@ -2866,7 +2876,7 @@ namespace Vigilance.Patches
                     __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] You can't report yourself!", "red");
                     return false;
                 }
-                if (!reason.IsEmpty())
+                if (string.IsNullOrEmpty(reason))
                 {
                     __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] Please provide a valid report reason!", "red");
                     return false;
@@ -2901,7 +2911,7 @@ namespace Vigilance.Patches
                 string reportedNickname = referenceHub.nicknameSync.MyNick;
                 if (!notifyGm)
                 {
-                    Environment.OnLocalReport(reason.GetBanReason(), reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allo);
+                    Environment.OnLocalReport(reason, reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allo);
                     if (!allo)
                         return false;
                     Console.AddLog(string.Concat(new string[]
@@ -2939,7 +2949,7 @@ namespace Vigilance.Patches
                 }
                 __instance._lastReport = Time.time;
                 __instance._reportedPlayersAmount++;
-                Environment.OnGlobalReport(reason.GetBanReason(), reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allow);
+                Environment.OnGlobalReport(reason, reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allow);
                 if (!allow)
                     return false;
                 GameCore.Console.AddLog(string.Concat(new string[]
@@ -3026,10 +3036,12 @@ namespace Vigilance.Patches
                     {
                         if (referenceHub != null)
                         {
+                            Log.Add("RespawnManager", ex);
                             ServerLogs.AddLog(ServerLogs.Modules.ClassChange, "Player " + referenceHub.LoggedNameFromRefHub() + " couldn't be spawned. Err msg: " + ex.Message, ServerLogs.ServerLogType.GameEvent, false);
                         }
                         else
                         {
+                            Log.Add("RespawnManager", ex);
                             ServerLogs.AddLog(ServerLogs.Modules.ClassChange, "Couldn't spawn a player - target's ReferenceHub is null.", ServerLogs.ServerLogType.GameEvent, false);
                         }
                     }
@@ -3226,9 +3238,6 @@ namespace Vigilance.Patches
         }
     }
 
-
-    // Added in v5.0.8
-
     [HarmonyPatch(typeof(RoundSummary), nameof(RoundSummary.Start))]
     public static class RoundEndPatch
     {
@@ -3360,9 +3369,7 @@ namespace Vigilance.Patches
             {
                 if (instruction.opcode == OpCodes.Call)
                 {
-                    if (instruction.operand != null
-                        && instruction.operand is MethodBase methodBase
-                        && methodBase.Name != nameof(RoundSummary._ProcessServerSideCode))
+                    if (instruction.operand != null && instruction.operand is MethodBase methodBase && methodBase.Name != nameof(RoundSummary._ProcessServerSideCode))
                     {
                         yield return instruction;
                     }

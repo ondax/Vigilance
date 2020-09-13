@@ -4,7 +4,7 @@ using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
-using Mirror;
+using System;
 
 namespace Vigilance.Registered
 {
@@ -30,7 +30,7 @@ namespace Vigilance.Registered
 				ItemType item = ItemType.None;
 				foreach (Pickup pickup in Map.Pickups)
 				{
-					if ((int)pickup.ItemId == int.Parse(args[0]))
+					if (pickup.ItemId == args[0].GetItem())
 					{
 						pickup.Delete();
 						item = pickup.ItemId;
@@ -43,7 +43,7 @@ namespace Vigilance.Registered
 
 	public class CommandDropAll : CommandHandler
 	{
-		public string Usage => "Missing arguments!\nUsage: dropall <player/*>";
+		public string Usage => "Missing arguments!\nUsage: dropall <player>";
 
 		public string Command => "dropall";
 
@@ -54,7 +54,7 @@ namespace Vigilance.Registered
 			if (args.Length < 1)
 				return Usage;
 			Player player = args[0].GetPlayer();
-			player.Hub.inventory.ServerDropAll();
+			player.DropAllItems();
 			return $"Succesfully dropped all items for {player.Nick}";
 		}
 	}
@@ -71,13 +71,11 @@ namespace Vigilance.Registered
 		{
 			if (args.Length < 1)
 				return Usage;
-			if (!int.TryParse(args[0], out int id))
+			ItemType item = args[0].GetItem();
+			if (item == ItemType.None)
 				return "Please specify a valid ItemID!";
-			ItemType item = (ItemType)id;
 			foreach (Player player in Server.Players)
-			{
-				player.Hub.inventory.AddNewItem(item);
-			}
+				player.AddItem(item);
 			return $"Succesfully added a {item} to all players.";
 		}
 	}
@@ -92,10 +90,14 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
+			if (Server.Players.Count() == 0)
+				return "No players.";
 			string str = $"Players ({Server.Players.Count()}):\n";
-			foreach (Player player in Server.Players)
+			List<Player> plys = Server.Players.ToList();
+			IOrderedEnumerable<Player> players = plys.OrderBy(s => s.PlayerId);
+			foreach (Player player in players)
 			{
-				str += $"\n {player.ToString()}";
+				str += $"{player.ToString()}\n";
 			}
 			return str;
 		}
@@ -181,9 +183,7 @@ namespace Vigilance.Registered
         public string Execute(Player sender, string[] args)
 		{
 			foreach (Ragdoll ragdoll in Map.Ragdolls)
-			{
 				ragdoll.Delete();
-			}
 			return $"Succesfully deleted all ragdolls.";
 		}
 	}
@@ -234,9 +234,7 @@ namespace Vigilance.Registered
 			if (args[0].ToLower() == "*")
 			{
 				foreach (Player player in Server.Players)
-				{
 					Map.SpawnGrenade(player, GrenadeType.FragGrenade);
-				}
 				return $"Succesfully spawned a frag grenade at all players.";
 			}
 			Player player1 = args[0].GetPlayer();
@@ -260,9 +258,7 @@ namespace Vigilance.Registered
 			if (args[0] == "*")
 			{
 				foreach (Player player in Server.Players)
-				{
 					Map.SpawnGrenade(player, GrenadeType.FlashGrenade);
-				}
 				return "Succesfully spawned a flash grenade at all players.";
 			}
 			Player ply = args[0].GetPlayer();
@@ -286,9 +282,7 @@ namespace Vigilance.Registered
 			if (args[0] == "*")
 			{
 				foreach (Player player in Server.Players)
-				{
 					Map.SpawnGrenade(player, GrenadeType.Scp018);
-				}
 				return "Succesfully spawned a SCP-018 at all players.";
 			}
 			Player ply = args[0].GetPlayer();
@@ -316,9 +310,7 @@ namespace Vigilance.Registered
 			if (args[0] == "*")
 			{
 				foreach (Player player in Server.Players)
-				{
 					Map.SpawnRagdolls(player, role, amount);
-				}
 				return $"Succesfully spawned {amount} {(amount > 1 ? "ragdolls" : "ragdoll")} of {(RoleType)role} at all players.";
 			}
 			Player player1 = args[0].GetPlayer();
@@ -348,12 +340,12 @@ namespace Vigilance.Registered
 			{
 				foreach (Player player in Server.Players)
 				{
-					Map.SpawnDummyModel(player.Position, player.Hub.PlayerCameraReference.rotation, role, x, y, z);
+					Map.SpawnDummyModel(player.Position, player.RotationQuaternion, role, x, y, z);
 				}
 				return $"Succesfully spawned a dummy model of {role} at all players.";
 			}
 			Player ply = args[0].GetPlayer();
-			Map.SpawnDummyModel(ply.Position, ply.Hub.PlayerCameraReference.rotation, role, x, y, z);
+			Map.SpawnDummyModel(ply.Position, ply.RotationQuaternion, role, x, y, z);
 			return $"Succesfully spawned a dummy model of {role} at {ply.Nick}";
 		}
 	}
@@ -376,12 +368,12 @@ namespace Vigilance.Registered
 			{
 				foreach (Player player in Server.Players)
 				{
-					Map.SpawnWorkbench(player.Position, player.Hub.PlayerCameraReference.rotation.eulerAngles, new Vector3(x, y, z));
+					Prefab.WorkStation.Spawn(player.Position, player.RotationQuaternion, new Vector3(x, y, z));
 				}
 				return "Succesfully spawned a workbench at all players.";
 			}
 			Player ply = args[0].GetPlayer();
-			Map.SpawnWorkbench(ply.Position, ply.Hub.PlayerCameraReference.rotation.eulerAngles, new Vector3(x, y, z));
+			Prefab.WorkStation.Spawn(ply.Position, ply.RotationQuaternion, new Vector3(x, y, z));
 			return $"Succesfully spawned a workbench at {ply.Nick}";
 		}
 	}
@@ -404,11 +396,14 @@ namespace Vigilance.Registered
 			{
 				foreach (Player ply in Server.Players)
 				{
-					ply.Rocket(speed);
+					if (ply.IsAlive)
+						ply.Rocket(speed);
 				}
 				return $"Succesfully launched all players into space.";
 			}
 			Player player = args[0].GetPlayer();
+			if (!player.IsAlive)
+				return $"{player.Nick} is a spectator!";
 			player.Rocket(speed);
 			return $"Succesfully launched {player.Nick} into space";
 		}
@@ -432,12 +427,12 @@ namespace Vigilance.Registered
 			{
 				foreach (Player ply in Server.Players)
 				{
-					ply.SetPlayerScale(x, y, z);
+					ply.Scale = new Vector3(x, y, z);
 				}
 				return "Succesfully changed size of all players.";
 			}
 			Player player = args[0].GetPlayer();
-			player.SetPlayerScale(x, y, z);
+			player.Scale = new Vector3(x, y, z);
 			return $"Succesfully changed size of {player.Nick}";
 		}
 	}
@@ -457,7 +452,7 @@ namespace Vigilance.Registered
 			Player player = args[0].GetPlayer();
 			string unit = args.SkipWords(1);
 			player.NtfUnit = unit;
-			return $"Succesfully changed unit of {player.Nick}";
+			return $"Succesfully set unit of {player.Nick} to {player.NtfUnit}";
         }
     }
 
@@ -473,7 +468,6 @@ namespace Vigilance.Registered
 				return Usage;
 			string name = args[0];
 			string url = args[1];
-			sender.RemoteAdminMessage($"Starting download of \"{name}\" from \"{url}\"");
 			Paths.DownloadPlugin(url, name);
 			return $"Succesfully downloaded and loaded \"{name}\" from \"{url}\"";
 		}
@@ -491,7 +485,6 @@ namespace Vigilance.Registered
 				return Usage;
 			string name = args[0];
 			string url = args[1];
-			sender.RemoteAdminMessage($"Starting download of \"{name}\" from \"{url}\"");
 			Paths.DownloadDependency(url, name);
 			return $"Succesfully downloaded and loaded \"{name}\" from \"{url}\"";
 		}
@@ -630,9 +623,9 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
         {
-			if (args.Length < 1)
+			if (args.Length < 2)
 				return Usage;
-			if (args.Length == 1)
+			if (args.Length == 2)
             {
 				switch (args[0].ToLower())
                 {
@@ -650,7 +643,7 @@ namespace Vigilance.Registered
 						return "Please specify a valid operation! [get/set/add]";
                 }
             }
-			else
+			else if (args.Length == 3)
             {
 				Player player = args[1].GetPlayer();
 				switch (args[0].ToLower())
@@ -669,6 +662,10 @@ namespace Vigilance.Registered
 						return "Please specify a valid operation! [get/set/add]";
 				}
 			}
+			else
+            {
+				return Usage;
+            }
         }
 
 		public static Vector3 ParsePosition(string s)
@@ -745,33 +742,93 @@ namespace Vigilance.Registered
     {
 		public string Command => "spawnprefab";
 
-		public string Usage => "spawnprefab <X=Y=Z> <name>";
+		public string Usage => "spawnprefab <player/*> <scale [X=Y=Z]> <prefab name>";
 
 		public string Aliases => "sp";
 
-        public static GameObject FindPrefab(string name)
+        public string Execute(Player sender, string[] args)
         {
-			foreach (GameObject obj in NetworkManager.singleton.spawnPrefabs)
+			if (args.Length < 3)
+				return Usage;
+			Prefab prefab = args.SkipWords(2).GetPrefab();
+			if (prefab == Prefab.None)
+				return $"NetworkManager was unable to find a prefab with that name.";
+			Vector3 scale = CommandPos.ParsePosition(args[1]);
+			if (args[0].ToLower() == "all" || args[0] == "*")
             {
-				if (obj.name == name)
-					return obj;
+				foreach (Player ply in Server.Players)
+                {
+					if (ply.IsAlive)
+                    {
+						prefab.Spawn(ply.Position, ply.RotationQuaternion, scale);
+                    }
+                }
+				return $"Succesfully spawned {prefab} at all players.";
             }
-			return null;
+			else
+            {
+				Player player = args[0].GetPlayer();
+				if (player.IsAlive)
+				{
+					prefab.Spawn(player.Position, player.RotationQuaternion, scale);
+					return $"Succesfully spawned {prefab} at {player.Nick}";
+				}
+				else
+                {
+					return $"{player.Nick} is a spectator!";
+                }
+            }
         }
+    }
+
+    public class CommandExplode : CommandHandler
+    {
+        public string Command => "explode";
+
+		public string Usage => "explode <player/*> <force = 1>";
+
+		public string Aliases => "";
 
         public string Execute(Player sender, string[] args)
         {
-			if (args.Length < 2)
+			if (args.Length < 1)
 				return Usage;
-			GameObject toSpawn = FindPrefab(args.SkipWords(1));
-			if (toSpawn == null)
-				return $"Cannot find an object with name {args.Combine()}!\nValid names: Player, PlaybackLobby, Pickup, Work Station, Ragdoll_0, Ragdoll_1, Ragdoll_3, Ragdoll_4, Ragdoll_6, Ragdoll_7, Ragdoll_8, SCP-096_Ragdoll, Ragdoll_10, Ragdoll_14, Ragdoll_16, Ragdoll_17, Grenade Flash, Grenade Frag, Grenade SCP-018";
-			GameObject obj = Object.Instantiate(toSpawn);
-			obj.transform.localScale = CommandPos.ParsePosition(args[1]);
-			obj.transform.position = sender.Position;
-			obj.transform.rotation = sender.RotationQuaternion;
-			NetworkServer.Spawn(obj);
-			return $"Succesfully spawned {obj.name}";
+			float force;
+			if (!float.TryParse(args[1], out force))
+				force = 1f;
+			if (args[0] == "*")
+            {
+				foreach (Player player in Server.Players)
+                {
+					if (player.IsAlive)
+						player.Explode(force);
+                }
+				return $"Succesfully spawned an explosion at all players.";
+            }
+			else
+            {
+				Player player = args[0].GetPlayer();
+				if (player.IsAlive)
+				{
+					player.Explode(force);
+					return $"Succesfully spawned an explosion at {player.Nick}";
+				}
+				else
+					return $"{player.Nick} is a spectator!";
+            }
+        }
+    }
+
+    public class CommandDecontaminate : CommandHandler
+    {
+		public string Command => "decontaminate";
+		public string Usage => "";
+		public string Aliases => "decont startdecont";
+
+        public string Execute(Player sender, string[] args)
+        {
+			Map.Decontamination.Decontaminate();
+			return "Decontamination has begun.";
         }
     }
 }

@@ -15,13 +15,24 @@ namespace Vigilance.API
             Position = position;
             Zone = FindZone();
             Type = FindType(name);
+            Doors = FindDoors();
+            LightController = transform.GetComponentInChildren<FlickerableLightController>();
         }
         public string Name { get; }
         public Transform Transform { get; }
         public Vector3 Position { get; }
         public ZoneType Zone { get; }
         public RoomType Type { get; }
+        public List<Door> Doors { get; }
+        public FlickerableLightController LightController { get; }
         public IEnumerable<Player> Players => Server.Players.Where(player => player.CurrentRoom.Transform == Transform);
+
+        public void TurnOffLights(float duration)
+        {
+            if (LightController == null)
+                return;
+            LightController.ServerFlickerLights(duration);
+        }
 
         private ZoneType FindZone()
         {
@@ -144,6 +155,29 @@ namespace Vigilance.API
                 default:
                     return RoomType.Unknown;
             }
+        }
+
+        private List<Door> FindDoors()
+        {
+            List<Door> doorList = new List<Door>();
+            foreach (Scp079Interactable scp079Interactable in Interface079.singleton.allInteractables)
+            {
+                foreach (Scp079Interactable.ZoneAndRoom zoneAndRoom in scp079Interactable.currentZonesAndRooms)
+                {
+                    if (zoneAndRoom.currentRoom == Name && zoneAndRoom.currentZone == Transform.parent.name)
+                    {
+                        if (scp079Interactable.type == Scp079Interactable.InteractableType.Door)
+                        {
+                            Door door = scp079Interactable.GetComponent<Door>();
+                            if (door != null && !doorList.Contains(door))
+                            {
+                                doorList.Add(door);
+                            }
+                        }
+                    }
+                }
+            }
+            return doorList;
         }
     }
 }

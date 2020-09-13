@@ -101,7 +101,7 @@ namespace Vigilance.Patches
 								if (hub.queryProcessor.TryGetComponent(out component4) && (scp = (component4.CurrentScp as Scp096)) != null)
 								{
 									ServerLogs.AddLog(ServerLogs.Modules.Administrative, logName + " enraged SCP-096.", ServerLogs.ServerLogType.RemoteAdminActivity_GameChanging);
-									scp.Windup(force: true);
+									scp.Windup(true);
 								}
 							}
 							sender.RaReply(query[0].ToUpper() + "#Setting 096 into rage mode...", success: true, logToConsole: true, "");
@@ -1050,8 +1050,9 @@ namespace Vigilance.Patches
 										break;
 									}
 								default:
-									flag11 = false;
-									sender.RaReply(query[0].ToUpper() + "#Invalid config " + query[1], success: false, logToConsole: true, "ServerConfigs");
+									PluginManager.Config.SetString(query[1], query[2]);
+									ConfigFile.ServerConfig.SetString(query[1], query[2]);
+									sender.RaReply($"SETCONFIG#Key {query[1]} has been set to {query[2]}.", true, true, "");
 									break;
 							}
 							if (flag11)

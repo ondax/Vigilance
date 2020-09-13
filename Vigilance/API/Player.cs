@@ -79,6 +79,7 @@ namespace Vigilance.API
                     _hub.characterClassManager.CallCmdRequestShowTag(false);
             }
         }
+        public Class CurrentClass { get => CustomRoleBuilder.Build(Role); }
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
@@ -106,7 +107,8 @@ namespace Vigilance.API
         public int CufferId { get => _hub.handcuffs.NetworkCufferId; set => _hub.handcuffs.NetworkCufferId = value; }
         public bool IsCuffed => _hub.handcuffs.NetworkCufferId != -1;
         public bool IsReloading => _hub.weaponManager.IsReloading();
-        public bool IsZooming => _hub.weaponManager.ZoomInProgress();
+        public bool IsZooming { get => _hub.weaponManager.NetworksyncZoomed; set => _hub.weaponManager.NetworksyncZoomed = value; }
+        public bool IsFlashed { get => _hub.weaponManager.NetworksyncFlash; set => _hub.weaponManager.NetworksyncFlash = value; }
         public bool IsAlive => Role != RoleType.None && Role != RoleType.Spectator;
         public bool IsAnySCP => Team == TeamType.SCP;
         public bool IsSCP => Team == TeamType.SCP && Role != RoleType.Scp0492;
@@ -161,6 +163,36 @@ namespace Vigilance.API
             }
         }
 
+        public Vector3 Scale
+        {
+            get
+            {
+                return GameObject.transform.localScale;
+            }
+            set
+            {
+                try
+                {
+                    NetworkIdentity identity = GameObject.GetComponent<NetworkIdentity>();
+                    GameObject.transform.localScale = value;
+                    ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
+                    destroyMessage.netId = identity.netId;
+                    foreach (GameObject player in PlayerManager.players)
+                    {
+                        NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
+                        if (player != GameObject)
+                            playerCon.Send(destroyMessage, 0);
+                        object[] parameters = new object[] { identity, playerCon };
+                        typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Log.Add("Player", e);
+                }
+            }
+        }
+
         public void Ban(int duration) => Server.Ban(this, duration);
         public void Ban(int duration, string reason) => Server.Ban(this, duration, reason);
         public void Ban(int duration, string reason, string issuer) => Server.Ban(this, duration, reason, issuer);
@@ -184,6 +216,7 @@ namespace Vigilance.API
         public void ClearInventory() => _hub.inventory.Clear();
         public void AddItem(ItemType item) => _hub.inventory.AddNewItem(item);
         public void ResetInventory(List<Inventory.SyncItemInfo> newItems) => ResetInventory(newItems.Select(item => item.id).ToList());
+        public void DropAllItems() => Hub.inventory.ServerDropAll();
         public int GetAmmo(AmmoType ammoType) => (int)_hub.ammoBox[(int)ammoType];
 
         public void ShowHint(string message, float duration = 10f)
@@ -226,30 +259,6 @@ namespace Vigilance.API
             }
         }
 
-        public void SetPlayerScale(float x, float y, float z)
-        {
-            try
-            {
-                GameObject target = this.GameObject;
-                NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
-                target.transform.localScale = new Vector3(1 * x, 1 * y, 1 * z);
-                ObjectDestroyMessage destroyMessage = new ObjectDestroyMessage();
-                destroyMessage.netId = identity.netId;
-                foreach (GameObject player in PlayerManager.players)
-                {
-                    NetworkConnection playerCon = player.GetComponent<NetworkIdentity>().connectionToClient;
-                    if (player != target)
-                        playerCon.Send(destroyMessage, 0);
-                    object[] parameters = new object[] { identity, playerCon };
-                    typeof(NetworkServer).InvokeStaticMethod("SendSpawnMessage", parameters);
-                }
-            }
-            catch (System.Exception e)
-            {
-                Log.Add("Player", e);
-            }
-        }
-
         public void SetAmmo(Inventory.SyncItemInfo weapon, int ammo)
         {
             _hub.inventory.items.ModifyDuration(_hub.inventory.items.IndexOf(weapon), (float)ammo);
@@ -283,6 +292,14 @@ namespace Vigilance.API
             return Hub.ammoBox[(int)ammoType];
         }
 
+        public void Explode(float force)
+        {
+            for (int i = 0; i < force; i++)
+            {
+                Prefab.GrenadeFrag.Spawn(Position, RotationQuaternion, Vector3.one);
+            }
+        }
+
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
 
         private IEnumerator<float> DoRocket(Player player, float speed)
@@ -308,6 +325,6 @@ namespace Vigilance.API
             yield return Timing.WaitForOneFrame;
             BadgeHidden = !BadgeHidden;
         }
-        public override string ToString() => $"[{PlayerId}] {Nick} [{ParsedUserId}] [{Role.GetName()}]";
+        public override string ToString() => $"[{PlayerId}]: {Nick} [{ParsedUserId}] [{Role.ToString()}]";
     }
 }

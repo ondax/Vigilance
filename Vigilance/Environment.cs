@@ -9,11 +9,48 @@ using System.Collections.Generic;
 using Scp914;
 using Respawning;
 using System;
+using MEC;
 
 namespace Vigilance
 {
     public static class Environment
     {
+        public static List<CoroutineHandle> ActiveCoroutines { get; set; } = new List<CoroutineHandle>();
+
+        public static CoroutineHandle StartCoroutine(IEnumerator<float> handler, string name = "")
+        {
+            if (handler == null)
+                return default;
+            try
+            {
+                CoroutineHandle handle = Timing.RunCoroutine(handler, name);
+                ActiveCoroutines.Add(handle);
+                if (!string.IsNullOrEmpty(handle.Tag))
+                    Log.Add("Environment", $"Started coroutine \"{handle.Tag}\"", LogType.Debug);
+                return handle;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment", e);
+                return default;
+            }
+        }
+
+        public static void StopCoroutine(string name)
+        {
+            foreach (CoroutineHandle handle in ActiveCoroutines)
+            {
+                if (handle.Tag.ToLower() == name.ToLower() || handle.Tag.ToLower().Contains(name.ToLower()))
+                {
+                    Log.Add("Environment", $"Killed coroutine \"{handle.Tag}\"", LogType.Debug);
+                    ActiveCoroutines.Remove(handle);
+                    Timing.KillCoroutines(handle);
+                }
+            }
+        }
+
+        public static void StopAllCoroutines() => Timing.KillCoroutines(ActiveCoroutines);
+
         public static void OnAnnounceDecontamination(bool global, int id, bool all, out bool isGlobal, out int annId, out bool allow)
         {
             try
@@ -151,20 +188,8 @@ namespace Vigilance
             try
             {
                 string[] args = cmd.Split(' ');
-                foreach (string arg in args)
-                {
-                    if (arg == args[0])
-                        arg.Replace(".", "");
-                }
-                string command = "";
-                foreach (string arg in args)
-                {
-                    if (arg == args[0])
-                        command += arg;
-                    else
-                        command += $" {arg}";
-                }
-                ConsoleCommandEvent ev = new ConsoleCommandEvent(command, ply, all);
+                args[0].Remove(".");
+                ConsoleCommandEvent ev = new ConsoleCommandEvent(args.Combine(), ply, all);
                 EventManager.Trigger<Vigilance.EventHandlers.ConsoleCommandHandler>(ev);
                 reply = ev.Reply;
                 color = ev.Color.ToLower();
@@ -173,7 +198,7 @@ namespace Vigilance
             catch (Exception e)
             {
                 Log.Add("Environment", e);
-                reply = e.StackTrace;
+                reply = e.Message;
                 color = "red";
                 allow = all;
             }
@@ -474,7 +499,7 @@ namespace Vigilance
         {
             try
             {
-                BanEvent ev = new BanEvent(ply, issuer, res.GetBanReason(), issuance, expiery, all);
+                BanEvent ev = new BanEvent(ply, issuer, string.IsNullOrEmpty(res) ? "No reason provided." : res, issuance, expiery, all);
                 EventManager.Trigger<BanEventHandler>(ev);
                 allow = ev.Allow;
                 newExpiery = ev.Expiration.Ticks;
@@ -562,16 +587,18 @@ namespace Vigilance
             }
         }
 
-        public static void OnPlayerLeave(GameObject ply)
+        public static void OnPlayerLeave(GameObject ply, out bool destroy)
         {
             try
             {
                 PlayerLeaveEvent ev = new PlayerLeaveEvent(ply);
                 EventManager.Trigger<PlayerLeaveHandler>(ev);
+                destroy = ev.DestroyHub;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
+                destroy = true;
             }
         }
 

@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using CommandSystem.Commands;
 using Harmony;
-using MEC;
-using Mirror;
-using Vigilance.Extensions;
 
 namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.1.1";
+        public static string Version => "5.1.3";
         public static Dictionary<Plugin, Assembly> Plugins => _plugins;
         public static List<Assembly> Dependencies => _dependencies;
         public static YamlConfig Config => _config;
@@ -26,11 +22,12 @@ namespace Vigilance
             {
                 Paths.CheckMainConfig();
                 _config = new YamlConfig(Paths.ConfigPath);
-                _config?.Reload();
                 CommandManager.Enable();
                 EventManager.Enable();
                 Paths.CheckDirectories();
                 Paths.CheckDependencies();
+                Paths.ValidateConfig(Paths.GetDefaultConfigValues(), Paths.ConfigPath);
+                _config?.Reload();
                 _plugins = new Dictionary<Plugin, Assembly>();
                 _dependencies = new List<Assembly>();
 
@@ -79,6 +76,7 @@ namespace Vigilance
                             {
                                 try
                                 {
+                                    Paths.CheckPluginConfig(plugin.ConfigValues, Paths.GetPluginConfigPath(plugin));
                                     plugin.Reload();
                                     plugin.Config?.Reload();
                                 }
@@ -97,8 +95,9 @@ namespace Vigilance
                                     string cfgPath = Paths.GetPluginConfigPath(plugin);
                                     Paths.CheckFile(cfgPath);
                                     plugin.Config = new YamlConfig(cfgPath);
-                                    plugin.Config?.Reload();
                                     plugin.Enable();
+                                    Paths.CheckPluginConfig(plugin.ConfigValues, cfgPath);
+                                    plugin.Config.Reload();
                                     _plugins.Add(plugin, assembly);
                                     Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
                                 }

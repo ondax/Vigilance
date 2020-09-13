@@ -664,8 +664,13 @@ namespace Vigilance.Events
     public class PlayerLeaveEvent : Event
     {
         public Player Player { get; }
+        public bool DestroyHub { get; set; }
 
-        public PlayerLeaveEvent(GameObject ply) => Player = ply?.GetPlayer();
+        public PlayerLeaveEvent(GameObject ply)
+        {
+            Player = ply?.GetPlayer();
+            DestroyHub = true;
+        }
 
         public override void Execute(EventHandler handler)
         {

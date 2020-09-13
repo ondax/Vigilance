@@ -3,12 +3,9 @@ using UnityEngine;
 using Vigilance.Enums;
 using System.Collections.Generic;
 using System;
-using RemoteAdmin;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Vigilance.API;
-using System.Runtime.CompilerServices;
 
 namespace Vigilance.Extensions
 {
@@ -48,13 +45,26 @@ namespace Vigilance.Extensions
 	{
 		public static Player GetAttacker(this PlayerStats.HitInfo hitInfo)
 		{
-			return hitInfo.IsPlayer ? hitInfo.RHub.GetPlayer() : hitInfo.GetPlayer();
+			Player player = hitInfo.Attacker.GetPlayer();
+			if (player == null)
+				player = Server.PlayerList.Local;
+			return player;
 		}
 
 		public static Player GetPlayer(this PlayerStats.HitInfo hitInfo)
 		{
 			return hitInfo.GetPlayerObject().GetPlayer();
 		}
+
+		public static DamageType GetDamageType(this PlayerStats.HitInfo info)
+        {
+			string attacker = info.Attacker.ToUpper();
+			if (attacker == "CMDSUICIDE")
+				return DamageType.CmdSuicide;
+			if (attacker == "DISCONNECT")
+				return DamageType.Disconnect;
+			return info.GetDamageType().Convert();
+        }
 
 		public static DamageType Convert(this DamageTypes.DamageType dmgType)
 		{
@@ -132,8 +142,16 @@ namespace Vigilance.Extensions
 
 	public static class RagdollExtensions
 	{
-		public static Player GetOwner(this Ragdoll ragdoll) => ragdoll.Networkowner.PlayerId.GetPlayer();
-		public static void Delete(this Ragdoll ragdoll) => ragdoll.gameObject.Destroy();
+		public static Player GetOwner(this Ragdoll ragdoll)
+        {
+			Player player = Server.PlayerList.GetPlayer(ragdoll.owner.PlayerId);
+			if (player == null)
+				return Server.PlayerList.Local;
+			else
+				return player;
+        }
+
+		public static void Delete(this Ragdoll ragdoll) => ragdoll?.gameObject.Destroy();
 	}
 
 	public static class PlayerExtensions
@@ -299,6 +317,65 @@ namespace Vigilance.Extensions
 				return false;
 		}
 
+		public static void RefreshModel(this CharacterClassManager ccm, RoleType classId = RoleType.None)
+        {
+			ReferenceHub hub = ReferenceHub.LocalHub;
+			hub.GetComponent<AnimationController>().OnChangeClass();
+			if (ccm.MyModel != null)
+			{
+				UnityEngine.Object.Destroy(ccm.MyModel);
+			}
+			Role role = ccm.Classes.SafeGet((classId < RoleType.Scp173) ? ccm.CurClass : classId);
+			if (role.team != Team.RIP)
+			{
+				GameObject gameObject = UnityEngine.Object.Instantiate(role.model_player, ccm.gameObject.transform, true);
+				gameObject.transform.localPosition = role.model_offset.position;
+				gameObject.transform.localRotation = Quaternion.Euler(role.model_offset.rotation);
+				gameObject.transform.localScale = role.model_offset.scale;
+				ccm.MyModel = gameObject;
+				AnimationController component = hub.GetComponent<AnimationController>();
+				if (ccm.MyModel.GetComponent<Animator>() != null)
+				{
+					component.animator = ccm.MyModel.GetComponent<Animator>();
+				}
+				FootstepSync component2 = ccm.GetComponent<FootstepSync>();
+				FootstepHandler component3 = ccm.MyModel.GetComponent<FootstepHandler>();
+				if (component2 != null)
+				{
+					component2.FootstepHandler = component3;
+				}
+				if (component3 != null)
+				{
+					component3.FootstepSync = component2;
+					component3.AnimationController = component;
+				}
+				if (ccm.isLocalPlayer)
+				{
+					if (ccm.MyModel.GetComponent<Renderer>() != null)
+					{
+						ccm.MyModel.GetComponent<Renderer>().enabled = false;
+					}
+					Renderer[] componentsInChildren = ccm.MyModel.GetComponentsInChildren<Renderer>();
+					for (int i = 0; i < componentsInChildren.Length; i++)
+					{
+						componentsInChildren[i].enabled = false;
+					}
+					foreach (Collider collider in ccm.MyModel.GetComponentsInChildren<Collider>())
+					{
+						if (collider.name != "LookingTarget")
+						{
+							collider.enabled = false;
+						}
+					}
+				}
+			}
+			ccm.GetComponent<CapsuleCollider>().enabled = (role.team != Team.RIP);
+			if (ccm.MyModel != null)
+			{
+				ccm.GetComponent<WeaponManager>().hitboxes = ccm.MyModel.GetComponentsInChildren<HitboxIdentity>(true);
+			}
+		}
+
 		public static Vector3 FindLookRotation(this Vector3 player, Vector3 target) => (target - player).normalized;
 		public static bool IsSteam(this UserIdType idType) => idType != UserIdType.Discord && idType != UserIdType.Unspecified;
 	}
@@ -325,7 +402,7 @@ namespace Vigilance.Extensions
 			return dateTime.ToString("dd.MM.yy [HH:mm:ss]");
 		}
 
-		public static string GetDurationString(this TimeSpan expiery, TimeSpan issuance)
+		public static string ToString(this TimeSpan expiery, TimeSpan issuance)
 		{
 			TimeSpan time = expiery - issuance;
 			int seconds = time.Seconds;
@@ -333,21 +410,20 @@ namespace Vigilance.Extensions
 			int hours = time.Hours;
 			int days = time.Days;
 			int months = days / 30;
-
 			if (months > 0)
-				return $" {months.GetString(DurationType.Months)}";
+				return $" {months.ToString(DurationType.Months)}";
 			if (days > 0)
-				return $" {days.GetString(DurationType.Days)}";
+				return $" {days.ToString(DurationType.Days)}";
 			if (hours > 0)
-				return $" {hours.GetString(DurationType.Hours)}";
+				return $" {hours.ToString(DurationType.Hours)}";
 			if (minutes > 0)
-				return $" {minutes.GetString(DurationType.Minutes)}";
+				return $" {minutes.ToString(DurationType.Minutes)}";
 			if (seconds > 0)
-				return $" {seconds.GetString(DurationType.Seconds)}";
-			return $"{months.GetString(DurationType.Months)} | {days.GetString(DurationType.Days)} | {hours.GetString(DurationType.Hours)} | {minutes.GetString(DurationType.Minutes)} | {seconds.GetString(DurationType.Seconds)}";
+				return $" {seconds.ToString(DurationType.Seconds)}";
+			return $"{months.ToString(DurationType.Months)} | {days.ToString(DurationType.Days)} | {hours.ToString(DurationType.Hours)} | {minutes.ToString(DurationType.Minutes)} | {seconds.ToString(DurationType.Seconds)}";
 		}
 
-		public static string GetString(this int duration, DurationType durationType)
+		public static string ToString(this int duration, DurationType durationType)
 		{
 			return durationType.GetDurationTypeString(duration);
 		}
@@ -361,36 +437,18 @@ namespace Vigilance.Extensions
 		{
 			return TimeSpan.FromTicks(banDetails.IssuanceTime);
 		}
-
-		public static string GetBanReason(this string str)
-		{
-			return str.IsEmpty() ? "No reason provided." : str;
-		}
-
-		public static string GetReason(this BanDetails banDetails)
-		{
-			return banDetails.Reason.IsEmpty() ? "No reason provided." : banDetails.Reason;
-		}
-
-		public static string GetDurationString(this BanDetails banDetails)
-		{
-			return GetDurationString(TimeSpan.FromTicks(banDetails.Expires), TimeSpan.FromTicks(banDetails.IssuanceTime));
-		}
-
-		public static string GetDurationString(this int seconds)
-		{
-			int minutes = seconds / 60;
-			int hours = minutes / 60;
-			int days = hours / 24;
-			return $"{days}d {hours}h {minutes}m";
-		}
 	}
 
 	public static class StringExtensions
 	{
-		public static string GetWords(this string[] array)
+		public static void Remove(this string str, string toRemove) => str.Replace(toRemove, "");
+
+		public static bool IsValidChance(this int rnd, int chance)
 		{
-			return array.SkipCommand().Combine();
+			if (rnd == chance || rnd + 1 == chance || rnd + 2 == chance || rnd + 3 == chance || rnd + 4 == chance || rnd + 5 == chance || rnd - 1 == chance || rnd - 2 == chance || rnd - 3 == chance || rnd - 4 == chance || rnd - 5 == chance)
+				return true;
+			else
+				return false;
 		}
 
 		public static string SkipWords(this string[] array, int amount)
@@ -402,7 +460,7 @@ namespace Vigilance.Extensions
 		{
 			if (string.IsNullOrEmpty(str))
 				return "";
-			return str.Replace('@', ' ').Replace('_', ' ').Replace('*', ' ').Replace('<', ' ').Replace('`', ' ').Replace('>', ' ');
+			return str.Replace('@', ' ').Replace('_', ' ').Replace('*', ' ').Replace('<', ' ').Replace('`', ' ').Replace('>', ' ').Replace('|', ' ');
 		}
 
 		public static string[] SkipCommand(this string[] array)
@@ -419,18 +477,18 @@ namespace Vigilance.Extensions
 				return m;
 			if (m == 0)
 				return n;
+
 			for (int i = 0; i <= n; d[i, 0] = i++)
-			{
-			}
+			{ }
+
 			for (int j = 0; j <= m; d[0, j] = j++)
-			{
-			}
+			{ }
+
 			for (int i = 1; i <= n; i++)
 			{
 				for (int j = 1; j <= m; j++)
 				{
 					int cost = (secondString[j - 1] == firstString[i - 1]) ? 0 : 1;
-
 					d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + cost);
 				}
 			}
@@ -450,7 +508,7 @@ namespace Vigilance.Extensions
 			return string.Join(" ", array);
 		}
 
-		public static string[] ToStringArray(this char[] arr)
+		public static string[] ToArray(this char[] arr)
 		{
 			List<string> strings = new List<string>();
 			foreach (char s in arr)
@@ -462,7 +520,7 @@ namespace Vigilance.Extensions
 
 		public static string RemoveNumbers(this string str)
 		{
-			return str.Where(s => !s.IsNumber()).ToArray().ToStringArray().Combine();
+			return str.Where(s => !s.IsNumber()).ToArray().ToArray().Combine();
 		}
 
 		public static bool IsNumber(this char ch) => int.TryParse(ch.ToString(), out int idk);
@@ -565,11 +623,292 @@ namespace Vigilance.Extensions
 			}
 			return $"{dur} {durationType}";
 		}
+
+		public static string GetName(this Prefab prefab)
+        {
+			if (prefab == Prefab.GrenadeFlash)
+				return "Grenade Flash";
+			if (prefab == Prefab.GrenadeFrag)
+				return "Grenade Frag";
+			if (prefab == Prefab.GrenadeScp018)
+				return "Grenade SCP-018";
+			if (prefab == Prefab.Scp096_Ragdoll)
+				return "SCP-096_Ragdoll";
+			if (prefab == Prefab.WorkStation)
+				return "Work Station";
+			return prefab.ToString();
+        }
+
+		public static GameObject GetObject(this Prefab prefab)
+        {
+			foreach (GameObject obj in NetworkManager.singleton.spawnPrefabs)
+				if (obj.name == prefab.GetName())
+					return obj;
+			return null;
+        }
+
+		public static GameObject Spawn(this Prefab prefab, Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+			GameObject toInstantiate = prefab.GetObject();
+			GameObject clone = UnityEngine.Object.Instantiate(toInstantiate);
+			clone.transform.localScale = scale;
+			clone.transform.position = position;
+			clone.transform.rotation = rotation;
+			NetworkServer.Spawn(clone);
+			if (prefab == Prefab.WorkStation)
+			{
+				Offset offset = new Offset()
+				{
+					position = position,
+					rotation = rotation.eulerAngles,
+					scale = scale
+				};
+				clone.AddComponent<WorkStation>();
+				clone.GetComponent<WorkStation>().Networkposition = offset;
+				clone.AddComponent<WorkStationUpgrader>();
+				clone.GetComponent<WorkStationUpgrader>().Start();
+			}
+			return clone;
+        }
+
+		public static Prefab GetPrefab(this string str)
+        {
+			if (int.TryParse(str, out int index))
+				return (Prefab)index;
+			if (str == "Player")
+				return Prefab.Player;
+			if (str == "PlaybackLobby")
+				return Prefab.PlaybackLobby;
+			if (str == "Pickup")
+				return Prefab.Pickup;
+			if (str == "Work Station")
+				return Prefab.WorkStation;
+			if (str == "Ragdoll_0")
+				return Prefab.Ragdoll_0;
+			if (str == "Ragdoll_1")
+				return Prefab.Ragdoll_1;
+			if (str == "Ragdoll_3")
+				return Prefab.Ragdoll_3;
+			if (str == "Ragdoll_4")
+				return Prefab.Ragdoll_4;
+			if (str == "Ragdoll_6")
+				return Prefab.Ragdoll_6;
+			if (str == "Ragdoll_7")
+				return Prefab.Ragdoll_7;
+			if (str == "Ragdoll_8")
+				return Prefab.Ragdoll_8;
+			if (str == "SCP-096_Ragdoll")
+				return Prefab.Scp096_Ragdoll;
+			if (str == "Ragdoll_10")
+				return Prefab.Ragdoll_10;
+			if (str == "Ragdoll_14")
+				return Prefab.Ragdoll_14;
+			if (str == "Ragdoll_16")
+				return Prefab.Ragdoll_16;
+			if (str == "Ragdoll_17")
+				return Prefab.Ragdoll_17;
+			if (str == "Grenade Flash")
+				return Prefab.GrenadeFlash;
+			if (str == "Grenade Frag")
+				return Prefab.GrenadeFrag;
+			if (str == "Grenade SCP-018")
+				return Prefab.GrenadeScp018;
+			return Prefab.None;
+        }	
+		
+		public static RoleType GetRole(this string str)
+        {
+			if (int.TryParse(str, out int id))
+				return (RoleType)id;
+			str = str.ToLower();
+			if (str == "chaosinsurgency")
+				return RoleType.ChaosInsurgency;
+			if (str == "classd")
+				return RoleType.ClassD;
+			if (str == "facilityguard")
+				return RoleType.FacilityGuard;
+			if (str == "none")
+				return RoleType.None;
+			if (str == "ntfcadet")
+				return RoleType.NtfCadet;
+			if (str == "ntfcommander")
+				return RoleType.NtfCommander;
+			if (str == "ntflieutenant")
+				return RoleType.NtfLieutenant;
+			if (str == "ntfscientist")
+				return RoleType.NtfScientist;
+			if (str == "scientist")
+				return RoleType.Scientist;
+			if (str == "scp049")
+				return RoleType.Scp049;
+			if (str == "scp0492" || str == "zombie")
+				return RoleType.Scp0492;
+			if (str == "scp079")
+				return RoleType.Scp079;
+			if (str == "scp096")
+				return RoleType.Scp096;
+			if (str == "scp106")
+				return RoleType.Scp106;
+			if (str == "scp173")
+				return RoleType.Scp173;
+			if (str == "scp93989")
+				return RoleType.Scp93989;
+			if (str == "scp93989")
+				return RoleType.Scp93989;
+			if (str == "spectator")
+				return RoleType.Spectator;
+			if (str == "tutorial")
+				return RoleType.Tutorial;
+			return RoleType.None;
+        }
+
+		public static ItemType GetItem(this string str)
+        {
+			if (int.TryParse(str, out int id))
+				return (ItemType)id;
+			str = str.ToLower();
+			if (str == "adrenaline")
+				return ItemType.Adrenaline;
+			if (str == "ammo556")
+				return ItemType.Ammo556;
+			if (str == "ammo762")
+				return ItemType.Ammo762;
+			if (str == "ammo9mm")
+				return ItemType.Ammo9mm;
+			if (str == "coin")
+				return ItemType.Coin;
+			if (str == "disarmer")
+				return ItemType.Disarmer;
+			if (str == "flashlight")
+				return ItemType.Flashlight;
+			if (str == "flash" || str == "grenadeflash")
+				return ItemType.GrenadeFlash;
+			if (str == "frag" || str == "grenadefrag")
+				return ItemType.GrenadeFrag;
+			if (str == "guncom15" || str == "com15")
+				return ItemType.GunCOM15;
+			if (str == "gune11sr" || str == "e11sr" || str == "epsilon11")
+				return ItemType.GunE11SR;
+			if (str == "gunlogicer" || str == "logicer")
+				return ItemType.GunLogicer;
+			if (str == "gunmp7" || str == "mp7")
+				return ItemType.GunMP7;
+			if (str == "gunproject90" || str == "project90" || str == "p90")
+				return ItemType.GunProject90;
+			if (str == "gunusp" || str == "usp")
+				return ItemType.GunUSP;
+			if (str == "keycardchaosinsurgency")
+				return ItemType.KeycardChaosInsurgency;
+			if (str == "keycardcontainmentengineer")
+				return ItemType.KeycardContainmentEngineer;
+			if (str == "keycardfacilitymanager")
+				return ItemType.KeycardFacilityManager;
+			if (str == "keycardguard")
+				return ItemType.KeycardGuard;
+			if (str == "keycardjanitor")
+				return ItemType.KeycardJanitor;
+			if (str == "keycardntfcommander")
+				return ItemType.KeycardNTFCommander;
+			if (str == "keycardntflieutenant")
+				return ItemType.KeycardNTFLieutenant;
+			if (str == "keycardo5")
+				return ItemType.KeycardO5;
+			if (str == "keycardscientist")
+				return ItemType.KeycardScientist;
+			if (str == "keycardscientistmajor")
+				return ItemType.KeycardScientistMajor;
+			if (str == "keycardseniorguard")
+				return ItemType.KeycardSeniorGuard;
+			if (str == "keycardzonemanager")
+				return ItemType.KeycardZoneManager;
+			if (str == "medkit")
+				return ItemType.Medkit;
+			if (str == "microhid")
+				return ItemType.MicroHID;
+			if (str == "none")
+				return ItemType.None;
+			if (str == "painkillers")
+				return ItemType.Painkillers;
+			if (str == "radio")
+				return ItemType.Radio;
+			if (str == "scp018")
+				return ItemType.SCP018;
+			if (str == "scp500")
+				return ItemType.SCP500;
+			if (str == "scp207")
+				return ItemType.SCP207;
+			if (str == "scp268")
+				return ItemType.SCP268;
+			if (str == "tablet" || str == "weaponmanagertablet")
+				return ItemType.WeaponManagerTablet;
+			return ItemType.None;
+        }
+
+		public static TeamType GetTeam(this string str)
+        {
+			if (int.TryParse(str, out int id))
+				return (TeamType)id;
+			str = str.ToLower();
+			if (str == "chaosinsurgency")
+				return TeamType.ChaosInsurgency;
+			if (str == "classd")
+				return TeamType.ClassDPersonnel;
+			if (str == "ntf" || str == "ninetailedfox")
+				return TeamType.NineTailedFox;
+			if (str == "scientist")
+				return TeamType.Scientist;
+			if (str == "scp")
+				return TeamType.SCP;
+			if (str == "spectator")
+				return TeamType.Spectator;
+			if (str == "tutorial")
+				return TeamType.Tutorial;
+			if (str == "none")
+				return TeamType.None;
+			return TeamType.None;
+        }
+
+		public static WeaponType GetWeapon(this string str)
+        {
+			if (int.TryParse(str, out int id))
+				return (WeaponType)id;
+			str = str.ToLower();
+			if (str == "com15")
+				return WeaponType.Com15;
+			if (str == "epsilon11")
+				return WeaponType.Epsilon11;
+			if (str == "logicer")
+				return WeaponType.Logicer;
+			if (str == "microhid")
+				return WeaponType.MicroHID;
+			if (str == "mp7")
+				return WeaponType.MP7;
+			if (str == "none")
+				return WeaponType.None;
+			if (str == "project90" || str == "p90")
+				return WeaponType.Project90;
+			if (str == "usp")
+				return WeaponType.USP;
+			return WeaponType.None;
+        }
+
+		public static AmmoType GetAmmoType(this string str)
+        {
+			if (int.TryParse(str, out int id))
+				return (AmmoType)id;
+			if (str == "5mm")
+				return AmmoType.Nato_5mm;
+			if (str == "7mm")
+				return AmmoType.Nato_7mm;
+			if (str == "9mm")
+				return AmmoType.Nato_9mm;
+			return AmmoType.None;
+        }
 	}
 
 	public static class RoleExtensions
 	{
-		public static string GetName(this RoleType role)
+		public static string ToString(this RoleType role)
 		{
 			switch (role)
 			{
@@ -654,18 +993,18 @@ namespace Vigilance.Extensions
 
 	public static class Config
     {
-		public static ItemType GetItem(this YamlConfig cfg, string key) => (ItemType)Enum.Parse(typeof(ItemType), cfg.GetString(key));
-		public static RoleType GetRole(this YamlConfig cfg, string key) => (RoleType)Enum.Parse(typeof(RoleType), cfg.GetString(key));
-		public static TeamType GetTeam(this YamlConfig cfg, string key) => (TeamType)Enum.Parse(typeof(TeamType), cfg.GetString(key));
+		public static ItemType GetItem(this YamlConfig cfg, string key) => cfg.GetString(key).GetItem();
+		public static RoleType GetRole(this YamlConfig cfg, string key) => cfg.GetString(key).GetRole();
+		public static TeamType GetTeam(this YamlConfig cfg, string key) => cfg.GetString(key).GetTeam();
 
 		public static List<ItemType> GetItems(this YamlConfig cfg, string key)
 		{
 			try
 			{
 				List<ItemType> items = new List<ItemType>();
-				foreach (int val in cfg.GetIntList(key))
+				foreach (string val in cfg.GetStringList(key))
 				{
-					items.Add((ItemType)Enum.Parse(typeof(ItemType), val.ToString()));
+					items.Add(val.GetItem());
 				}
 				return items;
 			}
@@ -681,9 +1020,9 @@ namespace Vigilance.Extensions
 			try
 			{
 				List<RoleType> roles = new List<RoleType>();
-				foreach (int val in cfg.GetIntList(key))
+				foreach (string val in cfg.GetStringList(key))
 				{
-					roles.Add((RoleType)Enum.Parse(typeof(RoleType), val.ToString()));
+					roles.Add(val.GetRole());
 				}
 				return roles;
 			}
@@ -699,9 +1038,9 @@ namespace Vigilance.Extensions
 			try
 			{
 				List<TeamType> teams = new List<TeamType>();
-				foreach (int val in cfg.GetIntList(key))
+				foreach (string val in cfg.GetStringList(key))
 				{
-					teams.Add((TeamType)Enum.Parse(typeof(TeamType), val.ToString()));
+					teams.Add(val.GetTeam());
 				}
 				return teams;
 			}
@@ -746,9 +1085,7 @@ namespace Vigilance.Extensions
 			Dictionary<int, int> dictionary = new Dictionary<int, int>();
 			foreach (KeyValuePair<string, string> keyValuePair in stringDictionary)
 			{
-				int k;
-				int value;
-				if (int.TryParse(keyValuePair.Key, out k) && int.TryParse(keyValuePair.Value, out value))
+				if (int.TryParse(keyValuePair.Key, out int k) && int.TryParse(keyValuePair.Value, out int value))
 				{
 					dictionary.Add(k, value);
 				}
@@ -804,18 +1141,6 @@ namespace Vigilance.Extensions
 			if (item == ItemType.SCP018)
 				return GrenadeType.Scp018;
 			return GrenadeType.None;
-        }
-
-		public static InventoryCategory CreateCategory(bool hideWarning, ItemCategory itemCategory, string label, byte maxItems)
-        {
-			InventoryCategory category = new InventoryCategory()
-			{
-				hideWarning = hideWarning,
-				itemType = itemCategory,
-				maxItems = maxItems,
-				label = label
-			};
-			return category;
         }
 
 		public static bool IsWeapon(this ItemType item) => item.GetWeaponType() != WeaponType.None;

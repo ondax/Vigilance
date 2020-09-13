@@ -47,7 +47,7 @@ namespace Vigilance
 			if (!File.Exists(ConfigPath))
 			{
 				File.Create(ConfigPath).Close();
-				WriteConfigValues(GetDefaultConfigValues(), ConfigPath);
+				ValidateConfig(GetDefaultConfigValues(), ConfigPath);
 			}
 		}
 
@@ -78,6 +78,12 @@ namespace Vigilance
 		public static string GetPluginConfigPath(Plugin plugin)
         {
 			return $"{PluginConfigsPath}/{plugin.Name}.yml";
+        }
+
+		public static YamlConfig CheckConfig(string path)
+        {
+			CheckFile(path);
+			return new YamlConfig(path);
         }
 
 		public static void CheckDirectories()
@@ -117,6 +123,15 @@ namespace Vigilance
 			{
 				Log.Add("Paths", e);
 				return new List<Assembly>();
+			}
+		}
+
+		public static void CheckPluginConfig(Dictionary<string, string> configs, string path)
+		{
+			if (!File.Exists(path))
+			{
+				File.Create(path).Close();
+				ValidateConfig(configs, path);
 			}
 		}
 
@@ -174,11 +189,12 @@ namespace Vigilance
 							Plugin plugin = (Plugin)Activator.CreateInstance(type);
 							try
 							{
-								string cfgPath = GetPluginConfigPath(plugin);
-								CheckFile(cfgPath);
+								string cfgPath = Paths.GetPluginConfigPath(plugin);
+								Paths.CheckFile(cfgPath);
 								plugin.Config = new YamlConfig(cfgPath);
 								plugin.Config?.Reload();
 								plugin.Enable();
+								Paths.CheckPluginConfig(plugin.ConfigValues, Paths.GetPluginConfigPath(plugin));
 								PluginManager.Plugins.Add(plugin, assembly);
 								Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
 							}
@@ -230,6 +246,15 @@ namespace Vigilance
 			configs.Add("cfgdesc=Whether or not a ragdoll should spawn when a player dies/disconnects.", "spawn_ragdolls: true");
 			configs.Add("cfgdesc=List of RoleIDs that will be able to trigger tesla gates.", "tesla_triggerable_roles: [0,1,3,4,5,6,8,9,10,11,12,13,14,15,16,17]");
 			configs.Add("cfgdesc=How long does SCP-173 have to wait before it can open the gate when the round starts.", "scp173_door_cooldown: 25");
+			configs.Add("cfgdesc=Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_can_revive_not_killed_by_049: true");
+			configs.Add("cfgdesc=Elevator moving speed, pretty obvious.", "elevator_moving_speed: 5");
+			configs.Add("cfgdesc=Whether or not should radios drain battery.", "unlimited_radio_battery: false");
+			configs.Add("cfgdesc=Intercom ready message.", "intercom_ready_text: READY");
+			configs.Add("cfgdesc=Intercom transmitting message. %user% = The intercom speaker | %time% = remaining cooldown.", "intercom_transmitting_text: TRANSMITTING...\\nTIME LEFT - %time%");
+			configs.Add("cfgdesc=Intercom bypass mode transmitting messsage. %user% = The intercom speaker", "intercom_transmitting_bypass_text: TRANSMITTING...\\nBYPASS MODE");
+			configs.Add("cfgdesc=Intercom admin speaking text. %user% = The intercom speaker", "intercom_admin_speaking_text: ADMIN IS USING\\nTHE INTERCOM NOW");
+			configs.Add("cfgdesc=Intercom muted message. %user% = Muted user.", "intercom_muted_text: YOU ARE MUTED BY ADMIN");
+			configs.Add("cfgdesc=Intercom restarting message. %user% = The intercom speaker | %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING\\n%remainingTime%");
 			// 
 			configs.Add("line=3", "");
 			// SCP-096 Configs
@@ -246,31 +271,67 @@ namespace Vigilance
 			return configs;
         }
 
-		public static void WriteConfigValues(Dictionary<string, string> configs, string path)
+		public static void ValidateConfig(Dictionary<string, string> configs, string path)
         {
-			using (StreamWriter writer = new StreamWriter(path, true))
+			try
+			{
+				Paths.CheckFile(path);
+				string[] currentLines = File.ReadAllLines(path);
+				string current = FileManager.ReadAllText(path);
+				using (StreamWriter writer = new StreamWriter(path, true))
+				{
+					foreach (KeyValuePair<string, string> pair in configs)
+					{
+						if (pair.Key.ToUpper().StartsWith("LINE"))
+						{
+							writer.WriteLine("");
+						}
+
+						if (pair.Key.ToUpper().StartsWith("SEGMENT="))
+						{
+							string segment = pair.Key.Replace("segment=", "").ToUpper();
+							if (!current.Contains($"## {segment} ##"))
+								writer.WriteLine($"## {segment} ##");
+						}
+
+						if (pair.Key.ToUpper().StartsWith("CFGDESC="))
+						{
+							string description = pair.Key.Replace("cfgdesc=", "");
+							string key = pair.Value.Split(':')[0];
+							string value = pair.Value.Replace($"{key}: ", "");
+							if (!current.Contains($"# {description}"))
+								writer.WriteLine($"# {description}");
+							if (!ContainsKey(currentLines, key))
+								writer.WriteLine($"{key}: {value}");
+						}
+						
+						if (!pair.Key.ToUpper().StartsWith("LINE") && !pair.Key.ToUpper().StartsWith("SEGMENT=") && !pair.Key.ToUpper().StartsWith("CFGDESC="))
+                        {
+							string key = pair.Key;
+							string value = pair.Value;
+							if (!ContainsKey(currentLines, key))
+								writer.WriteLine($"{key}: {value}");
+						}
+					}
+					writer.Flush();
+					writer.Close();
+				}
+			}
+			catch (Exception e)
             {
-				foreach (KeyValuePair<string, string> pair in configs)
-                {
-					if (pair.Key.ToUpper().StartsWith("LINE"))
-                    {
-						writer.WriteLine("");
-                    }
-					if (pair.Key.ToUpper().StartsWith("SEGMENT="))
-                    {
-						string segment = pair.Key.Replace("segment=", "").ToUpper();
-						writer.WriteLine($"## {segment} ##");
-                    }
-					if (pair.Key.ToUpper().StartsWith("CFGDESC="))
-                    {
-						string description = pair.Key.Replace("cfgdesc=", "");
-						string key = pair.Value.Split(':')[0];
-						string value = pair.Value.Replace($"{key}: ", "");
-						writer.WriteLine($"# {description}");
-						writer.WriteLine($"{key}: {value}");
-                    }
-                }
+				Log.Add("An error occured while validating configs.", LogType.Error);
+				Log.Add(e);
             }
+		}
+
+		public static bool ContainsKey(string[] currentLines, string key)
+        {
+			foreach (string value in currentLines)
+            {
+				if (value.ToUpper().StartsWith(key.ToUpper()) || value.ToUpper() == key.ToUpper() || value.StartsWith($"{key}: "))
+					return true;
+            }
+			return false;
         }
 
 		public static void DownloadDependency(string url, string name)

@@ -190,6 +190,7 @@ namespace Vigilance.API
             public static Dictionary<GameObject, Player> PlayersDict { get; set; } = new Dictionary<GameObject, Player>();
             public static Dictionary<string, Player> UserIdCache { get; set; } = new Dictionary<string, Player>();
             public static Dictionary<int, Player> PlayerIdCache { get; set; } = new Dictionary<int, Player>();
+            public static List<Player> OfflinePlayersCache { get; set; } = new List<Player>();
             public static Dictionary<string, List<int>> TargetGhosts { get; set; } = new Dictionary<string, List<int>>();
             public static Player Local { get; set; } = new Player(ReferenceHub.LocalHub);
             public static Player Host { get; set; } = new Player(ReferenceHub.HostHub);
@@ -201,6 +202,7 @@ namespace Vigilance.API
                 UserIdCache.Clear();
                 PlayerIdCache.Clear();
                 TargetGhosts.Clear();
+                OfflinePlayersCache.Clear();
             }
 
             public static void Add(Player player)
@@ -214,6 +216,8 @@ namespace Vigilance.API
                 UserIdCache.Add(player.UserId, player);
                 PlayerIdCache.Add(player.PlayerId, player);
                 TargetGhosts.Add(player.UserId, new List<int>());
+                if (OfflinePlayersCache.Contains(player))
+                    OfflinePlayersCache.Remove(player);
             }
 
             public static void Remove(Player player)
@@ -227,6 +231,8 @@ namespace Vigilance.API
                 UserIdCache.Remove(player.UserId);
                 PlayerIdCache.Remove(player.PlayerId);
                 TargetGhosts.Remove(player.UserId);
+                if (!OfflinePlayersCache.Contains(player))
+                    OfflinePlayersCache.Add(player);
             }
 
             public static bool Contains(Player player)
@@ -266,7 +272,18 @@ namespace Vigilance.API
                 if (gameObject == null)
                     return Local;
                 if (!PlayersDict.TryGetValue(gameObject, out Player player))
+                {
+                    foreach (Player offline in OfflinePlayersCache)
+                    {
+                        CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
+                        if (ccm != null)
+                        {
+                            if (ccm.UserId == offline.UserId)
+                                return offline;
+                        }
+                    }
                     player = new Player(ReferenceHub.GetHub(gameObject));
+                }
                 return player;
             }
 
@@ -281,7 +298,10 @@ namespace Vigilance.API
                 {
                     foreach (Player ply in PlayersDict.Values)
                         if (ply.PlayerId == playerId)
-                            player = ply;
+                            return ply;
+                    foreach (Player offline in OfflinePlayersCache)
+                        if (offline.PlayerId == playerId)
+                            return offline;
                 }
                 return player;
             }
@@ -292,7 +312,10 @@ namespace Vigilance.API
                 {
                     foreach (Player player in PlayersDict.Values)
                         if (player.UserId == id || player.ParsedUserId == id)
-                            ply = player;
+                            return player;
+                    foreach (Player offline in OfflinePlayersCache)
+                        if (offline.ParsedUserId == id || offline.UserId == id)
+                            return offline;
                 }
                 return ply;
             }
@@ -342,6 +365,28 @@ namespace Vigilance.API
                                 {
                                     lastnameDifference = nameDifference;
                                     playerFound = player;
+                                }
+                            }
+                        }
+
+                        foreach (Player offline in OfflinePlayersCache)
+                        {
+                            if (!offline.Nick.ToLower().Contains(args.ToLower()))
+                                continue;
+                            if (firstString.Length < maxNameLength)
+                            {
+                                int x = maxNameLength - firstString.Length;
+                                int y = maxNameLength - offline.Nick.Length;
+                                string secondString = offline.Nick;
+                                for (int i = 0; i < x; i++)
+                                    firstString += "z";
+                                for (int i = 0; i < y; i++)
+                                    secondString += "z";
+                                int nameDifference = firstString.GetDistance(secondString);
+                                if (nameDifference < lastnameDifference)
+                                {
+                                    lastnameDifference = nameDifference;
+                                    playerFound = offline;
                                 }
                             }
                         }

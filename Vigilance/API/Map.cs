@@ -52,9 +52,7 @@ namespace Vigilance.API
 				{
 					_rooms = new List<Room>();
 					_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
-					const string surfaceRoomName = "Root_*&*Outside Cams";
-					var surfaceTransform = GameObject.Find(surfaceRoomName).transform;
-					_rooms.Add(new Room(surfaceRoomName, surfaceTransform, surfaceTransform.position));
+					_rooms.Add(new Room("Root_*&*Outside Cams", GameObject.Find("Root_*&*Outside Cams").transform, GameObject.Find("Root_*&*Outside Cams").transform.position));
 				}
 				return _rooms;
 			}
@@ -102,7 +100,8 @@ namespace Vigilance.API
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
 		public static List<Pickup> Pickups => Object.FindObjectsOfType<Pickup>().ToList();
 		public static string Seed => Server.Host.GetComponent<RandomSeedSync>().seed.ToString();
-		public static bool TeslaGatesDisabled { get => Vigilance.Patches.TeslaTriggerPatch.GatesDisabled; set => Vigilance.Patches.TeslaTriggerPatch.GatesDisabled = value; }
+		public static bool TeslaGatesDisabled { get => Patches.TeslaTriggerPatch.GatesDisabled; set => Patches.TeslaTriggerPatch.GatesDisabled = value; }
+		public static bool CassieDisabled { get => Patches.AnnounceNTFEntrancePatch.CassieDisabled; set => Patches.AnnounceNTFEntrancePatch.CassieDisabled = value; }
 		public static List<TeslaGate> TeslaGates
 		{
 			get
@@ -163,6 +162,8 @@ namespace Vigilance.API
 
 		public static void Announce(string message, bool makeHold = false, bool makeNoise = false)
 		{
+			if (Patches.AnnounceNTFEntrancePatch.CassieDisabled || string.IsNullOrEmpty(message))
+				return;
 			RespawnEffectsController.PlayCassieAnnouncement(message, makeHold, makeNoise);
 		}
 
@@ -223,7 +224,7 @@ namespace Vigilance.API
 			GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
 			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
 			ccm.CurClass = role;
-			ccm.RefreshPlyModel(role);
+			ccm.RefreshModel(role);
 			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
 			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
 			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
@@ -232,20 +233,6 @@ namespace Vigilance.API
 			obj.transform.rotation = rotation;
 			NetworkServer.Spawn(obj);
 			return obj;
-		}
-
-		public static GameObject SpawnWorkbench(Vector3 position, Vector3 rotation, Vector3 size)
-		{
-			GameObject bench = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.Find(p => p.gameObject.name == "Work Station"));
-			Offset offset = new Offset();
-			offset.position = position;
-			offset.rotation = rotation;
-			offset.scale = Vector3.one;
-			bench.gameObject.transform.localScale = size;
-			NetworkServer.Spawn(bench);
-			bench.GetComponent<WorkStation>().Networkposition = offset;
-			bench.AddComponent<WorkStationUpgrader>();
-			return bench;
 		}
 
 		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player, role, count));
@@ -295,12 +282,41 @@ namespace Vigilance.API
 
 		public static class Intercom
 		{
-			public static bool AdminSpeaking => global::Intercom.AdminSpeaking;
-			public static Player Speaker { get => global::Intercom.host.Networkspeaker?.GetPlayer(); set => global::Intercom.host.Networkspeaker = value.GameObject; }
-			public static string Text { get => global::Intercom.host.NetworkintercomText; set => global::Intercom.host.NetworkintercomText = value; }
+			public static bool AdminSpeaking { get => global::Intercom.AdminSpeaking; set => global::Intercom.AdminSpeaking = value; }
+			public static int CooldownAfter { get => (int)global::Intercom.host.cooldownAfter; set => global::Intercom.host.cooldownAfter = value; }
+			public static int RemainingCooldown { get => (int)global::Intercom.host.remainingCooldown; set => global::Intercom.host.remainingCooldown = value; }
+			public static int RemainingTime { get => (int)global::Intercom.host.speechRemainingTime; set => global::Intercom.host.speechRemainingTime = value; }
+			public static int SpeechTime { get => (int)global::Intercom.host.speechTime; set => global::Intercom.host.speechTime = value; }
+			public static Player Speaker { get => Patches.CustomTextPatch.LastSpeaker.GetPlayer(); set => SetSpeaker(value); }
+			public static string Text { get => global::Intercom.host.NetworkintercomText; set => global::Intercom.host.CustomContent = value; }
+			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone").transform;
 
 			public static void Timeout() => global::Intercom.host.speechRemainingTime = -1f;
 			public static void ResetCooldown() => global::Intercom.host.remainingCooldown = -1f;
+
+			public static void SetSpeaker(Player player)
+            {
+				if (player.GameObject == null || player == null)
+					return;
+				global::Intercom.host.RequestTransmission(player.GameObject);
+            }
+
+			public static void SetText(string txt)
+            {
+				if (string.IsNullOrEmpty(txt))
+					return;
+				global::Intercom.host.CustomContent = txt;
+            }
+
+			public static class Settings
+            {
+				public static string AdminSpeakingText => PluginManager.Config.GetString("intercom_admin_speaking_text", "ADMIN IS USING\nTHE INTERCOM NOW").Replace("%time%", RemainingCooldown.ToString());
+				public static string TransmittingText => PluginManager.Config.GetString("intercom_transmitting_text", $"TRANSMITTING...\nTIME LEFT - {RemainingTime}").Replace("%time%", RemainingTime.ToString());
+				public static string TransmittingBypassModeText => PluginManager.Config.GetString("intercom_transmitting_bypass_text", "TRANSMITTING...\nBYPASS MODE");
+				public static string MutedText => PluginManager.Config.GetString("intercom_muted_text", "YOU ARE MUTED BY ADMIN");
+				public static string RestartingText => PluginManager.Config.GetString("intercom_restarting_text", $"RESTARTING\n{RemainingCooldown}").Replace("%remainingTime%", RemainingCooldown.ToString());
+				public static string ReadyText => PluginManager.Config.GetString("intercom_ready_text", "READY");
+			}
 		}
 
 		public static class Decontamination
@@ -309,9 +325,14 @@ namespace Vigilance.API
 			public static bool IsDecontaminated => LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating;
 			public static AudioSource AudioSource => LightContainmentZoneDecontamination.DecontaminationController.Singleton.AnnouncementAudioSource;
 			public static double RoundStartTime => LightContainmentZoneDecontamination.DecontaminationController.Singleton.NetworkRoundStartTime;
-			public static bool IsDisabled { get => Vigilance.Patches.DecontaminationPatch.DecontDisabled; set => Vigilance.Patches.DecontaminationPatch.DecontDisabled = true; }
+			public static bool IsDisabled { get => Patches.DecontaminationPatch.DecontDisabled; set => Patches.DecontaminationPatch.DecontDisabled = value; }
 
-			public static void Decontaminate() => LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
+			public static void Decontaminate()
+            {
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun = true;
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton.KillPlayers();
+            }
 		}
 	}
 }
