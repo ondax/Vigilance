@@ -51,7 +51,7 @@ namespace Vigilance.Patches
 					q = q + " ~" + sender.Nickname;
 					foreach (KeyValuePair<GameObject, ReferenceHub> allHub in ReferenceHub.GetAllHubs())
 					{
-						if ((allHub.Value.serverRoles.AdminChatPerms || allHub.Value.serverRoles.RaEverywhere) && !allHub.Value.isDedicatedServer && allHub.Value.isReady)
+						if ((allHub.Value.serverRoles.AdminChatPerms || allHub.Value.serverRoles.RaEverywhere) && !allHub.Value.isDedicatedServer && allHub.Value.Ready)
 						{
 							allHub.Value.queryProcessor.TargetReply(allHub.Value.queryProcessor.connectionToClient, q, isSuccess: true, logInConsole: false, string.Empty);
 						}
@@ -305,7 +305,7 @@ namespace Vigilance.Patches
 									OriginalName = "Unknown - offline ban",
 									Id = query[1],
 									IssuanceTime = TimeBehaviour.CurrentTimestamp(),
-									Expires = TimeBehaviour.GetBanExpieryTime((uint)num4),
+									Expires = TimeBehaviour.GetBanExpirationTime((uint)num4),
 									Reason = text10,
 									Issuer = sender.Nickname
 								}, flag10 ? BanHandler.BanType.IP : BanHandler.BanType.UserId);
@@ -993,11 +993,7 @@ namespace Vigilance.Patches
 									{
 										if (bool.TryParse(query[2], out bool result4))
 										{
-											CharacterClassManager[] array2 = UnityEngine.Object.FindObjectsOfType<CharacterClassManager>();
-											for (int k = 0; k < array2.Length; k++)
-											{
-												array2[k].EnableSP = !result4;
-											}
+											CharacterClassManager.EnableSP = !result4;
 											sender.RaReply(query[0].ToUpper() + "#Done! Config [" + query[1] + "] has been set to [" + result4 + "]!", success: true, logToConsole: true, "ServerConfigs");
 										}
 										else
@@ -1010,11 +1006,7 @@ namespace Vigilance.Patches
 									{
 										if (int.TryParse(query[2], NumberStyles.Any, CultureInfo.InvariantCulture, out int result8))
 										{
-											CharacterClassManager[] array2 = UnityEngine.Object.FindObjectsOfType<CharacterClassManager>();
-											for (int k = 0; k < array2.Length; k++)
-											{
-												array2[k].SProtectedDuration = result8;
-											}
+											CharacterClassManager.SProtectedDuration = result8;
 											sender.RaReply(query[0].ToUpper() + "#Done! Config [" + query[1] + "] has been set to [" + result8 + "]!", success: true, logToConsole: true, "ServerConfigs");
 										}
 										else

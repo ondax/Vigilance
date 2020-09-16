@@ -283,12 +283,12 @@ namespace Vigilance.API
 		public static class Intercom
 		{
 			public static bool AdminSpeaking { get => global::Intercom.AdminSpeaking; set => global::Intercom.AdminSpeaking = value; }
-			public static int CooldownAfter { get => (int)global::Intercom.host.cooldownAfter; set => global::Intercom.host.cooldownAfter = value; }
+			public static int CooldownAfter { get => (int)global::Intercom.host._cooldownAfter; set => global::Intercom.host._cooldownAfter = value; }
 			public static int RemainingCooldown { get => (int)global::Intercom.host.remainingCooldown; set => global::Intercom.host.remainingCooldown = value; }
 			public static int RemainingTime { get => (int)global::Intercom.host.speechRemainingTime; set => global::Intercom.host.speechRemainingTime = value; }
-			public static int SpeechTime { get => (int)global::Intercom.host.speechTime; set => global::Intercom.host.speechTime = value; }
-			public static Player Speaker { get => Patches.CustomTextPatch.LastSpeaker.GetPlayer(); set => SetSpeaker(value); }
-			public static string Text { get => global::Intercom.host.NetworkintercomText; set => global::Intercom.host.CustomContent = value; }
+			public static int SpeechTime { get => (int)global::Intercom.host._speechTime; set => global::Intercom.host._speechTime = value; }
+			public static Player Speaker { get => Patches.IntercomPatch.Speaker.GetPlayer(); set => SetSpeaker(value); }
+			public static string Text { get => global::Intercom.host.Network_intercomText; set => global::Intercom.host.CustomContent = value; }
 			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone").transform;
 
 			public static void Timeout() => global::Intercom.host.speechRemainingTime = -1f;

@@ -366,7 +366,7 @@ namespace Vigilance.Patches
                     {
                         string originalName = string.IsNullOrEmpty(targetPlayer.Nick) ? "(no nick)" : targetPlayer.Nick;
                         long issuanceTime = TimeBehaviour.CurrentTimestamp();
-                        long banExpieryTime = TimeBehaviour.GetBanExpieryTime((uint)duration);
+                        long banExpieryTime = TimeBehaviour.GetBanExpirationTime((uint)duration);
                         Environment.OnBan(issuerPlayer.GameObject, targetPlayer.GameObject, reason, issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
                         if (!allow)
                             return false;
@@ -1021,7 +1021,7 @@ namespace Vigilance.Patches
 
                 foreach (ReferenceHub referenceHub in ReferenceHub.GetAllHubs().Values)
                 {
-                    if (!referenceHub.isDedicatedServer && referenceHub.isReady && Vector3.Distance(referenceHub.transform.position, __instance._lureSpj.transform.position) < 1.97f)
+                    if (!referenceHub.isDedicatedServer && referenceHub.Ready && Vector3.Distance(referenceHub.transform.position, __instance._lureSpj.transform.position) < 1.97f)
                     {
                         CharacterClassManager characterClassManager = referenceHub.characterClassManager;
                         PlayerStats playerStats = referenceHub.playerStats;
@@ -1068,16 +1068,16 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                if (!ServerTime.CheckSynchronization(t) || !__instance.iAm106 || Vector3.Distance(__instance.hub.playerMovementSync.RealModelPosition, ply.transform.position) >= 3f || !characterClassManager.IsHuman())
+                if (!ServerTime.CheckSynchronization(t) || !__instance.iAm106 || Vector3.Distance(__instance._hub.playerMovementSync.RealModelPosition, ply.transform.position) >= 3f || !characterClassManager.IsHuman())
                 {
                     return false;
                 }
-                __instance.hub.characterClassManager.RpcPlaceBlood(ply.transform.position, 1, 2f);
+                __instance._hub.characterClassManager.RpcPlaceBlood(ply.transform.position, 1, 2f);
                 __instance.TargetHitMarker(__instance.connectionToClient);
                 if (Scp106PlayerScript._blastDoor.isClosed)
                 {
-                    __instance.hub.characterClassManager.RpcPlaceBlood(ply.transform.position, 1, 2f);
-                    __instance.hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(500f, __instance.hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
+                    __instance._hub.characterClassManager.RpcPlaceBlood(ply.transform.position, 1, 2f);
+                    __instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(500f, __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
                 }
                 else
                 {
@@ -1085,7 +1085,7 @@ namespace Vigilance.Patches
                     if (!allow)
                         return false;
                     if (hurt)
-                        __instance.hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f), __instance.hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
+                        __instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f), __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
                     referenceHub.playerMovementSync.OverridePosition(Vector3.down * 1998.5f, 0f, true);
                     foreach (Scp079PlayerScript scp079PlayerScript in Scp079PlayerScript.instances)
                     {
@@ -1624,20 +1624,20 @@ namespace Vigilance.Patches
                 __instance.MyNick = nick;
                 if (__instance.isLocalPlayer && ServerStatic.IsDedicated || __instance == null || string.IsNullOrEmpty(nick))
                     return false;
-                if (!Server.PlayerList.PlayersDict.TryGetValue(__instance.hub.gameObject, out Player player))
+                if (!Server.PlayerList.PlayersDict.TryGetValue(__instance._hub.gameObject, out Player player))
                 {
                     player = new Player(ReferenceHub.GetHub(__instance.gameObject));
                     Server.PlayerList.Add(player);
                 }
-                if (ServerGuard.SteamShield.CheckAccount(__instance.hub.GetPlayer()))
+                if (ServerGuard.SteamShield.CheckAccount(__instance._hub.GetPlayer()))
                     return false;
-                if (ServerGuard.VPNShield.CheckIP(__instance.hub.GetPlayer()))
+                if (ServerGuard.VPNShield.CheckIP(__instance._hub.GetPlayer()))
                     return false;
-                Environment.OnPlayerJoin(__instance.hub.gameObject);
+                Environment.OnPlayerJoin(__instance._hub.gameObject);
                 ServerConsole.AddLog(string.Concat(new string[]
                 {
                     "Nickname of ",
-                    __instance.hub.characterClassManager.UserId,
+                    __instance._hub.characterClassManager.UserId,
                     " is now ",
                     nick,
                     "."
@@ -1646,7 +1646,7 @@ namespace Vigilance.Patches
                 ServerLogs.AddLog(ServerLogs.Modules.Networking, string.Concat(new string[]
                 {
                     "Nickname of ",
-                    __instance.hub.characterClassManager.UserId,
+                    __instance._hub.characterClassManager.UserId,
                     " is now ",
                     nick,
                     "."
@@ -1654,8 +1654,8 @@ namespace Vigilance.Patches
 
                 Timing.CallDelayed(0.25f, () =>
                 {
-                    if (__instance.hub != null && __instance.hub.characterClassManager.NetworkMuted)
-                        __instance.hub.characterClassManager.SetDirtyBit(1UL);
+                    if (__instance._hub != null && __instance._hub.characterClassManager.NetworkMuted)
+                        __instance._hub.characterClassManager.SetDirtyBit(1UL);
                 });
 
                 return false;
@@ -2697,7 +2697,7 @@ namespace Vigilance.Patches
             {
                 if (!__instance._interactRateLimit.CanExecute(true))
                     return false;
-                if (!__instance.hub.falldamage.isGrounded)
+                if (!__instance._hub.playerMovementSync.Grounded)
                     return false;
                 Transform transform = __instance.transform;
                 Debug.DrawRay(transform.position, -transform.up, Color.red, 10f);
@@ -2728,7 +2728,7 @@ namespace Vigilance.Patches
             {
                 if (!__instance._interactRateLimit.CanExecute(true))
                     return false;
-                if (!__instance.hub.falldamage.isGrounded)
+                if (!__instance._hub.playerMovementSync.Grounded)
                     return false;
                 if (__instance.iAm106 && __instance.portalPosition != Vector3.zero && !__instance.goingViaThePortal)
                 {
@@ -3003,8 +3003,8 @@ namespace Vigilance.Patches
                 int num = singleton.GetAvailableTickets(__instance.NextKnownTeam);
                 if (num == 0)
                 {
-                    num = singleton.DefaultTeamAmount;
-                    RespawnTickets.Singleton.GrantTickets(singleton.DefaultTeam, singleton.DefaultTeamAmount, true);
+                    num = RespawnTickets.DefaultTeamAmount;
+                    RespawnTickets.Singleton.GrantTickets(RespawnTickets.DefaultTeam, RespawnTickets.DefaultTeamAmount, true);
                 }
                 int num2 = Mathf.Min(num, spawnableTeam.MaxWaveSize);
                 Environment.OnTeamRespawn(list.GetGameObjects(), __instance.NextKnownTeam, true, out __instance.NextKnownTeam, out bool allow);

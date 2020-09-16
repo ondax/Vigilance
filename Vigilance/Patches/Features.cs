@@ -388,44 +388,66 @@ namespace Vigilance.Patches
 	}
 
 	[HarmonyPatch(typeof(Intercom), nameof(Intercom.UpdateText))]
-	public static class CustomTextPatch
+	public static class IntercomPatch
     {
-		public static GameObject LastSpeaker { get; set; }
+		public static GameObject Speaker { get; set; }
 
 		public static bool Prefix(Intercom __instance)
         {
 			try
 			{
 				if (!string.IsNullOrEmpty(__instance.CustomContent))
-					__instance._content = __instance.CustomContent;
+				{
+					__instance.IntercomState = Intercom.State.Custom;
+					__instance.Network_intercomText = __instance.CustomContent;
+				}
 				else if (__instance.Muted)
-					__instance._content = Map.Intercom.Settings.MutedText;
+				{
+					__instance.IntercomState = Intercom.State.Muted;
+					__instance.Network_intercomText = Map.Intercom.Settings.MutedText;
+				}
 				else if (Intercom.AdminSpeaking)
-					__instance._content = Map.Intercom.Settings.AdminSpeakingText;
+				{
+					__instance.IntercomState = Intercom.State.AdminSpeaking;
+					__instance.Network_intercomText = Map.Intercom.Settings.AdminSpeakingText;
+				}
 				else if (__instance.remainingCooldown > 0f)
-					__instance._content = Map.Intercom.Settings.RestartingText;
+				{
+					int num = Mathf.CeilToInt(__instance.remainingCooldown);
+					__instance.IntercomState = Intercom.State.Restarting;
+					__instance.NetworkIntercomTime = (ushort)((num >= 0) ? ((ushort)num) : 0);
+					__instance.Network_intercomText = Map.Intercom.Settings.RestartingText;
+				}
 				else if (__instance.Networkspeaker != null)
 				{
-					LastSpeaker = __instance.ccm.gameObject;
-					if (__instance.speechRemainingTime == -77f)
-						__instance._content = Map.Intercom.Settings.TransmittingBypassModeText;
+					if (__instance._ccm.IsHost)
+						Speaker = __instance.gameObject;
 					else
-						__instance._content = Map.Intercom.Settings.TransmittingText;
+						Speaker = __instance._ccm.gameObject;
+					if (__instance.bypassSpeaking)
+					{
+						__instance.IntercomState = Intercom.State.TransmittingBypass;
+						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingBypassModeText;
+					}
+					else
+					{
+						int num2 = Mathf.CeilToInt(__instance.speechRemainingTime);
+						__instance.IntercomState = Intercom.State.Transmitting;
+						__instance.NetworkIntercomTime = (ushort)((num2 >= 0) ? ((ushort)num2) : 0);
+						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingText;
+					}
 				}
 				else
-					__instance._content = Map.Intercom.Settings.ReadyText;
-
-				if (__instance._contentDirty)
 				{
-					__instance.NetworkintercomText = __instance._content;
-					__instance._contentDirty = false;
+					__instance.IntercomState = Intercom.State.Ready;
+					__instance.Network_intercomText = Map.Intercom.Settings.ReadyText;
 				}
-
-				if (Intercom.AdminSpeaking != Intercom.LastState)
+				if (Intercom.AdminSpeaking == Intercom.LastState)
 				{
-					Intercom.LastState = Intercom.AdminSpeaking;
-					__instance.RpcUpdateAdminStatus(Intercom.AdminSpeaking);
+					return false;
 				}
+				Intercom.LastState = Intercom.AdminSpeaking;
+				__instance.RpcUpdateAdminStatus(Intercom.AdminSpeaking);
 				return false;
 			}
 			catch (Exception e)

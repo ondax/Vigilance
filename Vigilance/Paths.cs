@@ -250,11 +250,11 @@ namespace Vigilance
 			configs.Add("cfgdesc=Elevator moving speed, pretty obvious.", "elevator_moving_speed: 5");
 			configs.Add("cfgdesc=Whether or not should radios drain battery.", "unlimited_radio_battery: false");
 			configs.Add("cfgdesc=Intercom ready message.", "intercom_ready_text: READY");
-			configs.Add("cfgdesc=Intercom transmitting message. %user% = The intercom speaker | %time% = remaining cooldown.", "intercom_transmitting_text: TRANSMITTING...\\nTIME LEFT - %time%");
-			configs.Add("cfgdesc=Intercom bypass mode transmitting messsage. %user% = The intercom speaker", "intercom_transmitting_bypass_text: TRANSMITTING...\\nBYPASS MODE");
-			configs.Add("cfgdesc=Intercom admin speaking text. %user% = The intercom speaker", "intercom_admin_speaking_text: ADMIN IS USING\\nTHE INTERCOM NOW");
-			configs.Add("cfgdesc=Intercom muted message. %user% = Muted user.", "intercom_muted_text: YOU ARE MUTED BY ADMIN");
-			configs.Add("cfgdesc=Intercom restarting message. %user% = The intercom speaker | %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING\\n%remainingTime%");
+			configs.Add("cfgdesc=Intercom transmitting message. %time% = remaining speech time.", "intercom_transmitting_text: TRANSMITTING...TIME LEFT - %time%");
+			configs.Add("cfgdesc=Intercom bypass mode transmitting messsage.", "intercom_transmitting_bypass_text: TRANSMITTING...BYPASS MODE");
+			configs.Add("cfgdesc=Intercom admin speaking text.", "intercom_admin_speaking_text: ADMIN IS USING THE INTERCOM NOW");
+			configs.Add("cfgdesc=Intercom muted message.", "intercom_muted_text: YOU ARE MUTED BY ADMIN");
+			configs.Add("cfgdesc=Intercom restarting message. %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING %remainingTime%");
 			// 
 			configs.Add("line=3", "");
 			// SCP-096 Configs
