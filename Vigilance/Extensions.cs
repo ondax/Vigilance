@@ -66,6 +66,7 @@ namespace Vigilance.Extensions
 			return info.GetDamageType().Convert();
         }
 
+
 		public static DamageType Convert(this DamageTypes.DamageType dmgType)
 		{
 			if (string.IsNullOrEmpty(dmgType.name))
@@ -445,7 +446,7 @@ namespace Vigilance.Extensions
 
 		public static bool IsValidChance(this int rnd, int chance)
 		{
-			if (rnd == chance || rnd + 1 == chance || rnd + 2 == chance || rnd + 3 == chance || rnd + 4 == chance || rnd + 5 == chance || rnd - 1 == chance || rnd - 2 == chance || rnd - 3 == chance || rnd - 4 == chance || rnd - 5 == chance)
+			if (rnd == chance || rnd + 1 == chance || rnd + 2 == chance || rnd + 3 == chance || rnd + 4 == chance || rnd + 5 == chance || rnd - 1 == chance || rnd - 2 == chance || rnd - 3 == chance || rnd - 4 == chance || rnd - 5 == chance || chance == 100)
 				return true;
 			else
 				return false;
@@ -477,13 +478,10 @@ namespace Vigilance.Extensions
 				return m;
 			if (m == 0)
 				return n;
-
 			for (int i = 0; i <= n; d[i, 0] = i++)
 			{ }
-
 			for (int j = 0; j <= m; d[0, j] = j++)
 			{ }
-
 			for (int i = 1; i <= n; i++)
 			{
 				for (int j = 1; j <= m; j++)
@@ -666,7 +664,6 @@ namespace Vigilance.Extensions
 				clone.AddComponent<WorkStation>();
 				clone.GetComponent<WorkStation>().Networkposition = offset;
 				clone.AddComponent<WorkStationUpgrader>();
-				clone.GetComponent<WorkStationUpgrader>().Start();
 			}
 			return clone;
         }
@@ -953,6 +950,41 @@ namespace Vigilance.Extensions
 				default:
 					return "Unspecified";
 			}
+		}
+
+		public static string ToCassie(this RoleType role)
+		{
+			if (role == RoleType.ChaosInsurgency)
+				return "ChaosInsurgency";
+			if (role == RoleType.ClassD)
+				return "ClassD";
+			if (role == RoleType.FacilityGuard)
+				return "Facility Guard";
+			if (role == RoleType.NtfCadet)
+				return "Cadet";
+			if (role == RoleType.NtfCommander)
+				return "Commander";
+			if (role == RoleType.NtfLieutenant)
+				return "Lieutenant";
+			if (role == RoleType.NtfScientist)
+				return "NineTailedFox Scientist";
+			if (role == RoleType.Scientist)
+				return "Scientist";
+			if (role == RoleType.Scp049)
+				return "SCP 0 4 9";
+			if (role == RoleType.Scp0492)
+				return "SCP 0 4 9 . 2";
+			if (role == RoleType.Scp079)
+				return "SCP 0 7 9";
+			if (role == RoleType.Scp096)
+				return "SCP 0 9 6";
+			if (role == RoleType.Scp106)
+				return "SCP 1 0 6";
+			if (role == RoleType.Scp173)
+				return "SCP 1 7 3";
+			if (role == RoleType.Scp93953 || role == RoleType.Scp93989)
+				return "SCP 9 3 9";
+			return "";
 		}
 
 		public static Color GetColor(this RoleType role) => role == RoleType.None ? Color.white : CharacterClassManager._staticClasses.Get(role).classColor;

@@ -47,7 +47,7 @@ namespace Vigilance
 			if (!File.Exists(ConfigPath))
 			{
 				File.Create(ConfigPath).Close();
-				ValidateConfig(GetDefaultConfigValues(), ConfigPath);
+				ValidateConfig(GetDefaultConfigValues(), ConfigPath, true);
 			}
 		}
 
@@ -131,7 +131,7 @@ namespace Vigilance
 			if (!File.Exists(path))
 			{
 				File.Create(path).Close();
-				ValidateConfig(configs, path);
+				ValidateConfig(configs, path, true);
 			}
 		}
 
@@ -194,7 +194,6 @@ namespace Vigilance
 								plugin.Config = new YamlConfig(cfgPath);
 								plugin.Config?.Reload();
 								plugin.Enable();
-								Paths.CheckPluginConfig(plugin.ConfigValues, Paths.GetPluginConfigPath(plugin));
 								PluginManager.Plugins.Add(plugin, assembly);
 								Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
 							}
@@ -255,6 +254,8 @@ namespace Vigilance
 			configs.Add("cfgdesc=Intercom admin speaking text.", "intercom_admin_speaking_text: ADMIN IS USING THE INTERCOM NOW");
 			configs.Add("cfgdesc=Intercom muted message.", "intercom_muted_text: YOU ARE MUTED BY ADMIN");
 			configs.Add("cfgdesc=Intercom restarting message. %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING %remainingTime%");
+			configs.Add("cfgdesc=Roles allowed to use SCP-939's V alt voice chat feature.", "roles_allowed_to_use_alt_voice_chat: [Scp93989,Scp93953]");
+			configs.Add("cfgdesc=Roles allowed to use the Intercom.", "roles_allowed_to_use_intercom: [ChaosInsurgency,ClassD,FacilityGuard,NtfCadet,NtfCommander,NtfLieutenant,NtfScientist,Scientist,Tutorial]");
 			// 
 			configs.Add("line=3", "");
 			// SCP-096 Configs
@@ -271,7 +272,7 @@ namespace Vigilance
 			return configs;
         }
 
-		public static void ValidateConfig(Dictionary<string, string> configs, string path)
+		public static void ValidateConfig(Dictionary<string, string> configs, string path, bool firstTime = false)
         {
 			try
 			{
@@ -284,7 +285,8 @@ namespace Vigilance
 					{
 						if (pair.Key.ToUpper().StartsWith("LINE"))
 						{
-							writer.WriteLine("");
+							if (firstTime)
+								writer.WriteLine("");
 						}
 
 						if (pair.Key.ToUpper().StartsWith("SEGMENT="))

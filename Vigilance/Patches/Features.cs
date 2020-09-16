@@ -11,6 +11,7 @@ using PlayableScps;
 using MEC;
 using PlayableScps.Messages;
 using Targeting;
+using Assets._Scripts.Dissonance;
 
 namespace Vigilance.Patches
 {
@@ -457,4 +458,94 @@ namespace Vigilance.Patches
             }
 		}
     }
+
+	[HarmonyPatch(typeof(DissonanceUserSetup), nameof(DissonanceUserSetup.CallCmdAltIsActive))]
+	public static class CustomSpeechPath
+	{
+		public static List<RoleType> RolesAllowedToUseAltVoiceChat => PluginManager.Config.GetRoles("roles_allowed_to_use_alt_voice_chat");
+		public static List<RoleType> RolesAllowedToUseIntercom
+		{
+			get
+			{
+				List<RoleType> cfg = PluginManager.Config.GetRoles("roles_allowed_to_use_intercom");
+				if (cfg.Count == 0)
+					return new List<RoleType>() { RoleType.ChaosInsurgency, RoleType.ClassD, RoleType.FacilityGuard, RoleType.NtfCadet, RoleType.NtfCommander, RoleType.NtfLieutenant, RoleType.NtfScientist, RoleType.Scientist, RoleType.Tutorial };
+				return cfg;
+			}
+		}
+
+		public static bool Prefix(DissonanceUserSetup __instance, bool value)
+		{
+			try
+			{
+				CharacterClassManager ccm = __instance.gameObject.GetComponent<CharacterClassManager>();
+				if (RolesAllowedToUseAltVoiceChat.Contains(ccm.CurClass) || ccm.CurClass.Is939())
+					__instance.MimicAs939 = value;
+				return true;
+			}
+			catch (Exception e)
+			{
+				Log.Add("DissonanceUserSetup", e);
+				return true;
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(Intercom), nameof(Intercom.ServerAllowToSpeak))]
+	public static class CSPSATS
+	{
+		public static void Postfix(Intercom __instance, ref bool __result)
+		{
+			try
+			{
+				CharacterClassManager ccm = __instance.GetComponent<CharacterClassManager>();
+				if (!CustomSpeechPath.RolesAllowedToUseIntercom.Contains(ccm.CurClass))
+				{
+					__result = false;
+				}
+				else
+				{
+					__result = Vector3.Distance(__instance.transform.position, ccm.transform.position) < __instance.triggerDistance;
+				}
+			}
+			catch (Exception e)
+			{
+				Log.Add("Intercom", e);
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(Intercom), nameof(Intercom.RequestTransmission))]
+	public static class CSPRT
+	{
+		public static bool Prefix(Intercom __instance, GameObject spk)
+		{
+			try
+			{
+				if (spk != null)
+					return true;
+				if (Intercom.host.speaker == null)
+					return true;
+				CharacterClassManager ccm = Intercom.host.speaker.GetComponent<CharacterClassManager>();
+				if (CustomSpeechPath.RolesAllowedToUseIntercom.Contains(RoleType.Scp93953) || CustomSpeechPath.RolesAllowedToUseIntercom.Contains(RoleType.Scp93989))
+				{
+					Scp939PlayerScript script = Intercom.host.speaker.GetComponent<Scp939PlayerScript>();
+					if (!script.NetworkusingHumanChat)
+						__instance.Networkspeaker = null;
+					return false;
+				}
+				else
+				{
+					if (!CustomSpeechPath.RolesAllowedToUseIntercom.Contains(ccm.CurClass))
+						return false;
+					return true;
+				}
+			}
+			catch (Exception e)
+			{
+				Log.Add("Intercom", e);
+				return true;
+			}
+		}
+	}
 }

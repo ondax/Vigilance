@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System;
+using System.IO;
 
 namespace Vigilance
 {
@@ -6,7 +8,6 @@ namespace Vigilance
     {
         public abstract string Name { get; }
         public YamlConfig Config { get; set; }
-        public Dictionary<string, string> ConfigValues { get; set; } = new Dictionary<string, string>();
 
         public abstract void Enable();
         public abstract void Disable();
@@ -21,12 +22,30 @@ namespace Vigilance
         public void AddCommand(GameCommandHandler gameCommandHandler) => CommandManager.RegisterGameCommand(gameCommandHandler);
         public void AddCommand(ConsoleCommandHandler handler) => CommandManager.RegisterConsoleCommand(handler);
         public void AddEventHandler(EventHandler eventHandler) => EventManager.RegisterHandler(this, eventHandler);
-        public void AddConfig(string description, string key, string value)
+        public void AddConfig(string key, string value, string description = "")
         {
-            if (!string.IsNullOrEmpty(description))
-                ConfigValues.Add($"cfgdesc={description}", $"{key}: {value}");
-            else
-                ConfigValues.Add(key, value);
-        }
+			try
+			{
+				string path = Paths.GetPluginConfigPath(this);
+				Paths.CheckFile(path);
+				string[] currentLines = File.ReadAllLines(path);
+				using (StreamWriter writer = new StreamWriter(path, true))
+				{
+                    if (!Paths.ContainsKey(currentLines, key))
+                    {
+                        if (!string.IsNullOrEmpty(description))
+                            writer.WriteLine($"# {description}");
+                        if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(key))
+                            writer.WriteLine($"{key}: {value}");
+                    }
+					writer.Flush();
+					writer.Close();
+				}
+			}
+			catch (Exception e)
+			{
+				Log.Add("Plugin.AddConfig", e);
+			}
+		}
     }
 }

@@ -8,28 +8,25 @@ namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.1.4";
-        public static Dictionary<Plugin, Assembly> Plugins => _plugins;
-        public static List<Assembly> Dependencies => _dependencies;
-        public static YamlConfig Config => _config;
-        private static List<Assembly> _dependencies;
-        private static Dictionary<Plugin, Assembly> _plugins;
-        private static YamlConfig _config;
+        public static string Version => "5.1.5";
+        public static Dictionary<Plugin, Assembly> Plugins { get; set; }
+        public static List<Assembly> Dependencies { get; set; }
+        public static YamlConfig Config { get; set; }
 
         public static void Enable()
         {
             try
             {
                 Paths.CheckMainConfig();
-                _config = new YamlConfig(Paths.ConfigPath);
+                Config = new YamlConfig(Paths.ConfigPath);
                 CommandManager.Enable();
                 EventManager.Enable();
                 Paths.CheckDirectories();
                 Paths.CheckDependencies();
                 Paths.ValidateConfig(Paths.GetDefaultConfigValues(), Paths.ConfigPath);
-                _config?.Reload();
-                _plugins = new Dictionary<Plugin, Assembly>();
-                _dependencies = new List<Assembly>();
+                Config?.Reload();
+                Plugins = new Dictionary<Plugin, Assembly>();
+                Dependencies = new List<Assembly>();
 
                 try
                 {
@@ -50,7 +47,7 @@ namespace Vigilance
                     Log.Add("PluginManager", "An exception occured while loading!", LogType.Error);
                     Log.Add("PluginManager", e);
                 }
-                CustomNetworkManager.Modded = _config.GetBool("mark_as_modded", true);
+                CustomNetworkManager.Modded = Config.GetBool("mark_as_modded", true);
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} -> a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance v{Version}!", LogType.Info);
             }
@@ -72,11 +69,10 @@ namespace Vigilance
                         if (type.IsSubclassOf(typeof(Plugin)))
                         {
                             Plugin plugin = (Plugin)Activator.CreateInstance(type);
-                            if (_plugins.ContainsKey(plugin) || _plugins.ContainsValue(assembly))
+                            if (Plugins.ContainsKey(plugin) || Plugins.ContainsValue(assembly))
                             {
                                 try
                                 {
-                                    Paths.CheckPluginConfig(plugin.ConfigValues, Paths.GetPluginConfigPath(plugin));
                                     plugin.Reload();
                                     plugin.Config?.Reload();
                                 }
@@ -96,9 +92,8 @@ namespace Vigilance
                                     Paths.CheckFile(cfgPath);
                                     plugin.Config = new YamlConfig(cfgPath);
                                     plugin.Enable();
-                                    Paths.CheckPluginConfig(plugin.ConfigValues, cfgPath);
-                                    plugin.Config.Reload();
-                                    _plugins.Add(plugin, assembly);
+                                    plugin.Config?.Reload();
+                                    Plugins.Add(plugin, assembly);
                                     Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
                                 }
                                 catch (Exception e)
@@ -118,10 +113,18 @@ namespace Vigilance
 
             try
             {
-                foreach (Assembly assembly in Paths.GetAssemblies(Paths.Dependencies))
+                foreach (string dep in System.IO.Directory.GetFiles(Paths.Dependencies))
                 {
-                    _dependencies.Add(assembly);
-                    Log.Add("PluginManager", $"Succesfully loaded dependency ¸\"{assembly.GetName().Name}\"", LogType.Info);
+                    if (dep.EndsWith(".dll"))
+                    {
+                        Assembly assembly = Assembly.LoadFrom(dep);
+                        Dependencies.Add(assembly);
+                        Log.Add("PluginManager", $"Succesfully loaded dependency ¸\"{assembly.GetName().Name}\"", LogType.Info);
+                    }
+                    else
+                    {
+                        Log.Add($"PluginManager", $"{dep} is not a dependency!", LogType.Warn);
+                    }
                 }
             }
             catch (Exception e)
@@ -140,17 +143,17 @@ namespace Vigilance
         public static void Disable()
         {
             Log.Add("PluginManager", "Disabling plugins", LogType.Debug);
-            foreach (Plugin plugin in _plugins.Keys)
+            foreach (Plugin plugin in Plugins.Keys)
             {
                 Disable(plugin);
             }
-            _plugins.Clear();
-            _dependencies.Clear();
+            Plugins.Clear();
+            Dependencies.Clear();
         }
 
         public static void ReloadPluginConfigs()
         {
-            foreach (Plugin plugin in _plugins.Keys)
+            foreach (Plugin plugin in Plugins.Keys)
             {
                 try
                 {
@@ -169,24 +172,12 @@ namespace Vigilance
             try
             {
                 plugin.Disable();
-                _plugins.Remove(plugin);
+                Plugins.Remove(plugin);
             }
             catch (Exception e)
             {
                 Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while disabling.", LogType.Error);
                 Log.Add("PluginManager", e);
-            }
-        }
-
-        public static Assembly GetAssembly(Plugin plugin)
-        {
-            if (_plugins.TryGetValue(plugin, out Assembly assembly))
-            {
-                return assembly;
-            }
-            else
-            {
-                return null;
             }
         }
     }
