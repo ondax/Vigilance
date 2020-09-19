@@ -57,16 +57,16 @@ namespace Vigilance.Patches
 		}
 	}
 
-	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiFly))]
-	public static class DisableAntiflyPatch
-	{
-		private static bool Prefix() => PluginManager.Config.GetBool("antifly_enabled", true);
-	}
-
 	[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.GetShootPermission), new Type[] { typeof(CharacterClassManager), typeof(bool) })]
 	public static class FriendlyFirePatch
 	{
 		public static bool Prefix(WeaponManager __instance, ref bool forceFriendlyFire, ref bool __result) => !(__result = __instance.gameObject.GetPlayer().IsFriendlyFireEnabled || forceFriendlyFire || Round.FriendlyFire);
+	}
+
+	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiFly))]
+	public static class DisableAntiflyPatch
+	{
+		private static bool Prefix() => PluginManager.Config.GetBool("antifly_enabled", true);
 	}
 
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.ParseVisionInformation))]
@@ -554,97 +554,4 @@ namespace Vigilance.Patches
 			}
 		}
 	}
-
-	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.ForcePosition), new Type[] { typeof(Vector3), typeof(string), typeof(bool) })]
-	public static class AnticheatPatch
-    {
-		public static bool EnableAnticheat { get; set; } = PluginManager.Config.GetBool("enable_anticheat", true);
-
-		public static bool Prefix(PlayerMovementSync __instance, Vector3 pos, string anticheatCode, bool reset = false)
-        {
-			try
-			{
-				if (!EnableAnticheat)
-					return false;
-				if (!string.IsNullOrEmpty(anticheatCode) && PlayerMovementSync.AnticheatConsoleOutput)
-					Log.Add($"Anticheat", $"Player {__instance._hub.nicknameSync.MyNick} ({__instance._hub.characterClassManager.UserId}) playing as {__instance._hub.characterClassManager.CurRole.fullName} has been teleported. Code: {anticheatCode}", LogType.Debug);
-				__instance.RealModelPosition = pos;
-				__instance._lastSafePosition = pos;
-				__instance._receivedPosition = pos;
-				__instance._hub.falldamage.PreviousHeight = pos.y;
-				__instance._groundedY = pos.y;
-				__instance._flyTime = 0f;
-				if (anticheatCode == null || reset)
-				{
-					__instance._resetS = 0f;
-					__instance._resetL = 0f;
-					__instance._violationsS = 0;
-					__instance._violationsL = 0;
-				}
-				else if (!__instance._suppressViolations)
-				{
-					__instance._violationsS += 1;
-					__instance._violationsL += 1;
-				}
-				__instance._positionForced = true;
-				__instance._suppressViolations = true;
-				__instance._forcedPosTime = 0f;
-				if (__instance._corroding.Enabled && pos.y > -1900f)
-					__instance._corroding.ServerDisable();
-				__instance.AddSafeTime(0.8f);
-				__instance.TargetForcePosition(__instance.connectionToClient, pos);
-				return false;
-			}
-			catch (Exception e)
-            {
-				Log.Add("Anticheat", e);
-				return true;
-            }
-		}
-    }
-
-	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.CheckAnticheatSafe))]
-	public static class SafePosPatch
-    {
-		public static bool Prefix(PlayerMovementSync __instance, Vector3 pos)
-        {
-			if (AnticheatPatch.EnableAnticheat)
-				return Physics.RaycastNonAlloc(pos + Vector3.up * 0.35f, Vector3.up, PlayerMovementSync._hits, 1f, FallDamage.StaticGroundMask) == 0 && __instance.CheckIfGrounded(pos);
-			else
-				return true;
-		}
-    }
-
-	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiCheatKillPlayer))]
-	public static class AntiCheatKillPatch
-    {
-		public static bool Prefix(PlayerMovementSync __instance, string message, string code)
-        {
-			if (AnticheatPatch.EnableAnticheat)
-			{
-				__instance._violationsL = 0;
-				__instance._violationsS = 0;
-				string fullName = __instance._hub.characterClassManager.CurRole.fullName;
-				__instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(2000000f, "*" + message, DamageTypes.Flying, 0), __instance.gameObject, true);
-				if (PlayerMovementSync.AnticheatConsoleOutput)
-				{
-					ServerConsole.AddLog(string.Concat(new string[]
-					{
-				"[Anticheat Output] Player ",
-					__instance._hub.nicknameSync.MyNick,
-				" (",
-					__instance._hub.characterClassManager.UserId,
-				") playing as ",
-					fullName,
-				" has been **KILLED**. Detection code: ",
-					code,
-				"."
-					}), ConsoleColor.Gray);
-				}
-				return false;
-			}
-			else
-				return false;
-		}
-    }
 }

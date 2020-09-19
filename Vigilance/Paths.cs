@@ -237,7 +237,6 @@ namespace Vigilance
 			configs.Add("segment=Gameplay configuration", "");
 			configs.Add("cfgdesc=Whether or not SCP-939 should give you amnesia.", "enable_amnesia: true");
 			configs.Add("cfgdesc=Whether or not AntiFly should kick or kill players for \"cheating\".", "antifly_enabled: true");
-			configs.Add("cfgdesc=Whether or not AntiCheat should teleport players for \"cheating\".", "enable_anticheat: true");
 			configs.Add("cfgdesc=Whether or not players with tutorial should trigger SCP-096.", "can_tutorial_trigger_scp096: true");
 			configs.Add("cfgdesc=Whether or not players with tutorial should block SCP-173's movement.", "can_tutorial_block_scp173: true");
 			configs.Add("cfgdesc=Whether or not blood should be spawned underneath a player when a player gets hit.", "enable_blood_spawning: true");
