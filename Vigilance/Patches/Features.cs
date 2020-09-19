@@ -406,11 +406,13 @@ namespace Vigilance.Patches
 				{
 					__instance.IntercomState = Intercom.State.Muted;
 					__instance.Network_intercomText = Map.Intercom.Settings.MutedText;
+					__instance._intercomText = Map.Intercom.Settings.MutedText;
 				}
 				else if (Intercom.AdminSpeaking)
 				{
 					__instance.IntercomState = Intercom.State.AdminSpeaking;
 					__instance.Network_intercomText = Map.Intercom.Settings.AdminSpeakingText;
+					__instance._intercomText = Map.Intercom.Settings.AdminSpeakingText;
 				}
 				else if (__instance.remainingCooldown > 0f)
 				{
@@ -418,6 +420,7 @@ namespace Vigilance.Patches
 					__instance.IntercomState = Intercom.State.Restarting;
 					__instance.NetworkIntercomTime = (ushort)((num >= 0) ? ((ushort)num) : 0);
 					__instance.Network_intercomText = Map.Intercom.Settings.RestartingText;
+					__instance._intercomText = Map.Intercom.Settings.RestartingText;
 				}
 				else if (__instance.Networkspeaker != null)
 				{
@@ -429,6 +432,7 @@ namespace Vigilance.Patches
 					{
 						__instance.IntercomState = Intercom.State.TransmittingBypass;
 						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingBypassModeText;
+						__instance._intercomText = Map.Intercom.Settings.TransmittingBypassModeText;
 					}
 					else
 					{
@@ -436,12 +440,14 @@ namespace Vigilance.Patches
 						__instance.IntercomState = Intercom.State.Transmitting;
 						__instance.NetworkIntercomTime = (ushort)((num2 >= 0) ? ((ushort)num2) : 0);
 						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingText;
+						__instance._intercomText = Map.Intercom.Settings.TransmittingText;
 					}
 				}
 				else
 				{
 					__instance.IntercomState = Intercom.State.Ready;
 					__instance.Network_intercomText = Map.Intercom.Settings.ReadyText;
+					__instance._intercomText = Map.Intercom.Settings.ReadyText;
 				}
 				if (Intercom.AdminSpeaking == Intercom.LastState)
 				{
@@ -505,7 +511,7 @@ namespace Vigilance.Patches
 				}
 				else
 				{
-					__result = Vector3.Distance(__instance.transform.position, ccm.transform.position) < __instance.triggerDistance;
+					__result = Vector3.Distance(__instance.transform.position, ccm.transform.position) <= __instance.triggerDistance;
 				}
 			}
 			catch (Exception e)
@@ -548,4 +554,97 @@ namespace Vigilance.Patches
 			}
 		}
 	}
+
+	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.ForcePosition), new Type[] { typeof(Vector3), typeof(string), typeof(bool) })]
+	public static class AnticheatPatch
+    {
+		public static bool EnableAnticheat { get; set; } = PluginManager.Config.GetBool("enable_anticheat", true);
+
+		public static bool Prefix(PlayerMovementSync __instance, Vector3 pos, string anticheatCode, bool reset = false)
+        {
+			try
+			{
+				if (!EnableAnticheat)
+					return false;
+				if (!string.IsNullOrEmpty(anticheatCode) && PlayerMovementSync.AnticheatConsoleOutput)
+					Log.Add($"Anticheat", $"Player {__instance._hub.nicknameSync.MyNick} ({__instance._hub.characterClassManager.UserId}) playing as {__instance._hub.characterClassManager.CurRole.fullName} has been teleported. Code: {anticheatCode}", LogType.Debug);
+				__instance.RealModelPosition = pos;
+				__instance._lastSafePosition = pos;
+				__instance._receivedPosition = pos;
+				__instance._hub.falldamage.PreviousHeight = pos.y;
+				__instance._groundedY = pos.y;
+				__instance._flyTime = 0f;
+				if (anticheatCode == null || reset)
+				{
+					__instance._resetS = 0f;
+					__instance._resetL = 0f;
+					__instance._violationsS = 0;
+					__instance._violationsL = 0;
+				}
+				else if (!__instance._suppressViolations)
+				{
+					__instance._violationsS += 1;
+					__instance._violationsL += 1;
+				}
+				__instance._positionForced = true;
+				__instance._suppressViolations = true;
+				__instance._forcedPosTime = 0f;
+				if (__instance._corroding.Enabled && pos.y > -1900f)
+					__instance._corroding.ServerDisable();
+				__instance.AddSafeTime(0.8f);
+				__instance.TargetForcePosition(__instance.connectionToClient, pos);
+				return false;
+			}
+			catch (Exception e)
+            {
+				Log.Add("Anticheat", e);
+				return true;
+            }
+		}
+    }
+
+	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.CheckAnticheatSafe))]
+	public static class SafePosPatch
+    {
+		public static bool Prefix(PlayerMovementSync __instance, Vector3 pos)
+        {
+			if (AnticheatPatch.EnableAnticheat)
+				return Physics.RaycastNonAlloc(pos + Vector3.up * 0.35f, Vector3.up, PlayerMovementSync._hits, 1f, FallDamage.StaticGroundMask) == 0 && __instance.CheckIfGrounded(pos);
+			else
+				return true;
+		}
+    }
+
+	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiCheatKillPlayer))]
+	public static class AntiCheatKillPatch
+    {
+		public static bool Prefix(PlayerMovementSync __instance, string message, string code)
+        {
+			if (AnticheatPatch.EnableAnticheat)
+			{
+				__instance._violationsL = 0;
+				__instance._violationsS = 0;
+				string fullName = __instance._hub.characterClassManager.CurRole.fullName;
+				__instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(2000000f, "*" + message, DamageTypes.Flying, 0), __instance.gameObject, true);
+				if (PlayerMovementSync.AnticheatConsoleOutput)
+				{
+					ServerConsole.AddLog(string.Concat(new string[]
+					{
+				"[Anticheat Output] Player ",
+					__instance._hub.nicknameSync.MyNick,
+				" (",
+					__instance._hub.characterClassManager.UserId,
+				") playing as ",
+					fullName,
+				" has been **KILLED**. Detection code: ",
+					code,
+				"."
+					}), ConsoleColor.Gray);
+				}
+				return false;
+			}
+			else
+				return false;
+		}
+    }
 }

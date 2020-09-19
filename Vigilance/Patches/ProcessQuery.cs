@@ -2510,7 +2510,7 @@ namespace Vigilance.Patches
 			try
             {
 				Environment.OnConsoleCommand(query, __instance.gameObject, true, out string reply, out string color, out bool allow);
-				if (!allow)
+				if (!allow && !string.IsNullOrEmpty(reply) && !string.IsNullOrEmpty(color))
                 {
 					__instance.GCT.SendToClient(__instance.connectionToClient, reply, color.ToLower());
 					return false;
@@ -2520,7 +2520,7 @@ namespace Vigilance.Patches
 				if (handler != null)
                 {
 					string res = handler.Execute(__instance._hub.GetPlayer(), array.SkipCommand(), out string clr);
-					if (!string.IsNullOrEmpty(res))
+					if (!string.IsNullOrEmpty(res) && !string.IsNullOrEmpty(clr))
                     {
 						__instance.GCT.SendToClient(__instance.connectionToClient, res, clr.ToLower());
 						return false;

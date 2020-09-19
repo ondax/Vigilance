@@ -15,7 +15,8 @@ namespace Vigilance
 {
     public static class Environment
     {
-        public static List<CoroutineHandle> ActiveCoroutines { get; set; } = new List<CoroutineHandle>();
+        public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
+        public static System.Random Random = new System.Random();
 
         public static CoroutineHandle StartCoroutine(IEnumerator<float> handler, string name = "")
         {
@@ -47,6 +48,31 @@ namespace Vigilance
                     Timing.KillCoroutines(handle);
                 }
             }
+        }
+
+        public static float GetRandomNumber() => Random.Next(1, 10000) / 100f;
+        public static float GetRandomNumber(int max) => Random.Next(1, max);
+        public static bool GetBoolChance(float chance)
+        {
+            if (chance >= GetRandomNumber())
+                return true;
+            else
+                return false;
+        }
+        public static bool GetRandomBool()
+        {
+            if (GetRandomNumber() < 100)
+                return true;
+            else
+                return false;
+        }
+
+        public static bool GetChance(float chance)
+        {
+            if (chance >= (Random.Next(1, 10000) / 100f))
+                return true;
+            else
+                return false;
         }
 
         public static void StopAllCoroutines() => Timing.KillCoroutines(ActiveCoroutines);
@@ -187,10 +213,17 @@ namespace Vigilance
         {
             try
             {
+                if (string.IsNullOrEmpty(cmd) || ply == null)
+                {
+                    allow = all;
+                    reply = "";
+                    color = "";
+                    return;
+                }
                 string[] args = cmd.Split(' ');
-                args[0].Remove(".");
+                args[0] = args[0].Replace(".", "");
                 ConsoleCommandEvent ev = new ConsoleCommandEvent(args.Combine(), ply, all);
-                EventManager.Trigger<Vigilance.EventHandlers.ConsoleCommandHandler>(ev);
+                EventManager.Trigger<EventHandlers.ConsoleCommandHandler>(ev);
                 reply = ev.Reply;
                 color = ev.Color.ToLower();
                 allow = ev.Allow;
@@ -711,6 +744,8 @@ namespace Vigilance
         {
             try
             {
+                Round.CurrentState = RoundState.JustEnded;
+                Timing.CallDelayed(timeToRestart - 3, () => Round.CurrentState = RoundState.Ended);
                 RoundEndEvent ev = new RoundEndEvent(leadingTeam, endList, timeToRestart, all);
                 EventManager.Trigger<RoundEndHandler>(ev);
                 toRestart = ev.TimeToRestart;
@@ -731,6 +766,8 @@ namespace Vigilance
             try
             {
                 EventManager.Trigger<RoundStartHandler>(new RoundStartEvent());
+                Round.CurrentState = RoundState.JustStarted;
+                Timing.CallDelayed(5f, () => Round.CurrentState = RoundState.Started);
             }
             catch (Exception e)
             {
@@ -743,6 +780,7 @@ namespace Vigilance
             try
             {
                 EventManager.Trigger<RoundRestartHandler>(new RoundRestartEvent());
+                Round.CurrentState = RoundState.Restarting;
             }
             catch (Exception e)
             {
@@ -1030,6 +1068,7 @@ namespace Vigilance
             try
             {
                 EventManager.Trigger<WaitingForPlayersHandler>(new WaitingForPlayersEvent());
+                Round.CurrentState = RoundState.ShowingSummary;
             }
             catch (Exception e)
             {
@@ -1184,6 +1223,7 @@ namespace Vigilance
                 RoundShowSummaryEvent ev = new RoundShowSummaryEvent(start, end, team, all);
                 EventManager.Trigger<RoundShowSummaryHandler>(ev);
                 allow = ev.Allow;
+                Round.CurrentState = RoundState.ShowingSummary;
             }
             catch (Exception e)
             {

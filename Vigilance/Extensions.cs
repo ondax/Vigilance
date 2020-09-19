@@ -45,7 +45,7 @@ namespace Vigilance.Extensions
 	{
 		public static Player GetAttacker(this PlayerStats.HitInfo hitInfo)
 		{
-			Player player = hitInfo.Attacker.GetPlayer();
+			Player player = hitInfo.RHub.GetPlayer();
 			if (player == null)
 				player = Server.PlayerList.Local;
 			return player;
@@ -205,42 +205,45 @@ namespace Vigilance.Extensions
 
 		public static Player GetPlayer(this CharacterClassManager ccm)
 		{
-			return ccm.gameObject.GetPlayer();
+			return ccm._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this PlayerStats stats)
 		{
-			return stats.ccm.GetPlayer();
+			return stats.ccm._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this PlayerInteract interact)
 		{
-			return interact.gameObject.GetPlayer();
+			return interact._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this Inventory inventory)
 		{
-			return inventory.gameObject.GetPlayer();
+			return inventory._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this PlayableScpsController controller)
 		{
-			return controller.gameObject.GetPlayer();
+			return controller._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this WeaponManager manager)
 		{
-			return manager.gameObject.GetPlayer();
+			return manager._hub.GetPlayer();
 		}
 
 		public static Player GetPlayer(this CommandSender sender)
 		{
-			foreach (ReferenceHub player in ReferenceHub.GetAllHubs().Values)
+			string id = sender.SenderId;
+			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
+				return Server.PlayerList.Local;
+			foreach (Player player in Server.PlayerList.PlayersDict.Values)
 			{
-				if (player.characterClassManager.UserId == sender.SenderId)
-					return player.GetPlayer();
+				if (player.UserId == sender.SenderId)
+					return player;
 			}
-			return ReferenceHub.LocalHub.GetPlayer();
+			return Server.PlayerList.Local;
 		}
 
 		public static List<Player> ToList(IEnumerable<Player> players)
@@ -442,11 +445,11 @@ namespace Vigilance.Extensions
 
 	public static class StringExtensions
 	{
-		public static void Remove(this string str, string toRemove) => str.Replace(toRemove, "");
+		public static string Remove(this string str, string toRemove) => str.Replace(toRemove, "");
 
 		public static bool IsValidChance(this int rnd, int chance)
 		{
-			if (rnd == chance || rnd + 1 == chance || rnd + 2 == chance || rnd + 3 == chance || rnd + 4 == chance || rnd + 5 == chance || rnd - 1 == chance || rnd - 2 == chance || rnd - 3 == chance || rnd - 4 == chance || rnd - 5 == chance || chance == 100)
+			if (chance >= rnd)
 				return true;
 			else
 				return false;

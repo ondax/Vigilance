@@ -131,9 +131,13 @@ namespace Vigilance.Patches
             {
                 if (AnnounceNTFEntrancePatch.CassieDisabled)
                     return false;
+                if (scp == null)
+                    return false;
                 Player attacker = hit.GetAttacker();
-                Environment.OnAnnounceSCPTermination(attacker == null ? Server.PlayerList.Local.GameObject : attacker.GameObject, scp, hit, hit.Attacker, true, out bool allow);
+                Environment.OnAnnounceSCPTermination(attacker == null || attacker.GameObject == null ? ReferenceHub.LocalHub.gameObject : attacker.GameObject, scp, hit, string.IsNullOrEmpty(hit.Attacker) ? "NONE" : hit.Attacker, true, out bool allow);
                 if (!allow)
+                    return false;
+                if (NineTailedFoxAnnouncer.singleton == null)
                     return false;
                 NineTailedFoxAnnouncer.singleton.scpListTimer = 0f;
                 if (!string.IsNullOrEmpty(groupId))
@@ -207,7 +211,7 @@ namespace Vigilance.Patches
                 if (NetworkServer.active)
                 {
                     Environment.OnDecontamination(true, out bool allow);
-                    if (!allow || !DecontDisabled)
+                    if (!allow || DecontDisabled)
                         return false;
                     foreach (Lift lift in Lift.Instances)
                     {
@@ -646,9 +650,9 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                GameObject attacker = __instance.gameObject ?? ReferenceHub.LocalHub.gameObject;
-                GameObject target = go ?? ReferenceHub.LocalHub.gameObject;
-                Environment.OnHurt(target, attacker, info, true, out info, out bool allow);
+                Player attacker = Server.PlayerList.GetPlayer(__instance.gameObject);
+                Player player = Server.PlayerList.GetPlayer(characterClassManager.gameObject);
+                Environment.OnHurt(player.GameObject, attacker.GameObject, info, true, out info, out bool allow);
                 if (!allow)
                     return false;
                 bool flag4 = !noTeamDamage && info.IsPlayer && referenceHub != info.RHub && referenceHub.characterClassManager.Fraction == info.RHub.characterClassManager.Fraction;
@@ -796,7 +800,7 @@ namespace Vigilance.Patches
                     }
                     bool flag6 = info.IsPlayer && referenceHub == info.RHub;
                     flag2 = flag4;
-                    Environment.OnPlayerDie(attacker, target, info, true, out info, out bool allow2);
+                    Environment.OnPlayerDie(attacker.GameObject, player.GameObject, info, true, out info, out bool allow2);
                     if (!allow2)
                         return false;
                     if (flag6)
@@ -1534,6 +1538,7 @@ namespace Vigilance.Patches
         }
     }
 
+    /*
     [HarmonyPatch(typeof(PlayerInteract), nameof(PlayerInteract.CallCmdUseLocker))]
     public static class LockerInteractPatch
     {
@@ -1608,6 +1613,7 @@ namespace Vigilance.Patches
             }
         }
     }
+    */
 
     [HarmonyPatch(typeof(NicknameSync), nameof(NicknameSync.SetNick))]
     public static class PlayerJoinPatch
@@ -2813,6 +2819,8 @@ namespace Vigilance.Patches
                 Collider[] array = Physics.OverlapBox(__instance.intake.position, __instance.inputSize / 2f);
                 __instance.players.Clear();
                 __instance.items.Clear();
+                if (array == null)
+                    return false;
                 foreach (Collider collider in array)
                 {
                     CharacterClassManager component = collider.GetComponent<CharacterClassManager>();
@@ -2829,7 +2837,7 @@ namespace Vigilance.Patches
                         }
                     }
                 }
-                Environment.OnSCP914Ugrade(__instance.players, __instance.items, __instance.knobState, true, out Scp914Knob knob, out bool allow);
+                Environment.OnSCP914Ugrade(__instance.players, __instance.items, __instance.knobState, true, out __instance.knobState, out bool allow);
                 if (!allow)
                     return false;
                 __instance.MoveObjects(__instance.items, __instance.players);
@@ -3647,35 +3655,29 @@ namespace Vigilance.Patches
         }
     }
 
+    /*
     [HarmonyPatch(typeof(Pickup), nameof(Pickup.SetupPickup))]
     public static class SpawnItemPatch
     {
         public static bool Prefix(Pickup __instance, ItemType itemId, float durability, GameObject ownerPlayer, Pickup.WeaponModifiers mods, Vector3 pickupPosition, Quaternion pickupRotation)
         {
-            try
-            {
-                ReferenceHub owner = ReferenceHub.GetHub(ownerPlayer) == null ? ReferenceHub.LocalHub : ReferenceHub.GetHub(ownerPlayer);
-                Environment.OnSpawnItem(__instance, itemId, durability, owner.gameObject, mods, pickupPosition, pickupRotation, true, out itemId, out durability, out ownerPlayer, out mods,
-                 out pickupPosition, out pickupRotation, out bool allow);
-                if (!allow)
-                    return false;
-                __instance.NetworkitemId = itemId;
-                __instance.Networkdurability = durability;
-                __instance.ownerPlayer = ownerPlayer;
-                __instance.NetworkweaponMods = mods;
-                __instance.Networkposition = pickupPosition;
-                __instance.Networkrotation = pickupRotation;
-                __instance.transform.position = pickupPosition;
-                __instance.transform.rotation = pickupRotation;
-                __instance.RefreshModel();
-                __instance.UpdatePosition();
+            Player owner = Server.PlayerList.GetPlayer(ownerPlayer);
+            Environment.OnSpawnItem(__instance, itemId, durability, owner.GameObject, mods, pickupPosition, pickupRotation, true, out itemId, out durability, out ownerPlayer, out mods,
+             out pickupPosition, out pickupRotation, out bool allow);
+            if (!allow)
                 return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Pickup", e);
-                return true;
-            }
+            __instance.NetworkitemId = itemId;
+            __instance.Networkdurability = durability;
+            __instance.ownerPlayer = ownerPlayer;
+            __instance.NetworkweaponMods = mods;
+            __instance.Networkposition = pickupPosition;
+            __instance.Networkrotation = pickupRotation;
+            __instance.transform.position = pickupPosition;
+            __instance.transform.rotation = pickupRotation;
+            __instance.RefreshModel();
+            __instance.UpdatePosition();
+            return false;
         }
     }
+    */
 }

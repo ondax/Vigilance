@@ -79,7 +79,7 @@ namespace Vigilance.API
                     _hub.characterClassManager.CallCmdRequestShowTag(false);
             }
         }
-        public Class CurrentClass { get => CustomRoleBuilder.Build(Role); }
+        public Class CurrentClass { get => ClassHelper.Build(Role); }
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
@@ -91,7 +91,7 @@ namespace Vigilance.API
         public string Nick { get => _hub.nicknameSync.Network_myNickSync; set => _hub.nicknameSync.Network_myNickSync = value; }
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
         public bool NoClip { get => _hub.characterClassManager.NetworkNoclipEnabled; set => _hub.characterClassManager.NetworkNoclipEnabled = value; }
-        public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
+        public Vector3 Position { get => _hub.playerMovementSync.GetRealPosition(); set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
         public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; set => _hub.characterClassManager.AuthTokenSerial = value; }
         public string UserId { get => _hub.characterClassManager.UserId; set => _hub.characterClassManager.UserId = value; }
@@ -113,6 +113,7 @@ namespace Vigilance.API
         public bool IsAnySCP => Team == TeamType.SCP;
         public bool IsSCP => Team == TeamType.SCP && Role != RoleType.Scp0492;
         public bool IsNTF => Team == TeamType.NineTailedFox;
+        public bool CheckPermission(PlayerPermissions perm) => PermissionsHandler.IsPermitted(UserGroup.Permissions, perm);
         public TeamType Team => Role.GetTeam();
 
         public string ParsedUserId

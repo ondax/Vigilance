@@ -4,6 +4,7 @@ using System;
 using Respawning;
 using Respawning.NamingRules;
 using System.Collections.Generic;
+using MEC;
 
 namespace Vigilance.API
 {
@@ -13,6 +14,30 @@ namespace Vigilance.API
         public static bool RoundLock { get => Server.RoundLock; set => Server.RoundLock = value; }
         public static bool LobbyLock { get => Server.LobbyLock; set => Server.LobbyLock = value; }
         public static bool FriendlyFire { get => ServerConsole.FriendlyFire; set => ServerConsole.FriendlyFire = value; }
+        public static bool JustStarted => CurrentState == RoundState.JustStarted;
+        public static bool JustEnded => CurrentState == RoundState.JustEnded;
+        public static bool WaitingForPlayers => CurrentState == RoundState.WaitingForPlayers;
+        public static bool Restarting => CurrentState == RoundState.Restarting;
+        public static bool ShowingSummary => CurrentState == RoundState.ShowingSummary;
+        public static bool Started { get => CurrentState == RoundState.Started;
+            set
+            {
+                if (value)
+                    Start();
+                else
+                    End();
+            }
+        }
+        public static bool Ended { get => CurrentState == RoundState.Ended; 
+            set
+            {
+                if (value)
+                    End();
+                else
+                    Start();
+            }
+        }
+        public static RoundState CurrentState { get; set; } = RoundState.Undefined;
         public static RoundInfo Info
         {
             get
@@ -58,7 +83,7 @@ namespace Vigilance.API
         public int ChangedToZombies => RoundSummary.changed_into_zombies;
         public int EscapedClassDs => RoundSummary.escaped_ds;
         public int EscapedScientists => RoundSummary.escaped_scientists;
-        public List<SyncUnit> SyncUnits => RespawnManager.Singleton.NamingManager.AllUnitNames.ToList();
+        public List<SyncUnit> NtfUnits => RespawnManager.Singleton.NamingManager.AllUnitNames.ToList();
 
         public int CountTeam(TeamType team) => Server.PlayerList.GetPlayers(team).Count;
         public int CountRole(RoleType role) => Server.PlayerList.GetPlayers(role).Count;

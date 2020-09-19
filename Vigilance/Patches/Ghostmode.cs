@@ -33,7 +33,7 @@ namespace Vigilance.Patches
                     __instance._transmitBuffer = new PlayerPositionData[__instance._usedData * 2];
                 foreach (GameObject gameObject in players)
                 {
-                    Player player = gameObject.GetPlayer();
+                    Player player = Server.PlayerList.GetPlayer(gameObject);
                     Array.Copy(__instance._receivedData, __instance._transmitBuffer, __instance._usedData);
                     if (player.Role.Is939())
                     {
@@ -51,7 +51,7 @@ namespace Vigilance.Patches
                         for (int index = 0; index < __instance._usedData; ++index)
                         {
                             PlayerPositionData ppd = __instance._transmitBuffer[index];
-                            Player currentTarget = players[index].GetPlayer();
+                            Player currentTarget = Server.PlayerList.GetPlayer(players[index]);
                             Scp096 scp096 = player.Hub.scpsController.CurrentScp as Scp096;
                             bool canSee = true;
                             bool shouldRotate = false;

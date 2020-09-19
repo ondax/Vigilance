@@ -306,6 +306,7 @@ namespace Vigilance.API
 				if (string.IsNullOrEmpty(txt))
 					return;
 				global::Intercom.host.CustomContent = txt;
+				global::Intercom.host.UpdateText();
             }
 
 			public static class Settings
@@ -329,10 +330,11 @@ namespace Vigilance.API
 
 			public static void Decontaminate()
             {
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun = true;
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
 				LightContainmentZoneDecontamination.DecontaminationController.Singleton.KillPlayers();
-            }
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun = true;
+				LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating = true;
+			}
 		}
 	}
 }

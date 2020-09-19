@@ -168,6 +168,11 @@ namespace Vigilance
 				Log.Add("Paths", "Downloading Harmony", LogType.Info);
 				Download(HarmonyDownloadURL, HarmonyFile);
             }
+
+			if (!File.Exists(NewtonsoftJson))
+            {
+				Log.Add("Paths", "Downloading Newtonsoft.Json", LogType.Info);
+            }
         }
 
 		public static void DownloadPlugin(string url, string pluginName)
@@ -221,8 +226,6 @@ namespace Vigilance
 			configs.Add("cfgdesc=Your server will have the \"Modded\" flag in the server list if you set this to true.", "mark_as_modded: true");
 			configs.Add("cfgdesc=Adds a transparent text that specifies the version of Vigilance.", "tracking: false");
 			configs.Add("cfgdesc=Whether or not debug messages should be printed in the server console. This option is usually very spammy.", "debug: false");
-			//
-			configs.Add("line=1", "");
 			// ServerGuard
 			configs.Add("segment=Server Guard", "");
 			configs.Add("cfgdesc=Whether or not ServerGuard should be enabled.", "guard_enabled: false");
@@ -230,12 +233,11 @@ namespace Vigilance
 			configs.Add("cfgdesc=You will need a API key used for checking if a specific IP is a VPN connection or not. Warning! GeForce Now is flagged as a VPN too! You can get your key here! \"https://iphub.info/apiKey/newFree\"", "vpn_api_key: none");
 			configs.Add("cfgdesc=ServerGurd will kick players that didnt buy anything on Steam if this is set to true.", "steam_block_new accounts: false");
 			configs.Add("cfgdesc=ServerGuard will kick non-setup Steam accounts if this is set to true.", "steam_block_non_setup_accounts: false");
-			//
-			configs.Add("line=2", "");
 			// Gameplay configs
 			configs.Add("segment=Gameplay configuration", "");
 			configs.Add("cfgdesc=Whether or not SCP-939 should give you amnesia.", "enable_amnesia: true");
 			configs.Add("cfgdesc=Whether or not AntiFly should kick or kill players for \"cheating\".", "antifly_enabled: true");
+			configs.Add("cfgdesc=Whether or not AntiCheat should teleport players for \"cheating\".", "enable_anticheat: true");
 			configs.Add("cfgdesc=Whether or not players with tutorial should trigger SCP-096.", "can_tutorial_trigger_scp096: true");
 			configs.Add("cfgdesc=Whether or not players with tutorial should block SCP-173's movement.", "can_tutorial_block_scp173: true");
 			configs.Add("cfgdesc=Whether or not blood should be spawned underneath a player when a player gets hit.", "enable_blood_spawning: true");
@@ -256,8 +258,6 @@ namespace Vigilance
 			configs.Add("cfgdesc=Intercom restarting message. %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING %remainingTime%");
 			configs.Add("cfgdesc=Roles allowed to use SCP-939's V alt voice chat feature.", "roles_allowed_to_use_alt_voice_chat: [Scp93989,Scp93953]");
 			configs.Add("cfgdesc=Roles allowed to use the Intercom.", "roles_allowed_to_use_intercom: [ChaosInsurgency,ClassD,FacilityGuard,NtfCadet,NtfCommander,NtfLieutenant,NtfScientist,Scientist,Tutorial]");
-			// 
-			configs.Add("line=3", "");
 			// SCP-096 Configs
 			configs.Add("segment=Scp-096 Configuration", "");
 			configs.Add("cfgdesc=Starting value of AHP for SCP-096.", "scp096_max_shield: 500");
