@@ -117,7 +117,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnAnnounceSCPTermination(GameObject killer, Role role, PlayerStats.HitInfo info, string cause, bool all, out bool allow)
+        public static void OnAnnounceSCPTermination(Player killer, Role role, PlayerStats.HitInfo info, string cause, bool all, out bool allow)
         {
             try
             {
@@ -132,7 +132,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnCancelMedical(float cldwn, GameObject ply, ItemType item, bool all, out float cooldown, out bool allow)
+        public static void OnCancelMedical(float cldwn, Player ply, ItemType item, bool all, out float cooldown, out bool allow)
         {
             try
             {
@@ -149,7 +149,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGlobalReport(string res, GameObject rep, GameObject red, bool all, out bool allow)
+        public static void OnGlobalReport(string res, Player rep, Player red, bool all, out bool allow)
         {
             try
             {
@@ -164,7 +164,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnLocalReport(string res, GameObject rep, GameObject red, bool all, out bool allow)
+        public static void OnLocalReport(string res, Player rep, Player red, bool all, out bool allow)
         {
             try
             {
@@ -179,7 +179,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnCheckEscape(GameObject ply, bool all, out bool allow)
+        public static void OnCheckEscape(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -209,7 +209,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnConsoleCommand(string cmd, GameObject ply, bool all, out string reply, out string color, out bool allow)
+        public static void OnConsoleCommand(string cmd, Player ply, bool all, out string reply, out string color, out bool allow)
         {
             try
             {
@@ -252,7 +252,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnDoorInteract(bool all, Door door, GameObject user, out bool allow)
+        public static void OnDoorInteract(bool all, Door door, Player user, out bool allow)
         {
             try
             {
@@ -267,7 +267,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnDropItem(Inventory.SyncItemInfo sync, GameObject ply, bool all, out Inventory.SyncItemInfo itemInfo, out bool allow)
+        public static void OnDropItem(Inventory.SyncItemInfo sync, Player ply, bool all, out Inventory.SyncItemInfo itemInfo, out bool allow)
         {
             try
             {
@@ -284,7 +284,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnDroppedItem(Pickup pickup, GameObject ply)
+        public static void OnDroppedItem(Pickup pickup, Player ply)
         {
             try
             {
@@ -297,7 +297,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnElevatorInteract(Lift lift, GameObject ply, bool all, out bool allow)
+        public static void OnElevatorInteract(Lift lift, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -312,7 +312,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnFemurEnter(GameObject ply, bool all, out bool allow)
+        public static void OnFemurEnter(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -327,7 +327,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGeneratorInsert(Generator079 gen, GameObject ply, bool all, out bool allow)
+        public static void OnGeneratorInsert(Generator079 gen, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -342,7 +342,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGeneratorEject(Generator079 gen, GameObject ply, bool all, out bool allow)
+        public static void OnGeneratorEject(Generator079 gen, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -357,7 +357,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGeneratorUnlock(Generator079 gen, GameObject ply, bool all, out bool allow)
+        public static void OnGeneratorUnlock(Generator079 gen, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -372,7 +372,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGeneratorOpen(Generator079 gen, GameObject ply, bool all, out bool allow)
+        public static void OnGeneratorOpen(Generator079 gen, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -387,7 +387,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnGeneratorClose(Generator079 gen, GameObject ply, bool all, out bool allow)
+        public static void OnGeneratorClose(Generator079 gen, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -417,7 +417,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnThrowGrenade(GameObject ply, Grenade grenade, GrenadeType nadeType, bool all, out bool allow)
+        public static void OnThrowGrenade(Player ply, Grenade grenade, GrenadeType nadeType, bool all, out bool allow)
         {
             try
             {
@@ -432,7 +432,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnIntercomSpeak(GameObject ply, bool all, out bool allow)
+        public static void OnIntercomSpeak(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -447,7 +447,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnChangeItem(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, GameObject ply, bool all, out Inventory.SyncItemInfo changeTo, out bool allow)
+        public static void OnChangeItem(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, Player ply, bool all, out Inventory.SyncItemInfo changeTo, out bool allow)
         {
             try
             {
@@ -464,7 +464,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnLockerInteract(Locker locker, GameObject ply, bool all, out bool allow)
+        public static void OnLockerInteract(Locker locker, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -479,7 +479,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPickupItem(Pickup it, GameObject ply, bool all, out bool allow)
+        public static void OnPickupItem(Pickup it, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -528,7 +528,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnBan(GameObject issuer, GameObject ply, string res, long issuance, long expiery, bool all, out long newExpiery, out bool allow)
+        public static void OnBan(Player issuer, Player ply, string res, long issuance, long expiery, bool all, out long newExpiery, out bool allow)
         {
             try
             {
@@ -545,7 +545,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnHandcuff(GameObject ply, GameObject cuff, bool all, out bool allow)
+        public static void OnHandcuff(Player ply, Player cuff, bool all, out bool allow)
         {
             try
             {
@@ -560,7 +560,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnUncuff(GameObject ply, GameObject uncuff, bool all, out bool allow)
+        public static void OnUncuff(Player ply, Player uncuff, bool all, out bool allow)
         {
             try
             {
@@ -575,7 +575,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnHurt(GameObject ply, GameObject attack, PlayerStats.HitInfo info, bool all, out PlayerStats.HitInfo hitInfo, out bool allow)
+        public static void OnHurt(Player ply, Player attack, PlayerStats.HitInfo info, bool all, out PlayerStats.HitInfo hitInfo, out bool allow)
         {
             try
             {
@@ -592,7 +592,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnInteract(GameObject ply, bool all, out bool allow)
+        public static void OnInteract(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -607,7 +607,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPlayerJoin(GameObject ply)
+        public static void OnPlayerJoin(Player ply)
         {
             try
             {
@@ -620,7 +620,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPlayerLeave(GameObject ply, out bool destroy)
+        public static void OnPlayerLeave(Player ply, out bool destroy)
         {
             try
             {
@@ -635,12 +635,11 @@ namespace Vigilance
             }
         }
 
-        public static void OnReload(GameObject ply, bool anim, bool all, out bool animOnly, out bool allow)
+        public static void OnReload(Player ply, bool anim, bool all, out bool animOnly, out bool allow)
         {
             try
             {
-                Player player = ply?.GetPlayer();
-                WeaponReloadEvent ev = new WeaponReloadEvent(ply, player.Hub.inventory.curItem.GetWeaponType(), anim, all);
+                WeaponReloadEvent ev = new WeaponReloadEvent(ply, ply.Hub.inventory.curItem.GetWeaponType(), anim, all);
                 EventManager.Trigger<WeaponReloadHandler>(ev);
                 animOnly = ev.AnimationOnly;
                 allow = ev.Allow;
@@ -653,7 +652,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSpawn(GameObject ply, Vector3 pos, RoleType role, bool all, out Vector3 location, out RoleType newRole, out bool allow)
+        public static void OnSpawn(Player ply, Vector3 pos, RoleType role, bool all, out Vector3 location, out RoleType newRole, out bool allow)
         {
             try
             {
@@ -672,7 +671,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPocketEscape(GameObject ply, Vector3 pos, bool all, out Vector3 escapePos, out bool allow)
+        public static void OnPocketEscape(Player ply, Vector3 pos, bool all, out Vector3 escapePos, out bool allow)
         {
             try
             {
@@ -689,7 +688,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPocketEnter(GameObject ply, bool dmg, bool all, out bool hurt, out bool allow)
+        public static void OnPocketEnter(Player ply, bool dmg, bool all, out bool hurt, out bool allow)
         {
             try
             {
@@ -706,7 +705,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPocketHurt(GameObject ply, float dmg, bool all, out float damage, out bool allow)
+        public static void OnPocketHurt(Player ply, float dmg, bool all, out float damage, out bool allow)
         {
             try
             {
@@ -727,10 +726,28 @@ namespace Vigilance
         {
             try
             {
-                RemoteAdminCommandEvent ev = new RemoteAdminCommandEvent(issuer?.GetPlayer().GameObject, cmd, "SERVER#Unknown command!", all);
-                EventManager.Trigger<RemoteAdminEventHandler>(ev);
-                allow = ev.Allow;
-                response = ev.Response;
+                Player issue = null;
+                foreach (Player player in Server.PlayerList.PlayersDict.Values)
+                {
+                    if (player.UserId == issuer.SenderId)
+                        issue = player;
+                }
+                if (issuer.SenderId == "SERVER CONSOLE")
+                {
+                    issue = Server.PlayerList.Local;
+                }
+                if (issue != null)
+                {
+                    RemoteAdminCommandEvent ev = new RemoteAdminCommandEvent(issue, cmd, "SERVER#Unknown command!", all);
+                    EventManager.Trigger<RemoteAdminEventHandler>(ev);
+                    allow = ev.Allow;
+                    response = ev.Response;
+                }
+                else
+                {
+                    allow = all;
+                    response = "An error occured.";
+                }
             }
             catch (Exception e)
             {
@@ -768,6 +785,8 @@ namespace Vigilance
                 EventManager.Trigger<RoundStartHandler>(new RoundStartEvent());
                 Round.CurrentState = RoundState.JustStarted;
                 Timing.CallDelayed(5f, () => Round.CurrentState = RoundState.Started);
+                foreach (BreakableWindow window in UnityEngine.Object.FindObjectsOfType<BreakableWindow>())
+                    window.health = ConfigManager.WindowHealth;
             }
             catch (Exception e)
             {
@@ -781,6 +800,8 @@ namespace Vigilance
             {
                 EventManager.Trigger<RoundRestartHandler>(new RoundRestartEvent());
                 Round.CurrentState = RoundState.Restarting;
+                if (ConfigManager.ShouldReloadConfigsOnRoundRestart)
+                    Server.ReloadConfigs();
             }
             catch (Exception e)
             {
@@ -805,7 +826,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP096Enrage(GameObject ply, bool all, out bool allow)
+        public static void OnSCP096Enrage(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -820,7 +841,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP096Calm(GameObject ply, bool all, out bool allow)
+        public static void OnSCP096Calm(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -835,7 +856,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP106Contain(GameObject killer, GameObject ply, bool all, out bool allow)
+        public static void OnSCP106Contain(Player killer, Player ply, bool all, out bool allow)
         {
             try
             {
@@ -850,7 +871,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP106CreatePortal(GameObject ply, Vector3 pos, bool all, out Vector3 portalPosition, out bool allow)
+        public static void OnSCP106CreatePortal(Player ply, Vector3 pos, bool all, out Vector3 portalPosition, out bool allow)
         {
             try
             {
@@ -867,7 +888,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP106Teleport(GameObject ply, Vector3 old, Vector3 newPos, bool all, out Vector3 newPosition, out bool allow)
+        public static void OnSCP106Teleport(Player ply, Vector3 old, Vector3 newPos, bool all, out Vector3 newPosition, out bool allow)
         {
             try
             {
@@ -884,7 +905,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP914Activate(GameObject ply, float networkTime, bool all, out float time, out bool allow)
+        public static void OnSCP914Activate(Player ply, float networkTime, bool all, out float time, out bool allow)
         {
             try
             {
@@ -901,7 +922,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP914ChangeKnob(GameObject ply, Scp914Knob setting, bool all, out Scp914Knob knobSetting, out bool allow)
+        public static void OnSCP914ChangeKnob(Player ply, Scp914Knob setting, bool all, out Scp914Knob knobSetting, out bool allow)
         {
             try
             {
@@ -918,7 +939,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSetClass(GameObject ply, RoleType role, bool all, out RoleType outRole, out bool allow)
+        public static void OnSetClass(Player ply, RoleType role, bool all, out RoleType outRole, out bool allow)
         {
             try
             {
@@ -935,7 +956,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSetGroup(GameObject ply, UserGroup g, bool all, out UserGroup userGroup, out bool allow)
+        public static void OnSetGroup(Player ply, UserGroup g, bool all, out UserGroup userGroup, out bool allow)
         {
             try
             {
@@ -952,7 +973,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnShoot(GameObject ply, GameObject target, WeaponType weapon, bool all, out bool allow)
+        public static void OnShoot(Player ply, GameObject target, WeaponType weapon, bool all, out bool allow)
         {
             try
             {
@@ -967,7 +988,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnLateShoot(GameObject ply, GameObject target, WeaponType weapon, bool all, out bool allow)
+        public static void OnLateShoot(Player ply, GameObject target, WeaponType weapon, bool all, out bool allow)
         {
             try
             {
@@ -997,7 +1018,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSyncData(GameObject ply, Vector2 speed, byte anim, bool all, out byte curAnim, out bool allow)
+        public static void OnSyncData(Player ply, Vector2 speed, byte anim, bool all, out byte curAnim, out bool allow)
         {
             try
             {
@@ -1031,7 +1052,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnTriggerTesla(GameObject ply, TeslaGate tesla, bool all, out bool allow)
+        public static void OnTriggerTesla(Player ply, TeslaGate tesla, bool all, out bool allow)
         {
             try
             {
@@ -1046,7 +1067,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnUseMedical(GameObject ply, ItemType item, int hp, bool all, out int hpToRecover, out bool allow)
+        public static void OnUseMedical(Player ply, ItemType item, int hp, bool all, out int hpToRecover, out bool allow)
         {
             try
             {
@@ -1088,7 +1109,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnWarheadCancel(GameObject ply, float timeLeft, bool all, out float timeToDetonation, out bool allow)
+        public static void OnWarheadCancel(Player ply, float timeLeft, bool all, out float timeToDetonation, out bool allow)
         {
             try
             {
@@ -1105,7 +1126,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnWarheadStart(GameObject ply, float timeLeft, bool all, out float timeToDetonation, out bool allow)
+        public static void OnWarheadStart(Player ply, float timeLeft, bool all, out float timeToDetonation, out bool allow)
         {
             try
             {
@@ -1122,7 +1143,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnWarheadKeycardAccess(GameObject ply, bool all, out bool allow)
+        public static void OnWarheadKeycardAccess(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -1137,7 +1158,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnRecall(GameObject ply, Ragdoll ragdoll, bool all, out bool allow)
+        public static void OnRecall(Player ply, Ragdoll ragdoll, bool all, out bool allow)
         {
             try
             {
@@ -1152,7 +1173,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP079GainExp(GameObject ply, ExpGainType expGain, float exp, bool all, out float experience, out bool allow)
+        public static void OnSCP079GainExp(Player ply, ExpGainType expGain, float exp, bool all, out float experience, out bool allow)
         {
             try
             {
@@ -1169,7 +1190,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP079GainLvl(GameObject ply, bool all, out bool allow)
+        public static void OnSCP079GainLvl(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -1184,7 +1205,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP079Interact(GameObject ply, bool all, out bool allow)
+        public static void OnSCP079Interact(Player ply, bool all, out bool allow)
         {
             try
             {
@@ -1245,7 +1266,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnPlayerDie(GameObject ply, GameObject target, PlayerStats.HitInfo info, bool all, out PlayerStats.HitInfo hitInfo, out bool allow)
+        public static void OnPlayerDie(Player ply, Player target, PlayerStats.HitInfo info, bool all, out PlayerStats.HitInfo hitInfo, out bool allow, out bool spawnRagdoll)
         {
             try
             {
@@ -1254,16 +1275,18 @@ namespace Vigilance
                 EventManager.Trigger<PlayerDieEventHandler>(ev);
                 hitInfo = ev.HitInfo;
                 allow = ev.Allow;
+                spawnRagdoll = ev.SpawnRagdoll;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
                 hitInfo = info;
                 allow = all;
+                spawnRagdoll = true;
             }
         }
 
-        public static void OnScp096AddTarget(GameObject target, bool all, out bool allow)
+        public static void OnScp096AddTarget(Player target, bool all, out bool allow)
         {
             try
             {
@@ -1282,7 +1305,9 @@ namespace Vigilance
         {
             try
             {
-                SpawnItemEvent ev = new SpawnItemEvent(pickup, id, dur, ownr, mods, pos, rot, all);
+                CharacterClassManager ccm = ownr?.GetComponent<CharacterClassManager>();
+                Player ply = ccm.IsHost ? Server.PlayerList.Local : new Player(ReferenceHub.GetHub(ownr));
+                SpawnItemEvent ev = new SpawnItemEvent(pickup, id, dur, ply, mods, pos, rot, all);
                 EventManager.Trigger<SpawnItemEventHandler>(ev);
                 itemId = ev.ItemId;
                 durability = ev.Durability;

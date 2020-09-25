@@ -13,11 +13,29 @@ namespace Vigilance.API
     public class Player
     {
         private ReferenceHub _hub;
-        public Player(ReferenceHub hub) => _hub = hub;
+        public Player(ReferenceHub hub)
+        {
+            _hub = hub;
+            IsInvisible = false;
+            PlayerLock = false;
+        }
+
+        public Player(GameObject obj)
+        {
+            if (obj == null)
+                return;
+            ReferenceHub hub = ReferenceHub.GetHub(obj);
+            if (hub == null)
+                return;
+            _hub = hub;
+            IsInvisible = false;
+            PlayerLock = false;
+        }
 
         public GameObject GameObject => _hub.gameObject;
         public ReferenceHub Hub => _hub;
 
+        public bool PlayerLock { get; set; }
         public bool BypassMode => _hub.serverRoles.BypassMode;
         public bool DoNotTrack => _hub.serverRoles.DoNotTrack;
         public bool RemoteAdmin => _hub.serverRoles.RemoteAdmin;
@@ -85,7 +103,7 @@ namespace Vigilance.API
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
         public bool IsFriendlyFireEnabled { get; set; }
         public bool IsUsingStamina { get; set; } = true;
-        public bool IsInvisible { get; set; } = false;
+        public bool IsInvisible { get; set; }
         public ItemType ItemInHand { get => _hub.inventory.curItem; set => _hub.inventory.SetCurItem(value); }
         public int MaxHealth { get => _hub.playerStats.maxHP; set => _hub.playerStats.maxHP = value; }
         public string Nick { get => _hub.nicknameSync.Network_myNickSync; set => _hub.nicknameSync.Network_myNickSync = value; }

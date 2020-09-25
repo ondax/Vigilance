@@ -16,7 +16,7 @@ namespace Vigilance
     public static class ServerGuard
     {
         private static List<string> _modules;
-        public static bool IsEnabled => PluginManager.Config.GetBool("guard_enabled", false);
+        public static bool IsEnabled => ConfigManager.IsServerGuardEnabled;
         public static List<string> EnabledModules
         {
             get
@@ -24,7 +24,7 @@ namespace Vigilance
                 if (_modules == null)
                 {
                     _modules = new List<string>();
-                    foreach (string str in PluginManager.Config.GetStringList("guard_enabled_modules"))
+                    foreach (string str in ConfigManager.GuardEnabledModules)
                     {
                         if (str.ToLower() == "vpn" || str.ToLower() == "vpnshield")
                             _modules.Add("vpn");
@@ -84,7 +84,7 @@ namespace Vigilance
         public static class VPNShield
         {
             public static bool IsEnabled => EnabledModules.Contains("vpn");
-            public static string APIKey => PluginManager.Config.GetString("vpn_api_key");
+            public static string APIKey => ConfigManager.VpnApiKey;
 
             public static bool CheckIP(Player player)
             {
@@ -122,8 +122,8 @@ namespace Vigilance
         {
 
             public static bool IsEnabled => EnabledModules.Contains("steam");
-            public static bool BlockNewAccounts => PluginManager.Config.GetBool("steam_block_new_accounts");
-            public static bool BlockNonSetupAccounts => PluginManager.Config.GetBool("steam_block_non_setup_accounts");
+            public static bool BlockNewAccounts => ConfigManager.ShouldKickNewAccounts;
+            public static bool BlockNonSetupAccounts => ConfigManager.ShouldKickNonSetupAccounts;
 
             public static bool CheckAccount(Player player)
             {

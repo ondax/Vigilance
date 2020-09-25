@@ -6,7 +6,7 @@ namespace Vigilance
 {
     public static class Log
     {
-        public static bool Debug => PluginManager.Config.GetBool("debug");
+        public static bool Debug => ConfigManager.ShouldDebug;
 
         public static void Add(string message, LogType type)
         {

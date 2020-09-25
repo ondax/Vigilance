@@ -175,8 +175,8 @@ namespace Vigilance.API
         public static void ReloadConfigs()
         {
             ConfigFile.ReloadGameConfigs(false);
-            PluginManager.Config.Reload();
-            PluginManager.ReloadPluginConfigs();
+            PluginManager.Reload();
+            ConfigManager.Reload();
             ServerStatic.PermissionsHandler?.RefreshPermissions();
         }
 
@@ -269,22 +269,30 @@ namespace Vigilance.API
 
             public static Player GetPlayer(GameObject gameObject)
             {
-                if (gameObject == null)
-                    return Local;
-                if (!PlayersDict.TryGetValue(gameObject, out Player player))
+                Player ply = null;
+                if (PlayersDict.TryGetValue(gameObject, out ply))
+                    return ply;
+                else
                 {
-                    foreach (Player offline in OfflinePlayersCache)
+                    RemoteAdmin.QueryProcessor qp = gameObject.GetComponent<RemoteAdmin.QueryProcessor>();
+                    CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
+                    if (qp != null)
                     {
-                        CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
+                        if (PlayerIdCache.TryGetValue(qp.PlayerId, out ply))
+                            return ply;
+                    }
+                    else
+                    {
                         if (ccm != null)
                         {
-                            if (ccm.UserId == offline.UserId)
-                                return offline;
+                            if (UserIdCache.TryGetValue(ccm.UserId, out ply))
+                                return ply;
                         }
+                        else
+                            return Local;
                     }
-                    player = new Player(ReferenceHub.GetHub(gameObject));
                 }
-                return player;
+                return Local;
             }
 
             public static Player GetPlayer(ReferenceHub hub)

@@ -8,7 +8,7 @@ namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.1.7";
+        public static string Version => "5.1.9";
         public static Dictionary<Plugin, Assembly> Plugins { get; set; }
         public static List<Assembly> Dependencies { get; set; }
         public static YamlConfig Config { get; set; }
@@ -23,10 +23,9 @@ namespace Vigilance
                 EventManager.Enable();
                 Paths.CheckDirectories();
                 Paths.CheckDependencies();
-                Paths.ValidateConfig(Paths.GetDefaultConfigValues(), Paths.ConfigPath);
-                Config?.Reload();
                 Plugins = new Dictionary<Plugin, Assembly>();
                 Dependencies = new List<Assembly>();
+                ConfigManager.Reload();
 
                 try
                 {
@@ -47,9 +46,9 @@ namespace Vigilance
                     Log.Add("PluginManager", "An exception occured while loading!", LogType.Error);
                     Log.Add("PluginManager", e);
                 }
-                CustomNetworkManager.Modded = Config.GetBool("mark_as_modded", true);
-                BuildInfoCommand.ModDescription = $"Vigilance v{Version} -> a simple plugin loader and a little API for SCP: Secret Laboratory.";
-                Log.Add("PluginManager", $"Succesfully loaded Vigilance v{Version}!", LogType.Info);
+                CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
+                BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
+                Log.Add("PluginManager", $"Succesfully loaded version \"{Version}\"!", LogType.Info);
             }
             catch (Exception e)
             {
@@ -81,7 +80,6 @@ namespace Vigilance
                                     Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while reloading.", LogType.Error);
                                     Log.Add("PluginManager", e);
                                 }
-                                return;
                             }
                             else
                             {

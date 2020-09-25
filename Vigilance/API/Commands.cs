@@ -199,7 +199,6 @@ namespace Vigilance.Registered
         public string Execute(Player sender, string[] args)
 		{
 			Server.ReloadConfigs();
-			PluginManager.Reload();
 			return $"Success! Changes will be applied on your server next round.";
 		}
 	}
@@ -643,7 +642,7 @@ namespace Vigilance.Registered
 						return "Please specify a valid operation! [get/set/add]";
                 }
             }
-			else if (args.Length == 3)
+			else 
             {
 				Player player = args[1].GetPlayer();
 				switch (args[0].ToLower())
@@ -662,10 +661,6 @@ namespace Vigilance.Registered
 						return "Please specify a valid operation! [get/set/add]";
 				}
 			}
-			else
-            {
-				return Usage;
-            }
         }
 
 		public static Vector3 ParsePosition(string s)

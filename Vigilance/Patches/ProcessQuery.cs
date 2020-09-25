@@ -41,6 +41,11 @@ namespace Vigilance.Patches
 					sender.RaReply($"SERVER#{reply}", true, true, "");
 					return false;
 				}
+				if (!ConfigManager.EnableGameCommands || ConfigManager.GameCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.GameCommandsBlacklist.Contains(sender.SenderId))
+				{
+					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Disabled in config")}", false, true, "");
+					return false;
+				}
 				if (q.StartsWith("@", StringComparison.Ordinal))
 				{
 					if (!CheckPermissions(sender, "Admin Chat", PlayerPermissions.AdminChat, string.Empty))
@@ -2488,6 +2493,11 @@ namespace Vigilance.Patches
 							sender.RaReply("SERVER#Unknown command!", false, true, "");
 							return false;
 						}
+						if (!ConfigManager.EnableCustomCommands || ConfigManager.CustomCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.CustomCommandsBlacklist.Contains(sender.SenderId))
+						{
+							sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableCustomCommands ? "Blacklisted command or UserID" : "Disabled in config")}", false, true, "");
+							return false;
+						}
 						string response = $"{query[0].ToUpper()}#{handler.Execute(sender.GetPlayer(), query.SkipCommand())}";
 						sender.RaReply(response, true, true, "");
 						break;
@@ -2509,10 +2519,11 @@ namespace Vigilance.Patches
         {
 			try
             {
-				Environment.OnConsoleCommand(query, __instance.gameObject, true, out string reply, out string color, out bool allow);
-				if (!allow && !string.IsNullOrEmpty(reply) && !string.IsNullOrEmpty(color))
+				Environment.OnConsoleCommand(query, Server.PlayerList.GetPlayer(__instance.gameObject), true, out string reply, out string color, out bool allow);
+				if (!allow)
                 {
-					__instance.GCT.SendToClient(__instance.connectionToClient, reply, color.ToLower());
+					if (!string.IsNullOrEmpty(reply) && !string.IsNullOrEmpty(color))
+						__instance.GCT.SendToClient(__instance.connectionToClient, reply, color.ToLower());
 					return false;
                 }
 				string[] array = query.Split(' ');

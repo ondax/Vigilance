@@ -287,7 +287,7 @@ namespace Vigilance.API
 			public static int RemainingCooldown { get => (int)global::Intercom.host.remainingCooldown; set => global::Intercom.host.remainingCooldown = value; }
 			public static int RemainingTime { get => (int)global::Intercom.host.speechRemainingTime; set => global::Intercom.host.speechRemainingTime = value; }
 			public static int SpeechTime { get => (int)global::Intercom.host._speechTime; set => global::Intercom.host._speechTime = value; }
-			public static Player Speaker { get => Patches.IntercomPatch.Speaker.GetPlayer(); set => SetSpeaker(value); }
+			public static Player Speaker { get => global::Intercom.host.speaker.GetPlayer(); set => SetSpeaker(value); }
 			public static string Text { get => global::Intercom.host.Network_intercomText; set => global::Intercom.host.CustomContent = value; }
 			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone").transform;
 
@@ -308,16 +308,6 @@ namespace Vigilance.API
 				global::Intercom.host.CustomContent = txt;
 				global::Intercom.host.UpdateText();
             }
-
-			public static class Settings
-            {
-				public static string AdminSpeakingText => PluginManager.Config.GetString("intercom_admin_speaking_text", "ADMIN IS USING\nTHE INTERCOM NOW").Replace("%time%", RemainingCooldown.ToString());
-				public static string TransmittingText => PluginManager.Config.GetString("intercom_transmitting_text", $"TRANSMITTING...\nTIME LEFT - {RemainingTime}").Replace("%time%", RemainingTime.ToString());
-				public static string TransmittingBypassModeText => PluginManager.Config.GetString("intercom_transmitting_bypass_text", "TRANSMITTING...\nBYPASS MODE");
-				public static string MutedText => PluginManager.Config.GetString("intercom_muted_text", "YOU ARE MUTED BY ADMIN");
-				public static string RestartingText => PluginManager.Config.GetString("intercom_restarting_text", $"RESTARTING\n{RemainingCooldown}").Replace("%remainingTime%", RemainingCooldown.ToString());
-				public static string ReadyText => PluginManager.Config.GetString("intercom_ready_text", "READY");
-			}
 		}
 
 		public static class Decontamination

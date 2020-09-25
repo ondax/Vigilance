@@ -13,7 +13,7 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(PlayerPositionManager), nameof(PlayerPositionManager.TransmitData))]
     public static class GhostmodePatch
     {
-        public static List<Player> CannotBlock173 { get; set; } = new List<Player>();
+        public static List<string> CannotBlock173 { get; set; } = new List<string>();
 
         public static bool Prefix(PlayerPositionManager __instance)
         {
@@ -34,6 +34,8 @@ namespace Vigilance.Patches
                 foreach (GameObject gameObject in players)
                 {
                     Player player = Server.PlayerList.GetPlayer(gameObject);
+                    if (player == null || player.IsHost)
+                        return true;
                     Array.Copy(__instance._receivedData, __instance._transmitBuffer, __instance._usedData);
                     if (player.Role.Is939())
                     {
@@ -101,10 +103,10 @@ namespace Vigilance.Patches
 
                                 switch (player.Role)
                                 {
-                                    case RoleType.Scp173 when (!PluginManager.Config.GetBool("can_tutorial_block_scp173", true) && currentTarget.Role == RoleType.Tutorial) || CannotBlock173.Contains(currentTarget):
+                                    case RoleType.Scp173 when (!ConfigManager.CanTutorialBlockScp173 && currentTarget.Role == RoleType.Tutorial) || CannotBlock173.Contains(currentTarget.UserId):
                                         shouldRotate = true;
                                         break;
-                                    case RoleType.Scp096 when !PluginManager.Config.GetBool("can_tutorial_trigger_scp096", true) && currentTarget.Role == RoleType.Tutorial:
+                                    case RoleType.Scp096 when !ConfigManager.CanTutorialTriggerScp096 && currentTarget.Role == RoleType.Tutorial:
                                         shouldRotate = true;
                                         break;
                                 }

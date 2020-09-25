@@ -27,6 +27,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Vigilance.Events;
 using Searching;
+using Vigilance.Enums;
 
 namespace Vigilance.Patches
 {
@@ -133,8 +134,11 @@ namespace Vigilance.Patches
                     return false;
                 if (scp == null)
                     return false;
-                Player attacker = hit.GetAttacker();
-                Environment.OnAnnounceSCPTermination(attacker == null || attacker.GameObject == null ? ReferenceHub.LocalHub.gameObject : attacker.GameObject, scp, hit, string.IsNullOrEmpty(hit.Attacker) ? "NONE" : hit.Attacker, true, out bool allow);
+                Player attacker = null;
+                foreach (Player ply in Server.PlayerList.PlayersDict.Values)
+                    if (ply.Nick == hit.Attacker)
+                        attacker = ply;
+                Environment.OnAnnounceSCPTermination(attacker, scp, hit, string.IsNullOrEmpty(hit.Attacker) ? "NONE" : hit.Attacker, true, out bool allow);
                 if (!allow)
                     return false;
                 if (NineTailedFoxAnnouncer.singleton == null)
@@ -276,7 +280,7 @@ namespace Vigilance.Patches
         {
             Environment.OnPlaceBlood(type, pos, true, out Vector3 position, out bool allow);
             pos = position;
-            return allow && PluginManager.Config.GetBool("enable_blood_spawning", true);
+            return allow && ConfigManager.SpawnBlood;
         }
     }
 
@@ -289,13 +293,13 @@ namespace Vigilance.Patches
             {
                 Environment.OnPlaceBlood(type, pos, true, out Vector3 position, out bool allow);
                 pos = position;
-                return allow && PluginManager.Config.GetBool("enable_blood_spawning", true);
+                return allow && ConfigManager.SpawnBlood;
             }
             else
             {
                 Environment.OnPlaceDecal(pos, true, out Vector3 position, out bool allow);
                 pos = position;
-                return allow && PluginManager.Config.GetBool("enable_decal_spawning", true);
+                return allow && ConfigManager.SpawnDecal;
             }
         }
     }
@@ -317,7 +321,10 @@ namespace Vigilance.Patches
                     return false;
                 }
                 Item itemByID = __instance._inv.GetItemByID(__instance._inv.curItem);
-                Environment.OnWarheadKeycardAccess(__instance.gameObject, __instance._sr.BypassMode || (itemByID != null && itemByID.permissions.Contains("CONT_LVL_3")), out bool allow);
+                Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
+                if (player == null)
+                    return false;
+                Environment.OnWarheadKeycardAccess(player, __instance._sr.BypassMode || (itemByID != null && itemByID.permissions.Contains("CONT_LVL_3")), out bool allow);
                 if (allow)
                 {
                     gameObject.GetComponentInParent<AlphaWarheadOutsitePanel>().NetworkkeycardEntered = true;
@@ -371,7 +378,7 @@ namespace Vigilance.Patches
                         string originalName = string.IsNullOrEmpty(targetPlayer.Nick) ? "(no nick)" : targetPlayer.Nick;
                         long issuanceTime = TimeBehaviour.CurrentTimestamp();
                         long banExpieryTime = TimeBehaviour.GetBanExpirationTime((uint)duration);
-                        Environment.OnBan(issuerPlayer.GameObject, targetPlayer.GameObject, reason, issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
+                        Environment.OnBan(issuerPlayer, targetPlayer, reason, issuanceTime, banExpieryTime, true, out banExpieryTime, out bool allow);
                         if (!allow)
                             return false;
                         try
@@ -468,10 +475,13 @@ namespace Vigilance.Patches
                 }
                 else
                 {
-                    Environment.OnSetGroup(__instance.gameObject, group, true, out group, out bool allow);
+                    Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
+                    if (player == null)
+                        return false;
+                    Environment.OnSetGroup(player, group, true, out group, out bool allow);
                     if (!allow)
                         return false;
-                    __instance._ccm.TargetConsolePrint(__instance.connectionToClient, (!byAdmin) ? "Updating your group on server (local permissions)..." : "Updating your group on server (set by server administrator)...", "cyan");
+                    player.ConsoleMessage((!byAdmin) ? "Updating your group on server (local permissions)..." : "Updating your group on server (set by server administrator)...", "cyan");
                     __instance.Group = group;
                     __instance._badgeCover = group.Cover;
                     if (!__instance.OverwatchPermitted && PermissionsHandler.IsPermitted(group.Permissions, PlayerPermissions.Overwatch))
@@ -607,60 +617,59 @@ namespace Vigilance.Patches
                         info.Amount = ((referenceHub.playerStats != null) ? Mathf.Abs(referenceHub.playerStats.Health + referenceHub.playerStats.syncArtificialHealth + 10f) : Mathf.Abs(999999f));
                     }
                 }
-
                 if (__instance._burned.Enabled)
                 {
                     info.Amount *= __instance._burned.DamageMult;
                 }
-
                 if (info.Amount > 2.1474836E+09f)
                 {
                     info.Amount = 2.1474836E+09f;
                 }
-
                 if (info.GetDamageType().isWeapon && referenceHub.characterClassManager.IsAnyScp() && info.GetDamageType() != DamageTypes.MicroHid)
                 {
                     info.Amount *= __instance.weaponManager.weapons[(int)__instance.weaponManager.curWeapon].scpDamageMultiplier;
                 }
-
                 if (flag3)
                 {
                     return false;
                 }
-
                 PlayerStats playerStats = referenceHub.playerStats;
                 CharacterClassManager characterClassManager = referenceHub.characterClassManager;
-
                 if (playerStats == null || characterClassManager == null)
                 {
                     return false;
                 }
-
                 if (characterClassManager.GodMode)
                 {
                     return false;
                 }
-
                 if (__instance.ccm.CurRole.team == Team.SCP && __instance.ccm.Classes.SafeGet(characterClassManager.CurClass).team == Team.SCP && __instance.ccm != characterClassManager)
                 {
                     return false;
                 }
-
                 if (characterClassManager.SpawnProtected && !__instance._allowSPDmg)
                 {
                     return false;
                 }
-                Player attacker = Server.PlayerList.GetPlayer(__instance.gameObject);
-                Player player = Server.PlayerList.GetPlayer(characterClassManager.gameObject);
-                Environment.OnHurt(player.GameObject, attacker.GameObject, info, true, out info, out bool allow);
-                if (!allow)
-                    return false;
                 bool flag4 = !noTeamDamage && info.IsPlayer && referenceHub != info.RHub && referenceHub.characterClassManager.Fraction == info.RHub.characterClassManager.Fraction;
                 if (flag4)
                 {
                     info.Amount *= PlayerStats.FriendlyFireFactor;
                 }
-
+                Player player = new Player(referenceHub);
+                Player player2 = null;
+                GameObject playerObject = info.GetPlayerObject();
+                if (playerObject != null)
+                {
+                    player2 = new Player(ReferenceHub.GetHub(playerObject));
+                }
+                else if (__instance.gameObject.GetComponent<NicknameSync>() != null)
+                {
+                    player2 = new Player(ReferenceHub.GetHub(__instance.gameObject));
+                }
+                Environment.OnHurt(player, player2, info, true, out info, out bool allow);
+                if (!allow)
+                    return false;
                 float health = playerStats.Health;
                 if (__instance.lastHitInfo.Attacker == "ARTIFICIALDEGEN")
                 {
@@ -698,14 +707,12 @@ namespace Vigilance.Patches
                     }
                     playerStats.lastHitInfo = info;
                 }
-
                 PlayableScpsController component = go.GetComponent<PlayableScpsController>();
                 IDamagable damagable;
                 if (component != null && (damagable = (component.CurrentScp as IDamagable)) != null)
                 {
                     damagable.OnDamage(info);
                 }
-
                 if (playerStats.Health < 1f && characterClassManager.CurClass != RoleType.Spectator)
                 {
                     IImmortalScp immortalScp;
@@ -798,11 +805,11 @@ namespace Vigilance.Patches
                     {
                         __instance.TargetAchieve(__instance.connectionToClient, "timetodoitmyself");
                     }
-                    bool flag6 = info.IsPlayer && referenceHub == info.RHub;
-                    flag2 = flag4;
-                    Environment.OnPlayerDie(attacker.GameObject, player.GameObject, info, true, out info, out bool allow2);
+                    Environment.OnPlayerDie(player2, player, info, true, out info, out bool allow2, out bool spawnRagdoll);
                     if (!allow2)
                         return false;
+                    bool flag6 = info.IsPlayer && referenceHub == info.RHub;
+                    flag2 = flag4;
                     if (flag6)
                     {
                         ServerLogs.AddLog(ServerLogs.Modules.ClassChange, string.Concat(new string[]
@@ -837,18 +844,24 @@ namespace Vigilance.Patches
                     {
                         RoundSummary.kills_by_frag++;
                     }
-                    if (!__instance._pocketCleanup || info.GetDamageType() != DamageTypes.Pocket)
+                    if (spawnRagdoll && (!__instance._pocketCleanup || info.GetDamageType() != DamageTypes.Pocket))
                     {
                         referenceHub.inventory.ServerDropAll();
                         PlayerMovementSync playerMovementSync = referenceHub.playerMovementSync;
                         if (characterClassManager.Classes.CheckBounds(characterClassManager.CurClass) && info.GetDamageType() != DamageTypes.RagdollLess)
                         {
-                            __instance.GetComponent<RagdollManager>().SpawnRagdoll(go.transform.position, go.transform.rotation, (playerMovementSync == null) ? Vector3.zero : playerMovementSync.PlayerVelocity, (int)characterClassManager.CurClass, info, characterClassManager.CurRole.team > Team.SCP, go.GetComponent<MirrorIgnorancePlayer>().PlayerId, referenceHub.nicknameSync.DisplayName, referenceHub.queryProcessor.PlayerId);
+                            __instance.GetComponent<RagdollManager>().SpawnRagdoll(go.transform.position, go.transform.rotation, (playerMovementSync == null) ? Vector3.zero : playerMovementSync.PlayerVelocity, (int)characterClassManager.CurClass, info, characterClassManager.CurRole.team > Team.SCP, referenceHub.characterClassManager.UserId, referenceHub.nicknameSync.DisplayName, referenceHub.queryProcessor.PlayerId);
                         }
                     }
                     else
                     {
                         referenceHub.inventory.Clear();
+                    }
+                    int role = (int)RoleType.Spectator;
+                    int maxHP = characterClassManager.Classes[role].maxHP;
+                    if (role == 2)
+                    {
+                        characterClassManager.NetworkDeathPosition = go.transform.position;
                     }
                     characterClassManager.NetworkDeathPosition = go.transform.position;
                     if (characterClassManager.CurRole.team == Team.SCP)
@@ -859,16 +872,17 @@ namespace Vigilance.Patches
                         }
                         else
                         {
-                            GameObject x = null;
-                            foreach (GameObject gameObject in PlayerManager.players)
+                            GameObject gameObject = null;
+                            foreach (GameObject gameObject2 in PlayerManager.players)
                             {
-                                if (gameObject.GetComponent<QueryProcessor>().PlayerId == info.PlayerId)
+                                if (gameObject2.GetComponent<QueryProcessor>().PlayerId == info.PlayerId)
                                 {
-                                    x = gameObject;
+                                    gameObject = gameObject2;
                                 }
                             }
-                            if (x != null)
+                            if (gameObject != null)
                             {
+                                Role wrap = characterClassManager.Classes[Mathf.Clamp((int)characterClassManager.CurClass, 0, characterClassManager.Classes.Length - 1)];
                                 NineTailedFoxAnnouncer.AnnounceScpTermination(characterClassManager.CurRole, info, string.Empty);
                             }
                             else
@@ -893,8 +907,8 @@ namespace Vigilance.Patches
                             }
                         }
                     }
-                    playerStats.SetHPAmount(100);
-                    characterClassManager.SetClassID(RoleType.Spectator);
+                    playerStats.SetHPAmount(maxHP);
+                    characterClassManager.SetClassID((RoleType)role);
                 }
                 else
                 {
@@ -911,24 +925,22 @@ namespace Vigilance.Patches
                     }
                     else if (info.GetDamageType() == DamageTypes.Pocket)
                     {
-                        Environment.OnPocketHurt(go, info.Amount, true, out info.Amount, out bool allowDamage);
-                        if (!allowDamage)
-                            return false;
                         PlayerMovementSync component2 = __instance.ccm.GetComponent<PlayerMovementSync>();
                         if (component2.RealModelPosition.y > -1900f)
                         {
                             component2.OverridePosition(Vector3.down * 1998.5f, 0f, true);
                         }
                     }
-                    __instance.TargetBloodEffect(go.GetComponent<NetworkIdentity>().connectionToClient, pos, Mathf.Clamp01(info.Amount / num3));
+                    if (!ConfigManager.DisableBloodOnScreen && info.Amount > 1f)
+                    {
+                        __instance.TargetBloodEffect(go.GetComponent<NetworkIdentity>().connectionToClient, pos, Mathf.Clamp01(info.Amount / num3));
+                    }
                 }
-
                 RespawnTickets singleton = RespawnTickets.Singleton;
                 Team team = characterClassManager.CurRole.team;
-                byte b = (byte)team;
-                if (b != 0)
+                if (team != Team.SCP)
                 {
-                    if (b == 3)
+                    if (team == Team.RSC)
                     {
                         if (flag)
                         {
@@ -1031,7 +1043,8 @@ namespace Vigilance.Patches
                         PlayerStats playerStats = referenceHub.playerStats;
                         if (characterClassManager.CurRole.team != Team.SCP && characterClassManager.CurClass != RoleType.Spectator && !characterClassManager.GodMode)
                         {
-                            Environment.OnFemurEnter(referenceHub.gameObject, true, out bool allow);
+                            Player player = Server.PlayerList.GetPlayer(playerStats.gameObject);
+                            Environment.OnFemurEnter(player, true, out bool allow);
                             if (!allow)
                                 return false;
                             playerStats.HurtPlayer(new PlayerStats.HitInfo(10000f, "WORLD", DamageTypes.Lure, 0), referenceHub.gameObject, true);
@@ -1085,11 +1098,12 @@ namespace Vigilance.Patches
                 }
                 else
                 {
-                    Environment.OnPocketEnter(ply, true, true, out bool hurt, out bool allow);
+                    Player player = Server.PlayerList.GetPlayer(ply);
+                    Environment.OnPocketEnter(player, true, true, out bool hurt, out bool allow);
                     if (!allow)
                         return false;
                     if (hurt)
-                        __instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f), __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
+                        __instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(ConfigManager.Scp106PocketEnterDamage, __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp106, __instance.GetComponent<QueryProcessor>().PlayerId), ply, false);
                     referenceHub.playerMovementSync.OverridePosition(Vector3.down * 1998.5f, 0f, true);
                     foreach (Scp079PlayerScript scp079PlayerScript in Scp079PlayerScript.instances)
                     {
@@ -1192,7 +1206,8 @@ namespace Vigilance.Patches
                         Vector3 pos = __instance.tpPositions[UnityEngine.Random.Range(0, __instance.tpPositions.Count)];
                         pos.y += 2f;
                         PlayerMovementSync component3 = other.GetComponent<PlayerMovementSync>();
-                        Environment.OnPocketEscape(component3.gameObject, pos, true, out pos, out bool allow);
+                        Player player = Server.PlayerList.GetPlayer(component3.gameObject);
+                        Environment.OnPocketEscape(player, pos, true, out pos, out bool allow);
                         if (!allow)
                             return false;
                         component3.AddSafeTime(2f);
@@ -1310,6 +1325,7 @@ namespace Vigilance.Patches
         {
             try
             {
+                Player player = Server.PlayerList.GetPlayer(person);
                 switch (command)
                 {
                     case PlayerInteract.Generator079Operations.Door:
@@ -1324,7 +1340,7 @@ namespace Vigilance.Patches
                             {
                                 if (item.id == ItemType.WeaponManagerTablet)
                                 {
-                                    Environment.OnGeneratorInsert(__instance, person, true, out bool allow);
+                                    Environment.OnGeneratorInsert(__instance, player, true, out bool allow);
                                     if (!allow)
                                         return false;
                                     component.items.Remove(item);
@@ -1338,7 +1354,7 @@ namespace Vigilance.Patches
                     default:
                         return false;
                 }
-                Environment.OnGeneratorEject(__instance, person, true, out bool allow2);
+                Environment.OnGeneratorEject(__instance, player, true, out bool allow2);
                 if (!allow2)
                     return false;
                 __instance.EjectTablet();
@@ -1362,16 +1378,16 @@ namespace Vigilance.Patches
             {
                 return false;
             }
-
+            Player player = Server.PlayerList.GetPlayer(component.gameObject);
             try
             {
                 if (__instance.isDoorUnlocked)
                 {
                     bool allow = true;
                     if (__instance.NetworkisDoorOpen)
-                        Environment.OnGeneratorClose(__instance, person, true, out allow);
+                        Environment.OnGeneratorClose(__instance, player, true, out allow);
                     else
-                        Environment.OnGeneratorOpen(__instance, person, true, out allow);
+                        Environment.OnGeneratorOpen(__instance, player, true, out allow);
                     if (!allow)
                         return false;
                     __instance._doorAnimationCooldown = 1.5f;
@@ -1395,7 +1411,7 @@ namespace Vigilance.Patches
 
                 if (flag)
                 {
-                    Environment.OnGeneratorUnlock(__instance, person, true, out bool allow);
+                    Environment.OnGeneratorUnlock(__instance, player, true, out bool allow);
                     if (!allow)
                         return false;
                     __instance.NetworkisDoorUnlocked = true;
@@ -1420,8 +1436,8 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnInteract(__instance.gameObject, true, out bool allow);
-                if (allow && PluginManager.Config.GetBool("disable_scp_268_effects_when_interacted", true))
+                Environment.OnInteract(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
+                if (allow && !ConfigManager.ShouldKeepScp268)
                     __instance._scp268.ServerDisable();
                 return false;
             }
@@ -1443,8 +1459,9 @@ namespace Vigilance.Patches
                 return false;
             }
             __instance.OnInteract();
-            Environment.OnDoorInteract(true, component, __instance.gameObject, out bool allow);
-            if (!allow)
+            Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
+            Environment.OnDoorInteract(true, component, player, out bool allow);
+            if (!allow || player.PlayerLock)
                 return false;
             if (__instance._sr.BypassMode)
             {
@@ -1514,14 +1531,14 @@ namespace Vigilance.Patches
             {
                 return false;
             }
-
+            Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
             try
             {
                 foreach (Lift.Elevator elevator2 in component.elevators)
                 {
                     if (__instance.ChckDis(elevator2.door.transform.position))
                     {
-                        Environment.OnElevatorInteract(component, __instance.gameObject, true, out bool allow);
+                        Environment.OnElevatorInteract(component, player, true, out bool allow);
                         if (!allow)
                             return false;
                         elevator.GetComponent<Lift>().UseLift();
@@ -1537,83 +1554,6 @@ namespace Vigilance.Patches
             }
         }
     }
-
-    /*
-    [HarmonyPatch(typeof(PlayerInteract), nameof(PlayerInteract.CallCmdUseLocker))]
-    public static class LockerInteractPatch
-    {
-        public static bool Prefix(PlayerInteract __instance, byte lockerId, byte chamberNumber)
-        {
-            if (!__instance._playerInteractRateLimit.CanExecute(true) || (__instance._hc.CufferId > 0 && !PlayerInteract.CanDisarmedInteract))
-            {
-                return false;
-            }
-            LockerManager singleton = LockerManager.singleton;
-            if ((int)lockerId >= singleton.lockers.Length)
-            {
-                return false;
-            }
-            if (!__instance.ChckDis(singleton.lockers[(int)lockerId].gameObject.position) || !singleton.lockers[(int)lockerId].supportsStandarizedAnimation)
-            {
-                return false;
-            }
-            if ((int)chamberNumber >= singleton.lockers[(int)lockerId].chambers.Length)
-            {
-                return false;
-            }
-            if (singleton.lockers[(int)lockerId].chambers[(int)chamberNumber].doorAnimator == null)
-            {
-                return false;
-            }
-            if (!singleton.lockers[(int)lockerId].chambers[(int)chamberNumber].CooldownAtZero())
-            {
-                return false;
-            }
-
-            try
-            {
-                singleton.lockers[(int)lockerId].chambers[(int)chamberNumber].SetCooldown();
-                string accessToken = singleton.lockers[(int)lockerId].chambers[(int)chamberNumber].accessToken;
-                Item itemByID = __instance._inv.GetItemByID(__instance._inv.curItem);
-                Environment.OnLockerInteract(singleton.lockers[(int)lockerId], __instance.gameObject, __instance._sr.BypassMode || string.IsNullOrEmpty(accessToken) || (itemByID != null && itemByID.permissions.Contains(accessToken)), out bool allow);
-                if (allow)
-                {
-                    bool flag = ((int)singleton.openLockers[(int)lockerId] & 1 << (int)chamberNumber) != 1 << (int)chamberNumber;
-                    singleton.ModifyOpen((int)lockerId, (int)chamberNumber, flag);
-                    singleton.RpcDoSound((int)lockerId, (int)chamberNumber, flag);
-                    bool anyOpen = singleton.lockers[(int)lockerId].AnyVirtual;
-                    if (singleton.lockers[(int)lockerId].AnyVirtual)
-                    {
-                        for (int i = 0; i < singleton.lockers[(int)lockerId].chambers.Length; i++)
-                        {
-                            if (((int)singleton.openLockers[(int)lockerId] & 1 << i) == 1 << i)
-                            {
-                                anyOpen = false;
-                                break;
-                            }
-                        }
-                    }
-                    singleton.lockers[(int)lockerId].LockPickups(!flag, (uint)chamberNumber, anyOpen);
-                    if (!string.IsNullOrEmpty(accessToken))
-                    {
-                        singleton.RpcChangeMaterial((int)lockerId, (int)chamberNumber, false);
-                    }
-                }
-                else
-                {
-                    singleton.RpcChangeMaterial((int)lockerId, (int)chamberNumber, true);
-                }
-                __instance.OnInteract();
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("PlayerInteract", e);
-                return true;
-            }
-        }
-    }
-    */
 
     [HarmonyPatch(typeof(NicknameSync), nameof(NicknameSync.SetNick))]
     public static class PlayerJoinPatch
@@ -1635,15 +1575,15 @@ namespace Vigilance.Patches
                     player = new Player(ReferenceHub.GetHub(__instance.gameObject));
                     Server.PlayerList.Add(player);
                 }
-                if (ServerGuard.SteamShield.CheckAccount(__instance._hub.GetPlayer()))
+                if (ServerGuard.SteamShield.CheckAccount(player))
                     return false;
-                if (ServerGuard.VPNShield.CheckIP(__instance._hub.GetPlayer()))
+                if (ServerGuard.VPNShield.CheckIP(player))
                     return false;
-                Environment.OnPlayerJoin(__instance._hub.gameObject);
+                Environment.OnPlayerJoin(player);
                 ServerConsole.AddLog(string.Concat(new string[]
                 {
                     "Nickname of ",
-                    __instance._hub.characterClassManager.UserId,
+                    player.ParsedUserId,
                     " is now ",
                     nick,
                     "."
@@ -1652,7 +1592,7 @@ namespace Vigilance.Patches
                 ServerLogs.AddLog(ServerLogs.Modules.Networking, string.Concat(new string[]
                 {
                     "Nickname of ",
-                    __instance._hub.characterClassManager.UserId,
+                    player.ParsedUserId,
                     " is now ",
                     nick,
                     "."
@@ -1681,22 +1621,17 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnPlayerLeave(__instance.gameObject, out bool destroy);
+                Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
+                Environment.OnPlayerLeave(player, out bool destroy);
                 if (!destroy)
                     return false;
-                Server.PlayerList.Remove(__instance.gameObject.GetPlayer());
+                Server.PlayerList.Remove(player);
                 ReferenceHub.Hubs.Remove(__instance.gameObject);
-                ReferenceHub.HubIds.Remove(__instance.queryProcessor.PlayerId);
-
+                ReferenceHub.HubIds.Remove(player.PlayerId);
                 if (ReferenceHub._hostHub == __instance)
-                {
                     ReferenceHub._hostHub = null;
-                }
-
                 if (ReferenceHub._localHub == __instance)
-                {
                     ReferenceHub._localHub = null;
-                }
                 return false;
             }
             catch (Exception e)
@@ -1722,10 +1657,12 @@ namespace Vigilance.Patches
 
                 foreach (GameObject player in PlayerManager.players)
                 {
-                    Handcuffs handcuffs = ReferenceHub.GetHub(player).handcuffs;
-                    if (handcuffs.CufferId == __instance.MyReferenceHub.queryProcessor.PlayerId)
+                    Player ply = Server.PlayerList.GetPlayer(player);
+                    Player myPlayer = Server.PlayerList.GetPlayer(__instance.MyReferenceHub.gameObject);
+                    Handcuffs handcuffs = ply.Hub.handcuffs;
+                    if (ply.CufferId == myPlayer.PlayerId)
                     {
-                        Environment.OnUncuff(handcuffs.MyReferenceHub.gameObject, __instance.gameObject, true, out bool allow);
+                        Environment.OnUncuff(ply, myPlayer, true, out bool allow);
                         if (allow)
                             handcuffs.NetworkCufferId = -1;
                         break;
@@ -1762,7 +1699,11 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                Environment.OnUncuff(target, __instance.gameObject, true, out bool allow);
+                Player myPlayer = Server.PlayerList.GetPlayer(__instance.gameObject);
+                Player myTarget = Server.PlayerList.GetPlayer(target);
+                if (myPlayer == null)
+                    myPlayer = Server.PlayerList.Local;
+                Environment.OnUncuff(myTarget, myPlayer, true, out bool allow);
                 if (allow)
                     ReferenceHub.GetHub(target).handcuffs.NetworkCufferId = -1;
                 return false;
@@ -1803,7 +1744,7 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                Environment.OnShoot(__instance._hub.gameObject, target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow);
+                Environment.OnShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow);
                 if (!allow)
                     return false;
                 if (Vector3.Distance(__instance._hub.playerMovementSync.RealModelPosition, sourcePos) > 5.5f)
@@ -1970,7 +1911,7 @@ namespace Vigilance.Patches
                         }
                     }
                 IL_6EF:
-                    Environment.OnLateShoot(__instance._hub.gameObject, target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow2);
+                    Environment.OnLateShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow2);
                     if (!allow2)
                         return false;
                     num3 *= __instance.weapons[(int)__instance.curWeapon].allEffects.damageMultiplier;
@@ -2010,7 +1951,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnSpawn(__instance.gameObject, __instance.transform.position, __instance.CurClass, true, out Vector3 pos, out RoleType role, out bool allow);
+                Environment.OnSpawn(Server.PlayerList.GetPlayer(__instance.gameObject), __instance.transform.position, __instance.CurClass, true, out Vector3 pos, out RoleType role, out bool allow);
             }
             catch (Exception e)
             {
@@ -2026,7 +1967,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                if (!PluginManager.Config.GetBool("spawn_ragdolls", true))
+                if (!ConfigManager.SpawnRagdolls)
                     return false;
                 Role role = __instance.hub.characterClassManager.Classes.SafeGet(classId);
                 if (role.model_ragdoll == null)
@@ -2071,7 +2012,7 @@ namespace Vigilance.Patches
                     return false;
                 }
 
-                Environment.OnCancelMedical(__instance.cooldown, __instance._hub.gameObject, __instance._hub.inventory.curItem, true, out __instance.cooldown, out bool allow);
+                Environment.OnCancelMedical(__instance.cooldown, Server.PlayerList.GetPlayer(__instance.gameObject), __instance._hub.inventory.curItem, true, out __instance.cooldown, out bool allow);
                 if (!allow)
                     return false;
                 foreach (ConsumableAndWearableItems.UsableItem usableItem in __instance.usableItems)
@@ -2100,7 +2041,7 @@ namespace Vigilance.Patches
             {
                 if (!__instance._mSyncRateLimit.CanExecute(true))
                     return false;
-                Environment.OnSyncData(__instance.gameObject, v2, state, true, out state, out bool allow);
+                Environment.OnSyncData(Server.PlayerList.GetPlayer(__instance.gameObject), v2, state, true, out state, out bool allow);
                 if (!allow)
                     return false;
                 __instance.NetworkcurAnim = (int)state;
@@ -2131,7 +2072,7 @@ namespace Vigilance.Patches
                     return false;
                 float delay = Mathf.Clamp((float)(time - NetworkTime.time), 0f, grenadeSettings.throwAnimationDuration);
                 float forceMultiplier = slowThrow ? 0.5f : 1f;
-                Environment.OnThrowGrenade(__instance.hub.gameObject, grenadeSettings.grenadeInstance.GetComponent<Grenade>(), grenadeSettings.inventoryID.GetGrenadeType(), true, out bool allow);
+                Environment.OnThrowGrenade(Server.PlayerList.GetPlayer(__instance.gameObject), grenadeSettings.grenadeInstance.GetComponent<Grenade>(), grenadeSettings.inventoryID.GetGrenadeType(), true, out bool allow);
                 if (!allow)
                     return false;
                 Timing.RunCoroutine(__instance._ServerThrowGrenade(grenadeSettings, forceMultiplier, __instance.hub.inventory.GetItemIndex(), delay), Segment.FixedUpdate);
@@ -2156,9 +2097,9 @@ namespace Vigilance.Patches
             {
                 if (Vector3.Distance(__instance.transform.position, player.playerMovementSync.RealModelPosition) < __instance.sizeOfTrigger)
                 {
-                    if (PluginManager.Config.GetRoles("tesla_triggerable_roles").Contains(player.characterClassManager.CurClass) && !GatesDisabled && !player.characterClassManager.GodMode)
+                    if (ConfigManager.TeslaTriggerableRoles.Contains(player.characterClassManager.CurClass) && !GatesDisabled && !player.characterClassManager.GodMode)
                     {
-                        Environment.OnTriggerTesla(player.gameObject, __instance, true, out bool allow);
+                        Environment.OnTriggerTesla(Server.PlayerList.GetPlayer(__instance.gameObject), __instance, true, out bool allow);
                         return allow;
                     }
                 }
@@ -2182,7 +2123,7 @@ namespace Vigilance.Patches
                 if (!__instance._interactRateLimit.CanExecute(true))
                     return false;
                 int hp;
-                Environment.OnUseMedical(__instance._hub.gameObject, __instance._hub.inventory.curItem, (int)__instance.hpToHeal, true, out hp, out bool allow);
+                Environment.OnUseMedical(Server.PlayerList.GetPlayer(__instance._hub.gameObject), __instance._hub.inventory.curItem, (int)__instance.hpToHeal, true, out hp, out bool allow);
                 __instance.hpToHeal = (float)hp;
                 if (!allow)
                     return false;
@@ -2273,9 +2214,9 @@ namespace Vigilance.Patches
                             }
                             if (referenceHub.characterClassManager.CurClass != RoleType.Spectator)
                                 return false;
-                            if (!PluginManager.Config.GetBool("scp049_can_revive_not_killed_by_049", true) && component.owner.DeathCause.GetDamageName() != "SCP-049")
+                            if (!ConfigManager.CanScp049ReviveOther && component.owner.DeathCause.GetDamageName() != "SCP-049")
                                 return false;
-                            Environment.OnRecall(__instance.Hub.gameObject, component, true, out bool allow);
+                            Environment.OnRecall(Server.PlayerList.GetPlayer(__instance.Hub.gameObject), component, true, out bool allow);
                             if (!allow)
                                 return false;
                             GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'finish recalling' accepted", MessageImportance.LessImportant, false);
@@ -2385,7 +2326,7 @@ namespace Vigilance.Patches
                             }
                             if (NetworkServer.active)
                             {
-                                Environment.OnSCP079GainExp(__instance.gameObject, type, num2, true, out num2, out bool allow);
+                                Environment.OnSCP079GainExp(Server.PlayerList.GetPlayer(__instance.gameObject), type, num2, true, out num2, out bool allow);
                                 if (!allow)
                                     return false;
                                 __instance.AddExperience(num2);
@@ -2402,7 +2343,7 @@ namespace Vigilance.Patches
                             if (NetworkServer.active)
                             {
                                 float exp = (float)details;
-                                Environment.OnSCP079GainExp(__instance.gameObject, type, exp, true, out exp, out bool allow);
+                                Environment.OnSCP079GainExp(Server.PlayerList.GetPlayer(__instance.gameObject), type, exp, true, out exp, out bool allow);
                                 if (!allow)
                                     return false;
                                 __instance.AddExperience(exp);
@@ -2437,7 +2378,7 @@ namespace Vigilance.Patches
                                 num3 = Mathf.Round(num3 * num4 * 10f) / 10f;
                                 if (NetworkServer.active)
                                 {
-                                    Environment.OnSCP079GainExp(__instance.gameObject, type, num3, true, out num3, out bool allow);
+                                    Environment.OnSCP079GainExp(Server.PlayerList.GetPlayer(__instance.gameObject), type, num3, true, out num3, out bool allow);
                                     if (!allow)
                                         return false;
                                     __instance.AddExperience(num3);
@@ -2466,7 +2407,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnSCP079GainLvl(__instance.gameObject, true, out bool allow);
+                Environment.OnSCP079GainLvl(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
                 if (allow)
                     __instance.Lvl = (byte)newLvl;
                 return allow;
@@ -2497,7 +2438,7 @@ namespace Vigilance.Patches
                 __instance.RefreshCurrentRoom();
                 if (!__instance.CheckInteractableLegitness(__instance.currentRoom, __instance.currentZone, target, true))
                     return false;
-                Environment.OnSCP079Interact(__instance.gameObject, true, out bool allow);
+                Environment.OnSCP079Interact(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
                 if (!allow)
                     return false;
                 List<string> list = ListPool<string>.Shared.Rent();
@@ -2596,7 +2537,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnSCP096Calm(__instance.Hub.gameObject, true, out bool allow);
+                Environment.OnSCP096Calm(Server.PlayerList.GetPlayer(__instance.Hub.gameObject), true, out bool allow);
                 if (!allow)
                     return false;
                 __instance.EndCharge();
@@ -2625,7 +2566,7 @@ namespace Vigilance.Patches
             {
                 if (!NetworkServer.active)
                     throw new InvalidOperationException("Called Enrage from client.");
-                Environment.OnSCP096Enrage(__instance.Hub.gameObject, true, out bool allow);
+                Environment.OnSCP096Enrage(Server.PlayerList.GetPlayer(__instance.Hub.gameObject), true, out bool allow);
                 if (!allow)
                     return false;
                 if (__instance.Enraged)
@@ -2673,7 +2614,7 @@ namespace Vigilance.Patches
                     {
                         if (keyValuePair2.Value.characterClassManager.CurClass == RoleType.Scp106)
                         {
-                            Environment.OnSCP106Contain(__instance.gameObject, keyValuePair2.Key, true, out allow);
+                            Environment.OnSCP106Contain(Server.PlayerList.GetPlayer(__instance.gameObject), Server.PlayerList.GetPlayer(keyValuePair2.Key), true, out allow);
                             if (allow)
                                 keyValuePair2.Key.GetComponent<Scp106PlayerScript>().Contain(__instance._hub);
                         }
@@ -2711,7 +2652,7 @@ namespace Vigilance.Patches
                 if (__instance.iAm106 && !__instance.goingViaThePortal && Physics.Raycast(new Ray(__instance.transform.position, -__instance.transform.up), out raycastHit, 10f, __instance.teleportPlacementMask))
                 {
                     Vector3 pos = raycastHit.point - Vector3.up;
-                    Environment.OnSCP106CreatePortal(__instance.gameObject, pos, true, out pos, out bool allow);
+                    Environment.OnSCP106CreatePortal(Server.PlayerList.GetPlayer(__instance.gameObject), pos, true, out pos, out bool allow);
                     if (allow)
                         __instance.SetPortalPosition(pos);
                 }
@@ -2738,7 +2679,7 @@ namespace Vigilance.Patches
                     return false;
                 if (__instance.iAm106 && __instance.portalPosition != Vector3.zero && !__instance.goingViaThePortal)
                 {
-                    Environment.OnSCP106Teleport(__instance.gameObject, __instance.transform.position, __instance.portalPosition, true, out __instance.portalPosition, out bool allow);
+                    Environment.OnSCP106Teleport(Server.PlayerList.GetPlayer(__instance.gameObject), __instance.transform.position, __instance.portalPosition, true, out __instance.portalPosition, out bool allow);
                     if (allow)
                         Timing.RunCoroutine(__instance._DoTeleportAnimation(), Segment.Update);
                 }
@@ -2763,7 +2704,7 @@ namespace Vigilance.Patches
                     return false;
                 if (Scp914Machine.singleton.working || !__instance.ChckDis(Scp914Machine.singleton.button.position))
                     return false;
-                Environment.OnSCP914Activate(__instance._hub.gameObject, (float)NetworkTime.time, true, out float time, out bool allow);
+                Environment.OnSCP914Activate(Server.PlayerList.GetPlayer(__instance.gameObject), (float)NetworkTime.time, true, out float time, out bool allow);
                 if (!allow)
                     return false;
                 Scp914Machine.singleton.RpcActivate((double)time);
@@ -2790,7 +2731,7 @@ namespace Vigilance.Patches
                 if (Scp914Machine.singleton.working || !__instance.ChckDis(Scp914Machine.singleton.knob.position))
                     return false;
                 Scp914Knob scp914Knob = Scp914Machine.singleton.knobState + 1;
-                Environment.OnSCP914ChangeKnob(__instance._hub.gameObject, scp914Knob, true, out scp914Knob, out bool allow);
+                Environment.OnSCP914ChangeKnob(Server.PlayerList.GetPlayer(__instance.gameObject), scp914Knob, true, out scp914Knob, out bool allow);
                 if (!allow)
                     return false;
                 Scp914Machine.singleton.NetworkknobState = scp914Knob;
@@ -2919,7 +2860,7 @@ namespace Vigilance.Patches
                 string reportedNickname = referenceHub.nicknameSync.MyNick;
                 if (!notifyGm)
                 {
-                    Environment.OnLocalReport(reason, reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allo);
+                    Environment.OnLocalReport(reason, Server.PlayerList.GetPlayer(reporterCcm.gameObject), Server.PlayerList.GetPlayer(reportedCcm.gameObject), true, out bool allo);
                     if (!allo)
                         return false;
                     Console.AddLog(string.Concat(new string[]
@@ -2957,7 +2898,7 @@ namespace Vigilance.Patches
                 }
                 __instance._lastReport = Time.time;
                 __instance._reportedPlayersAmount++;
-                Environment.OnGlobalReport(reason, reporterCcm.gameObject, reportedCcm.gameObject, true, out bool allow);
+                Environment.OnGlobalReport(reason, Server.PlayerList.GetPlayer(reporterCcm.gameObject), Server.PlayerList.GetPlayer(reportedCcm.gameObject), true, out bool allow);
                 if (!allow)
                     return false;
                 GameCore.Console.AddLog(string.Concat(new string[]
@@ -3101,7 +3042,7 @@ namespace Vigilance.Patches
                 if (!NetworkServer.active)
                     return false;
                 Environment.OnRoundStart();
-                GameObject.Find("MeshDoor173").GetComponentInChildren<Door>().ForceCooldown(PluginManager.Config.GetFloat("scp173_door_cooldown", 25f));
+                GameObject.Find("MeshDoor173").GetComponentInChildren<Door>().ForceCooldown(ConfigManager.Scp173DoorCooldown);
                 __instance.NetworkRoundStarted = true;
                 return false;
             }
@@ -3178,7 +3119,7 @@ namespace Vigilance.Patches
                     GameObject gameObject = GameObject.Find("OutsitePanelScript");
                     if (__instance.ChckDis(gameObject.transform.position) && AlphaWarheadOutsitePanel.nukeside.enabled && gameObject.GetComponent<AlphaWarheadOutsitePanel>().keycardEntered)
                     {
-                        Environment.OnWarheadStart(__instance.gameObject, AlphaWarheadController.Host.timeToDetonation, true, out AlphaWarheadController.Host.timeToDetonation, out bool allow);
+                        Environment.OnWarheadStart(Server.PlayerList.GetPlayer(__instance.gameObject), AlphaWarheadController.Host.timeToDetonation, true, out AlphaWarheadController.Host.timeToDetonation, out bool allow);
                         if (!allow)
                             return false;
                         AlphaWarheadController.Host.StartDetonation();
@@ -3206,7 +3147,8 @@ namespace Vigilance.Patches
             {
                 if (!__instance.inProgress || !(__instance.timeToDetonation > 10f) || __instance._isLocked)
                     return false;
-                Environment.OnWarheadCancel(disabler, __instance.timeToDetonation, true, out __instance.timeToDetonation, out bool allow);
+                Environment.OnWarheadCancel(Server.PlayerList.GetPlayer(disabler) == null
+                     ? Server.PlayerList.Local : Server.PlayerList.GetPlayer(disabler), __instance.timeToDetonation, true, out __instance.timeToDetonation, out bool allow);
                 if (!allow)
                     return false;
                 if (__instance.timeToDetonation <= 15f && disabler != null)
@@ -3407,7 +3349,7 @@ namespace Vigilance.Patches
                 {
                     if (!__instance.ServerAllowToSpeak())
                         return false;
-                    Environment.OnIntercomSpeak(__instance.gameObject, true, out bool allow);
+                    Environment.OnIntercomSpeak(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
                     if (!allow)
                         return false;
                     Intercom.host.RequestTransmission(__instance.gameObject);
@@ -3416,7 +3358,7 @@ namespace Vigilance.Patches
                 {
                     if (!(Intercom.host.Networkspeaker == __instance.gameObject))
                         return false;
-                    Environment.OnIntercomSpeak(__instance.gameObject, true, out bool allow);
+                    Environment.OnIntercomSpeak(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
                     if (!allow)
                         return false;
                     Intercom.host.RequestTransmission(null);
@@ -3445,12 +3387,12 @@ namespace Vigilance.Patches
                 Inventory.SyncItemInfo syncItemInfo = __instance.items[itemInventoryIndex];
                 if (__instance.items[itemInventoryIndex].id != syncItemInfo.id)
                     return false;
-                Environment.OnDropItem(syncItemInfo, __instance._hub.gameObject, true, out syncItemInfo, out bool allow);
+                Environment.OnDropItem(syncItemInfo, Server.PlayerList.GetPlayer(__instance.gameObject), true, out syncItemInfo, out bool allow);
                 if (!allow)
                     return false;
                 Pickup droppedPickup = __instance.SetPickup(syncItemInfo.id, syncItemInfo.durability, __instance.transform.position, __instance.camera.transform.rotation, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
                 __instance.items.RemoveAt(itemInventoryIndex);
-                Environment.OnDroppedItem(droppedPickup, __instance._hub.gameObject);
+                Environment.OnDroppedItem(droppedPickup, Server.PlayerList.GetPlayer(__instance.gameObject));
                 return false;
             }
             catch (Exception e)
@@ -3481,7 +3423,7 @@ namespace Vigilance.Patches
                     if (item.uniq == i)
                         newItem = item;
                 }
-                Environment.OnChangeItem(oldItem, newItem, __instance._hub.gameObject, true, out newItem, out bool allow);
+                Environment.OnChangeItem(oldItem, newItem, Server.PlayerList.GetPlayer(__instance.gameObject), true, out newItem, out bool allow);
                 if (!allow)
                     return;
                 oldItemIndex = __instance.GetItemIndex();
@@ -3502,7 +3444,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnPickupItem(__instance.TargetPickup, __instance.Hub.gameObject, true, out bool allow);
+                Environment.OnPickupItem(__instance.TargetPickup, Server.PlayerList.GetPlayer(__instance.Hub.gameObject), true, out bool allow);
                 return allow;
             }
             catch (Exception e)
@@ -3525,7 +3467,7 @@ namespace Vigilance.Patches
                 int itemIndex = __instance._hub.inventory.GetItemIndex();
                 if (itemIndex < 0 || itemIndex >= __instance._hub.inventory.items.Count || (__instance.curWeapon < 0 || __instance._hub.inventory.curItem != __instance.weapons[__instance.curWeapon].inventoryID) || __instance._hub.inventory.items[itemIndex].durability >= (double)__instance.weapons[__instance.curWeapon].maxAmmo)
                     return false;
-                Environment.OnReload(__instance._hub.gameObject, animationOnly, true, out animationOnly, out bool allow);
+                Environment.OnReload(Server.PlayerList.GetPlayer(__instance.gameObject), animationOnly, true, out animationOnly, out bool allow);
                 return allow;
             }
             catch (Exception e)
@@ -3543,7 +3485,7 @@ namespace Vigilance.Patches
         {
             try
             {
-                Environment.OnSetClass(ply, classid, true, out RoleType roleType, out bool allow);
+                Environment.OnSetClass(Server.PlayerList.GetPlayer(ply), classid, true, out RoleType roleType, out bool allow);
             }
             catch (Exception e)
             {
@@ -3578,7 +3520,7 @@ namespace Vigilance.Patches
                         flag = true;
                     }
                 }
-                Environment.OnCheckEscape(__instance.gameObject, true, out bool allow);
+                Environment.OnCheckEscape(Server.PlayerList.GetPlayer(__instance.gameObject), true, out bool allow);
                 if (!allow)
                     return false;
                 RespawnTickets singleton = RespawnTickets.Singleton;
@@ -3633,17 +3575,17 @@ namespace Vigilance.Patches
                 if (!NetworkServer.active)
                     throw new InvalidOperationException("Called AddTarget from client.");
                 ReferenceHub hub = ReferenceHub.GetHub(target);
-                if (!Scp096Properties.CanTutorialTriggerScp096 && hub.characterClassManager.CurClass == RoleType.Tutorial)
+                if (!ConfigManager.CanTutorialTriggerScp096 && hub.characterClassManager.CurClass == RoleType.Tutorial)
                     return false;
-                Environment.OnScp096AddTarget(target, true, out bool allow);
+                Environment.OnScp096AddTarget(Server.PlayerList.GetPlayer(target), true, out bool allow);
                 if (!allow)
                     return false;
                 if (__instance.CanReceiveTargets && !(hub == null) && !__instance._targets.Contains(hub))
                 {
-                    if (!__instance._targets.IsEmpty() && Scp096Properties.AddEnrageTimeWhenLooked)
+                    if (!__instance._targets.IsEmpty() && ConfigManager.Scp096AddEnrage)
                         __instance.AddReset();
                     __instance._targets.Add(hub);
-                    __instance.AdjustShield(Scp096Properties.ShieldPerPlayer);
+                    __instance.AdjustShield(ConfigManager.Scp096ShieldPerPlayer);
                 }
                 return false;
             }
@@ -3654,30 +3596,4 @@ namespace Vigilance.Patches
             }
         }
     }
-
-    /*
-    [HarmonyPatch(typeof(Pickup), nameof(Pickup.SetupPickup))]
-    public static class SpawnItemPatch
-    {
-        public static bool Prefix(Pickup __instance, ItemType itemId, float durability, GameObject ownerPlayer, Pickup.WeaponModifiers mods, Vector3 pickupPosition, Quaternion pickupRotation)
-        {
-            Player owner = Server.PlayerList.GetPlayer(ownerPlayer);
-            Environment.OnSpawnItem(__instance, itemId, durability, owner.GameObject, mods, pickupPosition, pickupRotation, true, out itemId, out durability, out ownerPlayer, out mods,
-             out pickupPosition, out pickupRotation, out bool allow);
-            if (!allow)
-                return false;
-            __instance.NetworkitemId = itemId;
-            __instance.Networkdurability = durability;
-            __instance.ownerPlayer = ownerPlayer;
-            __instance.NetworkweaponMods = mods;
-            __instance.Networkposition = pickupPosition;
-            __instance.Networkrotation = pickupRotation;
-            __instance.transform.position = pickupPosition;
-            __instance.transform.rotation = pickupRotation;
-            __instance.RefreshModel();
-            __instance.UpdatePosition();
-            return false;
-        }
-    }
-    */
 }

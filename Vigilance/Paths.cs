@@ -47,7 +47,6 @@ namespace Vigilance
 			if (!File.Exists(ConfigPath))
 			{
 				File.Create(ConfigPath).Close();
-				ValidateConfig(GetDefaultConfigValues(), ConfigPath, true);
 			}
 		}
 
@@ -131,7 +130,6 @@ namespace Vigilance
 			if (!File.Exists(path))
 			{
 				File.Create(path).Close();
-				ValidateConfig(configs, path, true);
 			}
 		}
 
@@ -172,6 +170,7 @@ namespace Vigilance
 			if (!File.Exists(NewtonsoftJson))
             {
 				Log.Add("Paths", "Downloading Newtonsoft.Json", LogType.Info);
+				Download("https://github.com/DrGaster17/Vigilance/releases/download/v4.1.6/Newtonsoft.Json.dll", NewtonsoftJson);
             }
         }
 
@@ -215,114 +214,6 @@ namespace Vigilance
 			{
 				Log.Add("Paths", e);
 			}
-		}
-
-		public static Dictionary<string, string> GetDefaultConfigValues()
-        {
-			Dictionary<string, string> configs = new Dictionary<string, string>();
-
-			// Generic configs
-			configs.Add("segment=Generic configs", "");
-			configs.Add("cfgdesc=Your server will have the \"Modded\" flag in the server list if you set this to true.", "mark_as_modded: true");
-			configs.Add("cfgdesc=Adds a transparent text that specifies the version of Vigilance.", "tracking: false");
-			configs.Add("cfgdesc=Whether or not debug messages should be printed in the server console. This option is usually very spammy.", "debug: false");
-			// ServerGuard
-			configs.Add("segment=Server Guard", "");
-			configs.Add("cfgdesc=Whether or not ServerGuard should be enabled.", "guard_enabled: false");
-			configs.Add("cfgdesc=List of active ServerGuard modules. Valid values: vpn, vpnshield, steam, steamshield.", "guard_enabled_modules: [vpn,steam]");
-			configs.Add("cfgdesc=You will need a API key used for checking if a specific IP is a VPN connection or not. Warning! GeForce Now is flagged as a VPN too! You can get your key here! \"https://iphub.info/apiKey/newFree\"", "vpn_api_key: none");
-			configs.Add("cfgdesc=ServerGurd will kick players that didnt buy anything on Steam if this is set to true.", "steam_block_new accounts: false");
-			configs.Add("cfgdesc=ServerGuard will kick non-setup Steam accounts if this is set to true.", "steam_block_non_setup_accounts: false");
-			// Gameplay configs
-			configs.Add("segment=Gameplay configuration", "");
-			configs.Add("cfgdesc=Whether or not SCP-939 should give you amnesia.", "enable_amnesia: true");
-			configs.Add("cfgdesc=Whether or not AntiFly should kick or kill players for \"cheating\".", "antifly_enabled: true");
-			configs.Add("cfgdesc=Whether or not players with tutorial should trigger SCP-096.", "can_tutorial_trigger_scp096: true");
-			configs.Add("cfgdesc=Whether or not players with tutorial should block SCP-173's movement.", "can_tutorial_block_scp173: true");
-			configs.Add("cfgdesc=Whether or not blood should be spawned underneath a player when a player gets hit.", "enable_blood_spawning: true");
-			configs.Add("cfgdesc=Whether or not a black hole should be spawned underneath a player when a player gets taken by SCP-106.", "enable_decal_spawning: true");
-			configs.Add("cfgdesc=Amount of damage the player takes when SCP-106 sends him into the pocket dimension.", "scp106_pocket_enter_damage: 40");
-			configs.Add("cfgdesc=Whether or not SCP-268 effects should wear off when a player interacts with something.", "disable_scp_268_effects_when_interacted: true");
-			configs.Add("cfgdesc=Whether or not a ragdoll should spawn when a player dies/disconnects.", "spawn_ragdolls: true");
-			configs.Add("cfgdesc=List of RoleIDs that will be able to trigger tesla gates.", "tesla_triggerable_roles: [0,1,3,4,5,6,8,9,10,11,12,13,14,15,16,17]");
-			configs.Add("cfgdesc=How long does SCP-173 have to wait before it can open the gate when the round starts.", "scp173_door_cooldown: 25");
-			configs.Add("cfgdesc=Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_can_revive_not_killed_by_049: true");
-			configs.Add("cfgdesc=Elevator moving speed, pretty obvious.", "elevator_moving_speed: 5");
-			configs.Add("cfgdesc=Whether or not should radios drain battery.", "unlimited_radio_battery: false");
-			configs.Add("cfgdesc=Intercom ready message.", "intercom_ready_text: READY");
-			configs.Add("cfgdesc=Intercom transmitting message. %time% = remaining speech time.", "intercom_transmitting_text: TRANSMITTING...TIME LEFT - %time%");
-			configs.Add("cfgdesc=Intercom bypass mode transmitting messsage.", "intercom_transmitting_bypass_text: TRANSMITTING...BYPASS MODE");
-			configs.Add("cfgdesc=Intercom admin speaking text.", "intercom_admin_speaking_text: ADMIN IS USING THE INTERCOM NOW");
-			configs.Add("cfgdesc=Intercom muted message.", "intercom_muted_text: YOU ARE MUTED BY ADMIN");
-			configs.Add("cfgdesc=Intercom restarting message. %remainingTime% = remaining cooldown.", "intercom_restarting_text: RESTARTING %remainingTime%");
-			configs.Add("cfgdesc=Roles allowed to use SCP-939's V alt voice chat feature.", "roles_allowed_to_use_alt_voice_chat: [Scp93989,Scp93953]");
-			configs.Add("cfgdesc=Roles allowed to use the Intercom.", "roles_allowed_to_use_intercom: [ChaosInsurgency,ClassD,FacilityGuard,NtfCadet,NtfCommander,NtfLieutenant,NtfScientist,Scientist,Tutorial]");
-			// SCP-096 Configs
-			configs.Add("segment=Scp-096 Configuration", "");
-			configs.Add("cfgdesc=Starting value of AHP for SCP-096.", "scp096_max_shield: 500");
-			configs.Add("cfgdesc=How much AHP does SCP-096 gain for every player that looks at it.", "scp096_shield_per_player: 200");
-			configs.Add("cfgdesc=Whether or not SCP-096 should be able to pry gates.", "scp096_pry_gates: true");
-			configs.Add("cfgdesc=Whether or not SCP-096 should stay enraged for longer when someone looks at it.", "scp096_add_enrage_time_when_looked: true");
-			configs.Add("cfgdesc=Whether or not SCP-096 should be able to kill players that didn't look at it.", "scp096_can_kill_only_targets: true");
-			configs.Add("cfgdesc=Whether or not SCP-096 should be able to regenerate AHP.", "scp096_can_regen: true");
-			configs.Add("cfgdesc=Recharge rate of AHP of SCP-096.", "scp096_shield_recharge_rate: 10");
-			configs.Add("cfgdesc=Whether or not SCP-096 should be able to see a red particle on every target.", "scp096_vision_particles: true");
-			configs.Add("cfgdesc=Whether or not SCP-096 should be able to destroy doors.", "scp096_can_destroy_doors: true");
-			return configs;
-        }
-
-		public static void ValidateConfig(Dictionary<string, string> configs, string path, bool firstTime = false)
-        {
-			try
-			{
-				Paths.CheckFile(path);
-				string[] currentLines = File.ReadAllLines(path);
-				string current = FileManager.ReadAllText(path);
-				using (StreamWriter writer = new StreamWriter(path, true))
-				{
-					foreach (KeyValuePair<string, string> pair in configs)
-					{
-						if (pair.Key.ToUpper().StartsWith("LINE"))
-						{
-							if (firstTime)
-								writer.WriteLine("");
-						}
-
-						if (pair.Key.ToUpper().StartsWith("SEGMENT="))
-						{
-							string segment = pair.Key.Replace("segment=", "").ToUpper();
-							if (!current.Contains($"## {segment} ##"))
-								writer.WriteLine($"## {segment} ##");
-						}
-
-						if (pair.Key.ToUpper().StartsWith("CFGDESC="))
-						{
-							string description = pair.Key.Replace("cfgdesc=", "");
-							string key = pair.Value.Split(':')[0];
-							string value = pair.Value.Replace($"{key}: ", "");
-							if (!current.Contains($"# {description}"))
-								writer.WriteLine($"# {description}");
-							if (!ContainsKey(currentLines, key))
-								writer.WriteLine($"{key}: {value}");
-						}
-						
-						if (!pair.Key.ToUpper().StartsWith("LINE") && !pair.Key.ToUpper().StartsWith("SEGMENT=") && !pair.Key.ToUpper().StartsWith("CFGDESC="))
-                        {
-							string key = pair.Key;
-							string value = pair.Value;
-							if (!ContainsKey(currentLines, key))
-								writer.WriteLine($"{key}: {value}");
-						}
-					}
-					writer.Flush();
-					writer.Close();
-				}
-			}
-			catch (Exception e)
-            {
-				Log.Add("An error occured while validating configs.", LogType.Error);
-				Log.Add(e);
-            }
 		}
 
 		public static bool ContainsKey(string[] currentLines, string key)

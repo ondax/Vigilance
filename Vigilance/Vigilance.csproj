@@ -101,6 +101,7 @@
     <Compile Include="Events\Events.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="Patches\Anticheat.cs" />
     <Compile Include="Patches\Features.cs" />
     <Compile Include="Patches\Fixes.cs" />
     <Compile Include="Patches\Ghostmode.cs" />
@@ -114,6 +115,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\ClassHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConfigManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

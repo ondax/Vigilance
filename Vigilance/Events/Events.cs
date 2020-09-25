@@ -63,9 +63,9 @@ namespace Vigilance.Events
         public string Cause { get; }
         public bool Allow { get; set; }
 
-        public AnnounceSCPTerminationEvent(GameObject killer, Role role, PlayerStats.HitInfo info, string cause, bool allow)
+        public AnnounceSCPTerminationEvent(Player killer, Role role, PlayerStats.HitInfo info, string cause, bool allow)
         {
-            Killer = killer?.GetPlayer();
+            Killer = killer;
             Role = role;
             HitInfo = info;
             Cause = cause;
@@ -85,10 +85,10 @@ namespace Vigilance.Events
         public ItemType Item { get; }
         public bool Allow { get; set; }
 
-        public CancelMedicalItemEvent(float cooldown, GameObject ply, ItemType item, bool allow)
+        public CancelMedicalItemEvent(float cooldown, Player ply, ItemType item, bool allow)
         {
             Cooldown = cooldown;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Item = item;
             Allow = allow;
         }
@@ -106,11 +106,11 @@ namespace Vigilance.Events
         public Player Reported { get; }
         public bool Allow { get; set; }
 
-        public GlobalReportEvent(string reason, GameObject reporter, GameObject reported, bool allow)
+        public GlobalReportEvent(string reason, Player reporter, Player reported, bool allow)
         {
             Reason = reason;
-            Reporter = reporter?.GetPlayer();
-            Reported = reported?.GetPlayer();
+            Reporter = reporter;
+            Reported = reported;
             Allow = allow;
         }
 
@@ -127,11 +127,11 @@ namespace Vigilance.Events
         public Player Reported { get; }
         public bool Allow { get; set; }
 
-        public LocalReportEvent(string reason, GameObject reporter, GameObject reported, bool allow)
+        public LocalReportEvent(string reason, Player reporter, Player reported, bool allow)
         {
             Reason = reason;
-            Reporter = reporter?.GetPlayer();
-            Reported = reported?.GetPlayer();
+            Reporter = reporter;
+            Reported = reported;
             Allow = allow;
         }
 
@@ -146,9 +146,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public CheckEscapeEvent(GameObject player, bool allow)
+        public CheckEscapeEvent(Player player, bool allow)
         {
-            Player = player?.GetPlayer();
+            Player = player;
             Allow = allow;
         }
 
@@ -184,16 +184,16 @@ namespace Vigilance.Events
         public Player Sender { get; }
         public bool Allow { get; set; }
 
-        public ConsoleCommandEvent(string cmd, GameObject sender, bool allow)
+        public ConsoleCommandEvent(string cmd, Player sender, bool allow)
         {
             Command = cmd;
-            Sender = sender?.GetPlayer();
+            Sender = sender;
             Allow = allow;
         }
 
         public override void Execute(EventHandler handler)
         {
-            ((Vigilance.EventHandlers.ConsoleCommandHandler)handler).OnConsoleCommand(this);
+            ((EventHandlers.ConsoleCommandHandler)handler).OnConsoleCommand(this);
         }
     }
 
@@ -215,10 +215,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public Door Door { get; }
 
-        public DoorInteractEvent(bool allow, GameObject ply, Door door)
+        public DoorInteractEvent(bool allow, Player ply, Door door)
         {
             Allow = allow;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Door = door;
         }
 
@@ -234,10 +234,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public DropItemEvent(Inventory.SyncItemInfo itemInfo, GameObject ply, bool allow)
+        public DropItemEvent(Inventory.SyncItemInfo itemInfo, Player ply, bool allow)
         {
             Item = itemInfo;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -252,10 +252,10 @@ namespace Vigilance.Events
         public Pickup Item { get; set; }
         public Player Player { get; }
 
-        public DroppedItemEvent(Pickup item, GameObject ply)
+        public DroppedItemEvent(Pickup item, Player ply)
         {
             Item = item;
-            Player = ply?.GetPlayer();
+            Player = ply;
         }
 
         public override void Execute(EventHandler handler)
@@ -270,10 +270,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public ElevatorInteractEvent(Lift lift, GameObject ply, bool allow)
+        public ElevatorInteractEvent(Lift lift, Player ply, bool allow)
         {
             Lift = lift;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -288,10 +288,10 @@ namespace Vigilance.Events
         public bool Allow { get; set; }
         public Player Player { get; }
 
-        public FemurEnterEvent(GameObject ply, bool allow)
+        public FemurEnterEvent(Player ply, bool allow)
         {
             Allow = allow;
-            Player = ply?.GetPlayer();
+            Player = ply;
         }
 
         public override void Execute(EventHandler handler)
@@ -306,10 +306,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public GeneratorInsertEvent(Generator079 gen, GameObject ply, bool allow)
+        public GeneratorInsertEvent(Generator079 gen, Player ply, bool allow)
         {
             Generator = gen;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -325,10 +325,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public GeneratorEjectEvent(Generator079 gen, GameObject ply, bool allow)
+        public GeneratorEjectEvent(Generator079 gen, Player ply, bool allow)
         {
             Generator = gen;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -344,10 +344,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public GeneratorUnlockEvent(Generator079 gen, GameObject ply, bool allow)
+        public GeneratorUnlockEvent(Generator079 gen, Player ply, bool allow)
         {
             Generator = gen;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -363,10 +363,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public GeneratorOpenEvent(Generator079 gen, GameObject ply, bool allow)
+        public GeneratorOpenEvent(Generator079 gen, Player ply, bool allow)
         {
             Generator = gen;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -382,10 +382,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public GeneratorCloseEvent(Generator079 gen, GameObject ply, bool allow)
+        public GeneratorCloseEvent(Generator079 gen, Player ply, bool allow)
         {
             Generator = gen;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -419,9 +419,9 @@ namespace Vigilance.Events
         public GrenadeType GrenadeType { get; }
         public bool Allow { get; set; }
 
-        public ThrowGrenadeEvent(GameObject ply, Grenade grenade, GrenadeType grenadeType, bool allow)
+        public ThrowGrenadeEvent(Player ply, Grenade grenade, GrenadeType grenadeType, bool allow)
         {
-            Thrower = ply?.GetPlayer();
+            Thrower = ply;
             Grenade = grenade;
             GrenadeType = grenadeType;
             Allow = allow;
@@ -439,9 +439,9 @@ namespace Vigilance.Events
         public bool Allow { get; set; }
 
 
-        public IntercomSpeakEvent(GameObject speak, bool allow)
+        public IntercomSpeakEvent(Player speak, bool allow)
         {
-            Speaker = speak?.GetPlayer();
+            Speaker = speak;
             Allow = allow;
         }
 
@@ -458,11 +458,11 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public ChangeItemEvent(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, GameObject ply, bool allow)
+        public ChangeItemEvent(Inventory.SyncItemInfo oldItem, Inventory.SyncItemInfo newItem, Player ply, bool allow)
         {
             OldItem = oldItem;
             NewItem = newItem;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -478,10 +478,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public LockerInteractEvent(Locker locker, GameObject ply, bool allow)
+        public LockerInteractEvent(Locker locker, Player ply, bool allow)
         {
             Locker = locker;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -497,10 +497,10 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public PickupItemEvent(Pickup item, GameObject ply, bool allow)
+        public PickupItemEvent(Pickup item, Player ply, bool allow)
         {
             Item = item;
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -554,10 +554,10 @@ namespace Vigilance.Events
         public TimeSpan Issuance { get; set; }
         public bool Allow { get; set; }
 
-        public BanEvent(GameObject ply, GameObject issuer, string reason, long issuance, long expiery, bool allow)
+        public BanEvent(Player ply, Player issuer, string reason, long issuance, long expiery, bool allow)
         {
-            Player = ply?.GetPlayer();
-            Issuer = issuer?.GetPlayer();
+            Player = ply;
+            Issuer = issuer;
             Reason = reason.IsEmpty() ? "No reason provided." : reason;
             Expiration = TimeSpan.FromTicks(expiery);
             Issuance = TimeSpan.FromTicks(issuance);
@@ -576,10 +576,10 @@ namespace Vigilance.Events
         public Player Cuffer { get; }
         public bool Allow { get; set; }
 
-        public HandcuffEvent(GameObject ply, GameObject cuffer, bool allow)
+        public HandcuffEvent(Player ply, Player cuffer, bool allow)
         {
-            Player = ply?.GetPlayer();
-            Cuffer = cuffer?.GetPlayer();
+            Player = ply;
+            Cuffer = cuffer;
             Allow = allow;
         }
 
@@ -595,10 +595,10 @@ namespace Vigilance.Events
         public Player Uncuffer { get; }
         public bool Allow { get; set; }
 
-        public UncuffEvent(GameObject ply, GameObject uncuffer, bool allow)
+        public UncuffEvent(Player ply, Player uncuffer, bool allow)
         {
-            Player = ply?.GetPlayer();
-            Uncuffer = uncuffer?.GetPlayer();
+            Player = ply;
+            Uncuffer = uncuffer;
             Allow = allow;
         }
 
@@ -615,10 +615,10 @@ namespace Vigilance.Events
         public PlayerStats.HitInfo HitInfo { get; set; }
         public bool Allow { get; set; }
 
-        public PlayerHurtEvent(GameObject ply, GameObject attack, PlayerStats.HitInfo hit, bool allow)
+        public PlayerHurtEvent(Player ply, Player attack, PlayerStats.HitInfo hit, bool allow)
         {
-            Player = ply?.GetPlayer();
-            Attacker = attack?.GetPlayer();
+            Player = ply;
+            Attacker = attack;
             HitInfo = hit;
             Allow = allow;
         }
@@ -634,9 +634,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public PlayerInteractEvent(GameObject ply, bool allow)
+        public PlayerInteractEvent(Player ply, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -650,9 +650,9 @@ namespace Vigilance.Events
     {
         public Player Player { get; }
 
-        public PlayerJoinEvent(GameObject ply)
+        public PlayerJoinEvent(Player ply)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
         }
 
         public override void Execute(EventHandler handler)
@@ -666,9 +666,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool DestroyHub { get; set; }
 
-        public PlayerLeaveEvent(GameObject ply)
+        public PlayerLeaveEvent(Player ply)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             DestroyHub = true;
         }
 
@@ -685,9 +685,9 @@ namespace Vigilance.Events
         public RoleType Role { get; set; }
         public bool Allow { get; set; }
 
-        public PlayerSpawnEvent(GameObject ply, Vector3 pos, RoleType role, bool allow)
+        public PlayerSpawnEvent(Player ply, Vector3 pos, RoleType role, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Location = pos;
             Role = role;
             Allow = allow;
@@ -706,9 +706,9 @@ namespace Vigilance.Events
         public bool AnimationOnly { get; set; }
         public bool Allow { get; set; }
 
-        public WeaponReloadEvent(GameObject ply, WeaponType weapon, bool anim, bool allow)
+        public WeaponReloadEvent(Player ply, WeaponType weapon, bool anim, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Weapon = weapon;
             AnimationOnly = anim;
             Allow = allow;
@@ -726,9 +726,9 @@ namespace Vigilance.Events
         public Vector3 Position { get; set; }
         public bool Allow { get; set; }
 
-        public PocketEscapeEvent(GameObject ply, Vector3 pos, bool allow)
+        public PocketEscapeEvent(Player ply, Vector3 pos, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Position = pos;
             Allow = allow;
         }
@@ -745,9 +745,9 @@ namespace Vigilance.Events
         public bool Hurt { get; set; }
         public bool Allow { get; set; }
 
-        public PocketEnterEvent(GameObject ply, bool damage, bool allow)
+        public PocketEnterEvent(Player ply, bool damage, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Hurt = damage;
             Allow = allow;
         }
@@ -764,9 +764,9 @@ namespace Vigilance.Events
         public bool Allow { get; set; }
         public float Damage { get; set; }
 
-        public PocketHurtEvent(GameObject ply, bool allow, float dmg)
+        public PocketHurtEvent(Player ply, bool allow, float dmg)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
             Damage = dmg;
         }
@@ -784,9 +784,9 @@ namespace Vigilance.Events
         public string Response { get; set; }
         public bool Allow { get; set; }
 
-        public RemoteAdminCommandEvent(GameObject ply, string cmd, string response, bool allow)
+        public RemoteAdminCommandEvent(Player ply, string cmd, string response, bool allow)
         {
-            Issuer = ply?.GetPlayer();
+            Issuer = ply;
             Command = cmd;
             Response = response;
             Allow = allow;
@@ -864,9 +864,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public SCP096EnrageEvent(GameObject ply, bool allow)
+        public SCP096EnrageEvent(Player ply, bool allow)
         {
-            Player p = ply?.GetPlayer();
+            Player p = ply;
             Scp096 scp = (Scp096)p.Hub.scpsController.CurrentScp;
             Scp096 = scp;
             Player = p;
@@ -885,9 +885,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public SCP096CalmEvent(GameObject ply, bool allow)
+        public SCP096CalmEvent(Player ply, bool allow)
         {
-            Player p = ply?.GetPlayer();
+            Player p = ply;
             Scp096 scp = (Scp096)p.Hub.scpsController.CurrentScp;
             Scp096 = scp;
             Player = p;
@@ -906,10 +906,10 @@ namespace Vigilance.Events
         public Player SCP { get; }
         public bool Allow { get; set; }
 
-        public SCP106ContainEvent(GameObject killer, GameObject ply, bool allow)
+        public SCP106ContainEvent(Player killer, Player ply, bool allow)
         {
-            Killer = killer?.GetPlayer();
-            SCP = ply?.GetPlayer();
+            Killer = killer;
+            SCP = ply;
             Allow = allow;
         }
 
@@ -925,9 +925,9 @@ namespace Vigilance.Events
         public Vector3 Position { get; set; }
         public bool Allow { get; set; }
 
-        public SCP106CreatePortalEvent(GameObject ply, Vector3 pos, bool allow)
+        public SCP106CreatePortalEvent(Player ply, Vector3 pos, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Position = pos;
             Allow = allow;
         }
@@ -945,9 +945,9 @@ namespace Vigilance.Events
         public Vector3 NewPosition{ get; set; }
         public bool Allow { get; set; }
 
-        public SCP106TeleportEvent(GameObject ply, Vector3 old, Vector3 newPos, bool allow)
+        public SCP106TeleportEvent(Player ply, Vector3 old, Vector3 newPos, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             OldPortal = old;
             NewPosition = newPos;
             Allow = allow;
@@ -965,9 +965,9 @@ namespace Vigilance.Events
         public float Time { get; set; }
         public bool Allow { get; set; }
 
-        public SCP914ActivateEvent(GameObject ply, float time, bool allow)
+        public SCP914ActivateEvent(Player ply, float time, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Time = time;
             Allow = allow;
         }
@@ -985,9 +985,9 @@ namespace Vigilance.Events
         public Scp914Knob KnobSetting { get; set; }
         public bool Allow { get; set; }
 
-        public SCP914ChangeKnobEvent(GameObject ply, Scp914Machine scp, Scp914Knob knob, bool allow)
+        public SCP914ChangeKnobEvent(Player ply, Scp914Machine scp, Scp914Knob knob, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Scp914 = scp;
             KnobSetting = knob;
             Allow = allow;
@@ -1005,9 +1005,9 @@ namespace Vigilance.Events
         public RoleType Role { get; set; }
         public bool Allow { get; set; }
 
-        public SetClassEvent(GameObject ply, RoleType role, bool allow)
+        public SetClassEvent(Player ply, RoleType role, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Role = role;
             Allow = allow;
         }
@@ -1024,9 +1024,9 @@ namespace Vigilance.Events
         public UserGroup Group { get; set; }
         public bool Allow { get; set; }
 
-        public SetGroupEvent(GameObject ply, UserGroup group, bool allow)
+        public SetGroupEvent(Player ply, UserGroup group, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Group = group;
             Allow = allow;
         }
@@ -1044,9 +1044,9 @@ namespace Vigilance.Events
         public WeaponType Weapon { get; }
         public bool Allow { get; set; }
 
-        public WeaponShootEvent(GameObject ply, GameObject target, WeaponType weapon, bool allow)
+        public WeaponShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Target = target;
             Weapon = weapon;
             Allow = allow;
@@ -1065,9 +1065,9 @@ namespace Vigilance.Events
         public WeaponType Weapon { get; }
         public bool Allow { get; set; }
 
-        public WeaponLateShootEvent(GameObject ply, GameObject target, WeaponType weapon, bool allow)
+        public WeaponLateShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Target = target;
             Weapon = weapon;
             Allow = allow;
@@ -1103,9 +1103,9 @@ namespace Vigilance.Events
         public byte CurrentAnimation { get; set; }
         public bool Allow { get; set; }
 
-        public SyncDataEvent(GameObject ply, Vector2 speed, byte curAnim, bool allow)
+        public SyncDataEvent(Player ply, Vector2 speed, byte curAnim, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Speed = speed;
             CurrentAnimation = curAnim;
             Allow = allow;
@@ -1142,9 +1142,9 @@ namespace Vigilance.Events
         public TeslaGate Tesla { get; }
         public bool Allow { get; set; }
 
-        public TriggerTeslaEvent(GameObject ply, TeslaGate tesla, bool allow)
+        public TriggerTeslaEvent(Player ply, TeslaGate tesla, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Tesla = tesla;
             Allow = allow;
         }
@@ -1162,9 +1162,9 @@ namespace Vigilance.Events
         public int HpToRecover { get; set; }
         public bool Allow { get; set; }
 
-        public UseMedicalItemEvent(GameObject ply, ItemType item, int hp, bool allow)
+        public UseMedicalItemEvent(Player ply, ItemType item, int hp, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Item = item;
             HpToRecover = hp;
             Allow = allow;
@@ -1198,9 +1198,9 @@ namespace Vigilance.Events
         public float TimeLeft { get; set; }
         public bool Allow { get; set; }
 
-        public WarheadCancelEvent(GameObject ply, float time, bool allow)
+        public WarheadCancelEvent(Player ply, float time, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             TimeLeft = time;
             Allow = allow;
         }
@@ -1217,9 +1217,9 @@ namespace Vigilance.Events
         public float TimeLeft { get; set; }
         public bool Allow { get; set; }
 
-        public WarheadStartEvent(GameObject ply, float time, bool allow)
+        public WarheadStartEvent(Player ply, float time, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             TimeLeft = time;
             Allow = allow;
         }
@@ -1235,9 +1235,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public WarheadKeycardAccessEvent(GameObject ply, bool allow)
+        public WarheadKeycardAccessEvent(Player ply, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -1253,9 +1253,9 @@ namespace Vigilance.Events
         public Ragdoll Ragdoll { get; }
         public bool Allow { get; set; }
 
-        public SCP049RecallEvent(GameObject ply, Ragdoll ragdoll, bool allow)
+        public SCP049RecallEvent(Player ply, Ragdoll ragdoll, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Ragdoll = ragdoll;
             Allow = allow;
         }
@@ -1273,9 +1273,9 @@ namespace Vigilance.Events
         public float Experience { get; set; }
         public bool Allow { get; set; }
 
-        public SCP079GainExpEvent(GameObject ply, ExpGainType gainType, float exp, bool allow)
+        public SCP079GainExpEvent(Player ply, ExpGainType gainType, float exp, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             ExpGainType = gainType;
             Experience = exp;
             Allow = allow;
@@ -1292,9 +1292,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public SCP079GainLvlEvent(GameObject ply, bool allow)
+        public SCP079GainLvlEvent(Player ply, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -1309,9 +1309,9 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Allow { get; set; }
 
-        public SCP079InteractEvent(GameObject ply, bool allow)
+        public SCP079InteractEvent(Player ply, bool allow)
         {
-            Player = ply?.GetPlayer();
+            Player = ply;
             Allow = allow;
         }
 
@@ -1384,13 +1384,15 @@ namespace Vigilance.Events
         public Player Attacker { get; }
         public PlayerStats.HitInfo HitInfo { get; set; }
         public bool Allow { get; set; }
+        public bool SpawnRagdoll { get; set; }
 
-        public PlayerDieEvent(GameObject target, GameObject attacker, PlayerStats.HitInfo info, bool allow)
+        public PlayerDieEvent(Player target, Player attacker, PlayerStats.HitInfo info, bool allow)
         {
-            Target = target?.GetPlayer();
-            Attacker = attacker?.GetPlayer();
+            Target = target;
+            Attacker = attacker;
             HitInfo = info;
             Allow = allow;
+            SpawnRagdoll = ConfigManager.SpawnRagdolls;
         }
 
         public override void Execute(EventHandler handler)
@@ -1404,9 +1406,9 @@ namespace Vigilance.Events
         public Player Target { get; }
         public bool Allow { get; set; }
 
-        public Scp096AddTargetEvent(GameObject target, bool allow)
+        public Scp096AddTargetEvent(Player target, bool allow)
         {
-            Target = target?.GetPlayer();
+            Target = target;
             Allow = allow;
         }
 
@@ -1427,12 +1429,12 @@ namespace Vigilance.Events
         public Quaternion Rotation { get; set; }
         public bool Allow { get; set; }
 
-        public SpawnItemEvent(Pickup pickup, ItemType id, float dur, GameObject ownr, Pickup.WeaponModifiers mods, Vector3 pos, Quaternion rot, bool allow)
+        public SpawnItemEvent(Pickup pickup, ItemType id, float dur, Player ownr, Pickup.WeaponModifiers mods, Vector3 pos, Quaternion rot, bool allow)
         {
             Pickup = pickup;
             ItemId = id;
             Durability = dur;
-            Owner = ownr?.GetPlayer();
+            Owner = ownr;
             WeaponModifiers = mods;
             Position = pos;
             Rotation = rot;

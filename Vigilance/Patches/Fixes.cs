@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Mirror;
-using Vigilance.Extensions;
 
 namespace Vigilance.Patches
 {
@@ -43,26 +42,6 @@ namespace Vigilance.Patches
                 else
                     yield return instruction;
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(Stamina), nameof(Stamina.ProcessStamina))]
-    public static class StaminaUsagePatch
-    {
-        public static bool Prefix(Stamina __instance)
-        {
-            return __instance._hub.GetPlayer()?.IsUsingStamina ?? true;
-        }
-    }
-
-    [HarmonyPatch(typeof(ServerConsole), nameof(ServerConsole.ReloadServerName))]
-    public static class ServerNamePatch
-    {
-        public static void Postfix()
-        {
-            if (!PluginManager.Config.GetBool("tracking"))
-                return;
-            ServerConsole._serverName += $"<color=#00000000><size=1>Vigilance v{PluginManager.Version}</size></color>";
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Vigilance.Patches
 
 				if (hub != null && hub.playerEffectsController != null)
 				{
-					if (PluginManager.Config.GetBool("enable_amnesia", true))
+					if (ConfigManager.Scp939Amnesia)
 						hub.playerEffectsController.EnableEffect<Amnesia>(3f, true);
 				}
 				__instance.RpcShoot();
@@ -60,13 +60,13 @@ namespace Vigilance.Patches
 	[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.GetShootPermission), new Type[] { typeof(CharacterClassManager), typeof(bool) })]
 	public static class FriendlyFirePatch
 	{
-		public static bool Prefix(WeaponManager __instance, ref bool forceFriendlyFire, ref bool __result) => !(__result = __instance.gameObject.GetPlayer().IsFriendlyFireEnabled || forceFriendlyFire || Round.FriendlyFire);
+		public static bool Prefix(WeaponManager __instance, ref bool forceFriendlyFire, ref bool __result) => !(__result = __instance.GetPlayer().IsFriendlyFireEnabled || forceFriendlyFire || Round.FriendlyFire);
 	}
 
 	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiFly))]
 	public static class DisableAntiflyPatch
 	{
-		private static bool Prefix() => PluginManager.Config.GetBool("antifly_enabled", true);
+		private static bool Prefix() => ConfigManager.IsAntiFlyEnabled;
 	}
 
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.ParseVisionInformation))]
@@ -97,7 +97,7 @@ namespace Vigilance.Patches
 					return false;
 				if (CannotTrigger096.Contains(player.UserId))
 					return false;
-				if (!Scp096Properties.CanTutorialTriggerScp096 && player.Role == RoleType.Tutorial)
+				if (!ConfigManager.CanTutorialTriggerScp096 && player.Role == RoleType.Tutorial)
 					return false;
 				float delay = (1f - info.DotProduct) / 0.25f * (Vector3.Distance(info.Source.transform.position, info.Target.transform.position) * 0.1f);
 				if (!__instance.Calming)
@@ -122,7 +122,7 @@ namespace Vigilance.Patches
 		{
 			try
 			{
-				__result = Scp096Properties.MaxShield;
+				__result = ConfigManager.Scp096MaxShield;
 				return false;
 			}
 			catch (Exception e)
@@ -142,7 +142,7 @@ namespace Vigilance.Patches
 			{
 				if (!NetworkServer.active)
 					throw new InvalidOperationException("Called PryGate from client.");
-				if (!Scp096Properties.AllowPryGates)
+				if (!ConfigManager.Scp096PryGates)
 					return false;
 				if (!__instance.Charging || !__instance.Enraged || gate.isOpen || gate.doorType != Door.DoorTypes.HeavyGate)
 					return false;
@@ -184,11 +184,11 @@ namespace Vigilance.Patches
         {
 			try
 			{
-				__instance._canRegen = Scp096Properties.CanRegen;
-				if (Scp096Properties.CanRegen)
+				__instance._canRegen = ConfigManager.Scp096CanRegen;
+				if (ConfigManager.Scp096CanRegen && ConfigManager.Scp096RechargeRate > 0)
 				{
-					__instance.ShieldRechargeRate = Scp096Properties.ShieldRechargeRate;
-					__instance._shieldRechargeRate = Scp096Properties.ShieldRechargeRate;
+					__instance.ShieldRechargeRate = ConfigManager.Scp096RechargeRate;
+					__instance._shieldRechargeRate = ConfigManager.Scp096RechargeRate;
 				}
 				else
 				{
@@ -205,17 +205,6 @@ namespace Vigilance.Patches
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.SetupShield))]
 	public static class Scp096Properties
     {
-		public static float MaxShield { get; set; } = PluginManager.Config.GetFloat("scp096_max_shield", 500f);
-		public static bool AllowPryGates { get; set; } = PluginManager.Config.GetBool("scp096_pry_gates", true);
-		public static bool AddEnrageTimeWhenLooked { get; set; } = PluginManager.Config.GetBool("scp096_add_enrage_time_when_looked", true);
-		public static int ShieldPerPlayer { get; set; } = PluginManager.Config.GetInt("scp096_shield_per_player", 200);
-		public static bool CanKillOnlyTargets { get; set; } = PluginManager.Config.GetBool("scp096_can_kill_only_targets", false);
-		public static bool CanRegen { get; set; } = PluginManager.Config.GetBool("scp096_can_regen", true);
-		public static float ShieldRechargeRate { get; set; } = PluginManager.Config.GetFloat("scp096_shield_recharge_rate", 10f);
-		public static bool Scp096VisionParticles { get; set; } = PluginManager.Config.GetBool("scp096_vision_particles", true);
-		public static bool Scp096CanDestroyDoors { get; set; } = PluginManager.Config.GetBool("scp096_can_destroy_doors", true);
-		public static bool CanTutorialTriggerScp096 { get; set; } = PluginManager.Config.GetBool("can_tutorial_trigger_scp096", true);
-
 		public static bool Prefix(Scp096 __instance)
         {
 			try
@@ -223,8 +212,8 @@ namespace Vigilance.Patches
 				__instance._prevArtificialHpDelay = __instance.Hub.playerStats.artificialHpDecay;
 				__instance._prevArtificialHpRatio = __instance.Hub.playerStats.artificialNormalRatio;
 				__instance._prevMaxArtificialHp = __instance.Hub.playerStats.maxArtificialHealth;
-				__instance.Hub.playerStats.NetworkmaxArtificialHealth = (int)MaxShield;
-				__instance.ShieldAmount = MaxShield;
+				__instance.Hub.playerStats.NetworkmaxArtificialHealth = (int)ConfigManager.Scp096MaxShield;
+				__instance.ShieldAmount = ConfigManager.Scp096MaxShield;
 				__instance.Hub.playerStats.NetworkartificialNormalRatio = 1f;
 				return false;
 			}
@@ -250,7 +239,7 @@ namespace Vigilance.Patches
 					switch (door.doorType)
 					{
 						case Door.DoorTypes.Standard:
-							if (Scp096Properties.Scp096CanDestroyDoors)
+							if (ConfigManager.Scp096DestroyDoors)
 								door.DestroyDoor096();
 							break;
 						case Door.DoorTypes.HeavyGate:
@@ -277,7 +266,7 @@ namespace Vigilance.Patches
         {
 			try
 			{
-				if (Scp096Properties.Scp096VisionParticles)
+				if (ConfigManager.Scp096VisionParticles)
 					__instance._targetParticles.SetActive(value);
 				else
 					__instance._targetParticles.SetActive(false);
@@ -292,6 +281,18 @@ namespace Vigilance.Patches
 		}
     }
 
+	[HarmonyPatch(typeof(Scp096Target), nameof(Scp096Target.Start))]
+	public static class ParticleConfigPatchStart
+	{
+		public static bool Prefix(Scp096Target __instance)
+		{
+			if (!ConfigManager.Scp096VisionParticles)
+				__instance._targetParticles.SetActive(false);
+			__instance.IsTarget = false;
+			return false;
+		}
+	}
+
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.ChargePlayer))]
 	public static class Scp096OnlyTargetsConfigPatch
     {
@@ -304,7 +305,7 @@ namespace Vigilance.Patches
 				if (!player.characterClassManager.IsAnyScp() && !Physics.Linecast(__instance.Hub.transform.position, player.transform.position, LayerMask.GetMask("Default", "Door", "Glass")))
 				{
 					bool flag = __instance._targets.Contains(player);
-					if (!flag && Scp096Properties.CanKillOnlyTargets)
+					if (!flag && ConfigManager.Scp096CanKillOnlyTargets)
 						return false;
 					if (__instance.Hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(flag ? 9696f : 35f, player.LoggedNameFromRefHub(), DamageTypes.Scp096, __instance.Hub.queryProcessor.PlayerId), player.gameObject))
 					{
@@ -342,7 +343,7 @@ namespace Vigilance.Patches
 				{
 					Scp173PlayerScript component = player.GetComponent<Scp173PlayerScript>();
 					Player ply = player.GetPlayer();
-					if (ply != null && ply.Role == RoleType.Tutorial && !PluginManager.Config.GetBool("can_tutorial_block_scp173", true))
+					if (ply != null && ply.Role == RoleType.Tutorial && !ConfigManager.CanTutorialBlockScp173)
 					{
 						__instance.AllowMove = true;
 						return false;
@@ -366,126 +367,33 @@ namespace Vigilance.Patches
 	[HarmonyPatch(typeof(Lift), nameof(Lift.UseLift))]
 	public static class ElevatorMovementSpeedPatch
 	{
-		public static int MovingSpeed { get; set; } = PluginManager.Config.GetInt("elevator_moving_speed", 5);
-
 		public static void Prefix(Lift __instance)
 		{
-			__instance.movingSpeed = MovingSpeed;
+			__instance.movingSpeed = ConfigManager.ElevatorMovingSpeed;
 		}
 	}
 
 	[HarmonyPatch(typeof(Radio), nameof(Radio.UseBattery))]
 	public static class RadioUnlimitedBatteryPatch
 	{
-		public static bool UnlimitedBattery { get; set; } = PluginManager.Config.GetBool("unlimited_radio_battery", false);
-
 		public static bool Prefix(Radio __instance)
 		{
-			if (UnlimitedBattery)
+			if (ConfigManager.UnlimitedRadioBattery)
 				return false;
 			else
 				return true;
 		}
 	}
 
-	[HarmonyPatch(typeof(Intercom), nameof(Intercom.UpdateText))]
-	public static class IntercomPatch
-    {
-		public static GameObject Speaker { get; set; }
-
-		public static bool Prefix(Intercom __instance)
-        {
-			try
-			{
-				if (!string.IsNullOrEmpty(__instance.CustomContent))
-				{
-					__instance.IntercomState = Intercom.State.Custom;
-					__instance.Network_intercomText = __instance.CustomContent;
-				}
-				else if (__instance.Muted)
-				{
-					__instance.IntercomState = Intercom.State.Muted;
-					__instance.Network_intercomText = Map.Intercom.Settings.MutedText;
-					__instance._intercomText = Map.Intercom.Settings.MutedText;
-				}
-				else if (Intercom.AdminSpeaking)
-				{
-					__instance.IntercomState = Intercom.State.AdminSpeaking;
-					__instance.Network_intercomText = Map.Intercom.Settings.AdminSpeakingText;
-					__instance._intercomText = Map.Intercom.Settings.AdminSpeakingText;
-				}
-				else if (__instance.remainingCooldown > 0f)
-				{
-					int num = Mathf.CeilToInt(__instance.remainingCooldown);
-					__instance.IntercomState = Intercom.State.Restarting;
-					__instance.NetworkIntercomTime = (ushort)((num >= 0) ? ((ushort)num) : 0);
-					__instance.Network_intercomText = Map.Intercom.Settings.RestartingText;
-					__instance._intercomText = Map.Intercom.Settings.RestartingText;
-				}
-				else if (__instance.Networkspeaker != null)
-				{
-					if (__instance._ccm.IsHost)
-						Speaker = __instance.gameObject;
-					else
-						Speaker = __instance._ccm.gameObject;
-					if (__instance.bypassSpeaking)
-					{
-						__instance.IntercomState = Intercom.State.TransmittingBypass;
-						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingBypassModeText;
-						__instance._intercomText = Map.Intercom.Settings.TransmittingBypassModeText;
-					}
-					else
-					{
-						int num2 = Mathf.CeilToInt(__instance.speechRemainingTime);
-						__instance.IntercomState = Intercom.State.Transmitting;
-						__instance.NetworkIntercomTime = (ushort)((num2 >= 0) ? ((ushort)num2) : 0);
-						__instance.Network_intercomText = Map.Intercom.Settings.TransmittingText;
-						__instance._intercomText = Map.Intercom.Settings.TransmittingText;
-					}
-				}
-				else
-				{
-					__instance.IntercomState = Intercom.State.Ready;
-					__instance.Network_intercomText = Map.Intercom.Settings.ReadyText;
-					__instance._intercomText = Map.Intercom.Settings.ReadyText;
-				}
-				if (Intercom.AdminSpeaking == Intercom.LastState)
-				{
-					return false;
-				}
-				Intercom.LastState = Intercom.AdminSpeaking;
-				__instance.RpcUpdateAdminStatus(Intercom.AdminSpeaking);
-				return false;
-			}
-			catch (Exception e)
-            {
-				Log.Add("Intercom", e);
-				return true;
-            }
-		}
-    }
-
 	[HarmonyPatch(typeof(DissonanceUserSetup), nameof(DissonanceUserSetup.CallCmdAltIsActive))]
 	public static class CustomSpeechPath
 	{
-		public static List<RoleType> RolesAllowedToUseAltVoiceChat => PluginManager.Config.GetRoles("roles_allowed_to_use_alt_voice_chat");
-		public static List<RoleType> RolesAllowedToUseIntercom
-		{
-			get
-			{
-				List<RoleType> cfg = PluginManager.Config.GetRoles("roles_allowed_to_use_intercom");
-				if (cfg.Count == 0)
-					return new List<RoleType>() { RoleType.ChaosInsurgency, RoleType.ClassD, RoleType.FacilityGuard, RoleType.NtfCadet, RoleType.NtfCommander, RoleType.NtfLieutenant, RoleType.NtfScientist, RoleType.Scientist, RoleType.Tutorial };
-				return cfg;
-			}
-		}
-
 		public static bool Prefix(DissonanceUserSetup __instance, bool value)
 		{
 			try
 			{
 				CharacterClassManager ccm = __instance.gameObject.GetComponent<CharacterClassManager>();
-				if (RolesAllowedToUseAltVoiceChat.Contains(ccm.CurClass) || ccm.CurClass.Is939())
+				if (ConfigManager.AltAllowedRoles.Contains(ccm.CurClass))
 					__instance.MimicAs939 = value;
 				return true;
 			}
@@ -497,61 +405,23 @@ namespace Vigilance.Patches
 		}
 	}
 
-	[HarmonyPatch(typeof(Intercom), nameof(Intercom.ServerAllowToSpeak))]
-	public static class CSPSATS
+	[HarmonyPatch(typeof(Stamina), nameof(Stamina.ProcessStamina))]
+	public static class StaminaUsagePatch
 	{
-		public static void Postfix(Intercom __instance, ref bool __result)
+		public static bool Prefix(Stamina __instance)
 		{
-			try
-			{
-				CharacterClassManager ccm = __instance.GetComponent<CharacterClassManager>();
-				if (!CustomSpeechPath.RolesAllowedToUseIntercom.Contains(ccm.CurClass))
-				{
-					__result = false;
-				}
-				else
-				{
-					__result = Vector3.Distance(__instance.transform.position, ccm.transform.position) <= __instance.triggerDistance;
-				}
-			}
-			catch (Exception e)
-			{
-				Log.Add("Intercom", e);
-			}
+			return __instance._hub.GetPlayer()?.IsUsingStamina ?? true;
 		}
 	}
 
-	[HarmonyPatch(typeof(Intercom), nameof(Intercom.RequestTransmission))]
-	public static class CSPRT
+	[HarmonyPatch(typeof(ServerConsole), nameof(ServerConsole.ReloadServerName))]
+	public static class ServerNamePatch
 	{
-		public static bool Prefix(Intercom __instance, GameObject spk)
+		public static void Postfix()
 		{
-			try
-			{
-				if (spk != null)
-					return true;
-				if (Intercom.host.speaker == null)
-					return true;
-				CharacterClassManager ccm = Intercom.host.speaker.GetComponent<CharacterClassManager>();
-				if (CustomSpeechPath.RolesAllowedToUseIntercom.Contains(RoleType.Scp93953) || CustomSpeechPath.RolesAllowedToUseIntercom.Contains(RoleType.Scp93989))
-				{
-					Scp939PlayerScript script = Intercom.host.speaker.GetComponent<Scp939PlayerScript>();
-					if (!script.NetworkusingHumanChat)
-						__instance.Networkspeaker = null;
-					return false;
-				}
-				else
-				{
-					if (!CustomSpeechPath.RolesAllowedToUseIntercom.Contains(ccm.CurClass))
-						return false;
-					return true;
-				}
-			}
-			catch (Exception e)
-			{
-				Log.Add("Intercom", e);
-				return true;
-			}
+			if (!ConfigManager.ShouldTrack)
+				return;
+			ServerConsole._serverName += $"<color=#00000000><size=1>Vigilance v{PluginManager.Version}</size></color>";
 		}
 	}
 }
