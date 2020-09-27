@@ -5,6 +5,7 @@ using Vigilance.Enums;
 using GameCore;
 using UnityEngine;
 using Vigilance.Extensions;
+using System.IO;
 
 namespace Vigilance.API
 {
@@ -183,6 +184,38 @@ namespace Vigilance.API
         public static string RunCommand(string command)
         {
             return ServerConsole.EnterCommand(command, out ConsoleColor color, new ConsoleCommandSender());
+        }
+
+        public static bool AddReservedSlot(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId) || userId.StartsWith("#"))
+                    return false;
+                if (!userId.Contains("@"))
+                {
+                    UserIdType userIdType = ((ulong)userId.Length).GetIdType();
+                    if (userIdType == UserIdType.Unspecified)
+                        return false;
+                    userId += $"@{userIdType.ToString().ToLower()}";
+                }
+                string appData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
+                string path = $"{appData}/SCP Secret Laboratory/config/{Port}/UserIDReservedSlots.txt";
+                if (!File.Exists(path))
+                    File.Create(path).Close();
+                using (StreamWriter writer = new StreamWriter(path, true))
+                {
+                    writer.WriteLine(userId);
+                    writer.Flush();
+                    writer.Close();
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Add("Server", e);
+                return false;
+            }
         }
 
         public static class PlayerList

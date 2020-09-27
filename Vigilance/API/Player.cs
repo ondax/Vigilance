@@ -46,8 +46,8 @@ namespace Vigilance.API
         {
             get
             {
-                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local") || _hub.serverRoles.Group == null || _hub.serverRoles.Group.BadgeText.IsEmpty())
-                    return "Local";
+                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
+                    return "LocalPlayer";
                 return _hub.serverRoles.Group.BadgeText;
             }
             set
@@ -97,7 +97,7 @@ namespace Vigilance.API
                     _hub.characterClassManager.CallCmdRequestShowTag(false);
             }
         }
-        public Class CurrentClass { get => ClassHelper.Build(Role); }
+        public Class CurrentClass { get => ClassHelper.Get(Role); }
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
@@ -139,7 +139,7 @@ namespace Vigilance.API
             get
             {
                 if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
-                    return "Local";
+                    return "LocalPlayer";
                 return UserId.Substring(0, UserId.LastIndexOf('@'));
             }
         }

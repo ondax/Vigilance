@@ -50,6 +50,8 @@ namespace Vigilance
             RegisterCommand(new CommandSpawnPrefab());
             RegisterCommand(new CommandExplode());
             RegisterCommand(new CommandDecontaminate());
+            RegisterCommand(new CommandForceEnd());
+            RegisterCommand(new CommandAddReservedSlot());
 
             RegisterGameCommand(new UnbanCommand());
             RegisterGameCommand(new OfflineBanCommand());

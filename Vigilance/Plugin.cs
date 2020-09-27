@@ -21,30 +21,31 @@ namespace Vigilance
         public void AddCommand(GameCommandHandler gameCommandHandler) => CommandManager.RegisterGameCommand(gameCommandHandler);
         public void AddCommand(ConsoleCommandHandler handler) => CommandManager.RegisterConsoleCommand(handler);
         public void AddEventHandler(EventHandler eventHandler) => EventManager.RegisterHandler(this, eventHandler);
-        public void AddConfig(string key, string value, string description = "")
-        {
+		public void AddConfig(string description, string key, string value)
+		{
 			try
 			{
-				string path = Paths.GetPluginConfigPath(this);
-				Paths.CheckFile(path);
-				string[] currentLines = File.ReadAllLines(path);
-				using (StreamWriter writer = new StreamWriter(path, true))
+				Paths.CheckFile(Paths.ConfigPath);
+				string[] currentLines = File.ReadAllLines(Paths.ConfigPath);
+				using (StreamWriter writer = new StreamWriter(Paths.ConfigPath, true))
 				{
-                    if (!Paths.ContainsKey(currentLines, key))
-                    {
-                        if (!string.IsNullOrEmpty(description))
-                            writer.WriteLine($"# {description}");
-                        if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(key))
-                            writer.WriteLine($"{key}: {value}");
-                    }
+					if (!Paths.ContainsKey(currentLines, key))
+					{
+						if (!string.IsNullOrEmpty(description) && !currentLines.Contains($"# {description}"))
+							writer.WriteLine($"# {description}");
+						if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(key))
+							writer.WriteLine($"{key}: {value}");
+						writer.WriteLine("");
+					}
 					writer.Flush();
 					writer.Close();
 				}
 			}
 			catch (Exception e)
 			{
-				Log.Add("Plugin.AddConfig", e);
+				Log.Add("Plugin", "An error ocurred while adding config", LogType.Error);
+				Log.Add("Plugin", e);
 			}
 		}
-    }
+	}
 }

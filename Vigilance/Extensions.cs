@@ -56,18 +56,17 @@ namespace Vigilance.Extensions
 			return hitInfo.GetPlayerObject().GetPlayer();
 		}
 
-		public static DamageType GetDamageType(this PlayerStats.HitInfo info)
+		public static DamageType GetDamageInfo(this PlayerStats.HitInfo info)
         {
 			string attacker = info.Attacker.ToUpper();
 			if (attacker == "CMDSUICIDE")
 				return DamageType.CmdSuicide;
 			if (attacker == "DISCONNECT")
 				return DamageType.Disconnect;
-			return info.GetDamageType().Convert();
+			return info.GetDamageType().AsDamageType();
         }
 
-
-		public static DamageType Convert(this DamageTypes.DamageType dmgType)
+		public static DamageType AsDamageType(this DamageTypes.DamageType dmgType)
 		{
 			if (string.IsNullOrEmpty(dmgType.name))
 				return DamageType.None;
@@ -176,7 +175,7 @@ namespace Vigilance.Extensions
 				if (item.id == ItemType.MicroHID && weapon == WeaponType.MicroHID)
 					return item;
             }
-			return new Inventory.SyncItemInfo();
+			return default;
         }
 		public static void SendRemoteAdminMessage(this CommandSender sender, string message, string command)
 		{
@@ -908,7 +907,7 @@ namespace Vigilance.Extensions
 
 	public static class RoleExtensions
 	{
-		public static string ToString(this RoleType role)
+		public static string AsString(this RoleType role)
 		{
 			switch (role)
 			{

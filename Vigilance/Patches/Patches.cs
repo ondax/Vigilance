@@ -846,7 +846,8 @@ namespace Vigilance.Patches
                     }
                     if (spawnRagdoll && (!__instance._pocketCleanup || info.GetDamageType() != DamageTypes.Pocket))
                     {
-                        referenceHub.inventory.ServerDropAll();
+                        if (ConfigManager.ShouldDropInventory)
+                            referenceHub.inventory.ServerDropAll();
                         PlayerMovementSync playerMovementSync = referenceHub.playerMovementSync;
                         if (characterClassManager.Classes.CheckBounds(characterClassManager.CurClass) && info.GetDamageType() != DamageTypes.RagdollLess)
                         {
@@ -1947,11 +1948,36 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.ApplyProperties))]
     public static class SpawnPatch
     {
+        public static bool HasItem(CharacterClassManager ccm, ItemType item)
+        {
+            Inventory inventory = ccm._hub.inventory;
+            if (inventory == null)
+                return false;
+            foreach (Inventory.SyncItemInfo itemInfo in inventory.items)
+                if (itemInfo.id == item)
+                    return true;
+            return false;
+        }
+
         public static void Postfix(CharacterClassManager __instance, bool lite = false, bool escape = false)
         {
             try
             {
                 Environment.OnSpawn(Server.PlayerList.GetPlayer(__instance.gameObject), __instance.transform.position, __instance.CurClass, true, out Vector3 pos, out RoleType role, out bool allow);
+                if (!ConfigManager.MakeSureToGiveItems)
+                    return;
+                Inventory inventory = __instance._hub.inventory;
+                string nick = __instance._hub.nicknameSync.MyNick;
+                if (inventory == null)
+                    Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null", LogType.Warn);
+                foreach (ItemType item in __instance.Classes.SafeGet(__instance.CurClass).startItems)
+                {
+                    if (!HasItem(__instance, item))
+                    {
+                        inventory.AddNewItem(item);
+                        Log.Add("CharacterClassManager", $"Giving {item} to {nick} ({__instance.UserId})", LogType.Debug);
+                    }
+                }
             }
             catch (Exception e)
             {

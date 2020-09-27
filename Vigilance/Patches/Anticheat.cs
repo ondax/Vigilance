@@ -71,7 +71,7 @@ namespace Vigilance.Patches
 				}
 
 				wasChanged = false;
-				if (__instance.WhitelistPlayer || __instance.NoclipWhitelisted)
+				if (__instance.WhitelistPlayer || __instance.NoclipWhitelisted || !ConfigManager.IsAntiCheatEnabled)
 				{
 					__instance.RealModelPosition = __instance._receivedPosition;
 					__instance._lastSafePosition = __instance._receivedPosition;

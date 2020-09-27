@@ -9,7 +9,7 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.Start))]
     public static class CharacterClassManagerLoadSpam
     {
-        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             bool isFirst = false;
             foreach (CodeInstruction instruction in instructions)
@@ -25,12 +25,14 @@ namespace Vigilance.Patches
                 }
             }
         }
+
+        public static void Postfix(CharacterClassManager __instance) => Vigilance.API.ClassHelper.SetClasses();
     }
 
     [HarmonyPatch(typeof(CharacterClassManager), "set_" + nameof(CharacterClassManager.NetworkCurClass))]
     public static class DoubleSpawn
     {
-        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             bool isNOPDetected = false;
             foreach (CodeInstruction instruction in instructions)

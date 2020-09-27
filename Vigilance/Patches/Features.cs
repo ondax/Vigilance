@@ -424,4 +424,101 @@ namespace Vigilance.Patches
 			ServerConsole._serverName += $"<color=#00000000><size=1>Vigilance v{PluginManager.Version}</size></color>";
 		}
 	}
+
+	public static class IntercomPatch
+    {
+		public static void SetContent(Intercom singleton, Intercom.State state, string content)
+        {
+			if (state == Intercom.State.Restarting)
+				content = content.Replace("%remaining%", Mathf.CeilToInt(singleton.remainingCooldown).ToString());
+			else
+				content = content.Replace("%time%", Mathf.CeilToInt(singleton.speechRemainingTime).ToString());
+			if (!string.IsNullOrEmpty(content))
+			{
+				singleton.Network_intercomText = content;
+				singleton.Network_state = Intercom.State.Custom;
+			}
+			else
+			{
+				singleton.Network_state = state;
+			}
+		}
+
+		[HarmonyPatch(typeof(Intercom), nameof(Intercom.Start))]
+		public static class Start
+        {
+			public static void Postfix(Intercom __instance) => __instance.UpdateText();
+        }
+
+		[HarmonyPatch(typeof(Intercom), nameof(Intercom.UpdateText))]
+		public static class UpdateText
+        {
+			private static bool Prefix(Intercom __instance)
+			{
+				if (!string.IsNullOrEmpty(__instance.CustomContent))
+				{
+					__instance.IntercomState = Intercom.State.Custom;
+					__instance.Network_intercomText = __instance.CustomContent;
+				}
+
+				else if (__instance.Muted)
+				{
+					SetContent(__instance, Intercom.State.Muted, ConfigManager.Intercom_Muted);
+				}
+
+				else if (Intercom.AdminSpeaking)
+				{
+					SetContent(__instance, Intercom.State.AdminSpeaking, ConfigManager.Intercom_Admin);
+				}
+
+				else if (__instance.remainingCooldown > 0f)
+				{
+					int num = Mathf.CeilToInt(__instance.remainingCooldown);
+					__instance.NetworkIntercomTime = (ushort)((num >= 0) ? ((ushort)num) : 0);
+					SetContent(__instance, Intercom.State.Restarting, ConfigManager.Intercom_Restart);
+				}
+
+				else if (__instance.Networkspeaker != null)
+				{
+					if (__instance.bypassSpeaking)
+					{
+						SetContent(__instance, Intercom.State.TransmittingBypass, ConfigManager.Intercom_Bypass);
+					}
+					else
+					{
+						int num2 = Mathf.CeilToInt(__instance.speechRemainingTime);
+						__instance.NetworkIntercomTime = (ushort)((num2 >= 0) ? ((ushort)num2) : 0);
+						SetContent(__instance, Intercom.State.Transmitting, ConfigManager.Intercom_Transmit);
+					}
+				}
+				else
+				{
+					SetContent(__instance, Intercom.State.Ready, ConfigManager.Intercom_Ready);
+				}
+
+				if (Intercom.AdminSpeaking != Intercom.LastState)
+				{
+					Intercom.LastState = Intercom.AdminSpeaking;
+					__instance.RpcUpdateAdminStatus(Intercom.AdminSpeaking);
+				}
+				return false;
+			}
+		}
+    }
+
+	[HarmonyPatch(typeof(MicroHID), nameof(MicroHID.UpdateServerside))]
+	public static class UnlimitedEnergyPatch
+	{
+		public static void Prefix(MicroHID __instance)
+		{
+			Player player = Server.PlayerList.GetPlayer(__instance.refHub);
+			if (player == null || player.IsHost)
+				return;
+			if (ConfigManager.UnlimitedMicroEnergy && player.ItemInHand == ItemType.MicroHID)
+			{
+				__instance.ChangeEnergy(1);
+				__instance.NetworkEnergy = 1;
+			}
+		}
+	}
 }

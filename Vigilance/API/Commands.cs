@@ -826,4 +826,42 @@ namespace Vigilance.Registered
 			return "Decontamination has begun.";
         }
     }
+
+    public class CommandForceEnd : CommandHandler
+    {
+		public string Command => "forceend";
+		public string Usage => "";
+		public string Aliases => "fe";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (Round.CurrentState != RoundState.Started)
+				return "The round has not been started yet!";
+			Round.End();
+			return "Done! Forced round end.";
+        }
+    }
+
+    public class CommandAddReservedSlot : CommandHandler
+    {
+		public string Command => "addslot";
+		public string Usage => "Missing arguments!\nUsage: addslot <UserId>";
+		public string Aliases => "as";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			string userId = args[0];
+			if (Server.AddReservedSlot(userId))
+            {
+				GameCore.ConfigFile.ReloadGameConfigs();
+				return $"Succesfully added a reserved slot for {userId}.";
+            }
+			else
+            {
+				return $"An error occured while adding a slot for {userId}";
+            }
+        }
+    }
 }

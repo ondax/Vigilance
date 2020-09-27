@@ -7,10 +7,43 @@ namespace Vigilance.API
 {
     public static class ClassHelper
     {
+        public static Class[] Classes { get; set; }
+        public static bool ClassesSet { get; set; }
+
+        public static void SetClasses()
+        {
+            if (ClassesSet)
+                return;
+            List<Class> classes = new List<Class>();
+            foreach (Role role in CharacterClassManager._staticClasses)
+                classes.Add(Build(role.roleId));
+            Classes = classes.ToArray();
+            ClassesSet = true;
+        }
+
+        public static Class Get(RoleType role) => Classes[(int)role];
+        public static Class Get(Role role) => Classes[(int)role.roleId];
+
         public static Class Build(RoleType type)
         {
             Role role = CharacterClassManager._staticClasses.SafeGet(type);
             return new Class(role.roleId, role.fullName, role.description, role.team, role.banClass, role.abilities, role.startItems, role.ammoTypes, role.maxAmmo, role.maxHP, role.bloodType, role.classColor, role.classRecoil, role.forcedCrosshair, role.jumpSpeed, role.runSpeed, role.walkSpeed, role.iconHeightOffset, role.useHeadBob, role.model_offset, role.ragdoll_offset, role.model_player, role.model_ragdoll, role.postprocessingProfile, role.profileSprite, role.stepClips);
+        }
+
+        public static RoundSummary.SumInfo_ClassList Build()
+        {
+            RoundSummary.SumInfo_ClassList classList = new RoundSummary.SumInfo_ClassList()
+            {
+                chaos_insurgents = Round.Info.ChaosInsurgents,
+                class_ds = Round.Info.Class_Ds,
+                mtf_and_guards = Round.Info.MTF,
+                scientists = Round.Info.Scientists,
+                scps_except_zombies = Round.Info.TotalSCPsExceptZombies,
+                time = Round.Info.Seconds,
+                warhead_kills = Round.Info.WarheadKills,
+                zombies = Round.Info.ChangedToZombies
+            };
+            return classList;
         }
     }
 
@@ -254,24 +287,31 @@ namespace Vigilance.API
 
         public void Replace()
         {
-            Role[] curRoles = CharacterClassManager._staticClasses;
-            List<Role> newRoles = new List<Role>();
-            foreach (Role role in curRoles)
+            try
             {
-                if (role.roleId != RoleId)
+                Role[] current = CharacterClassManager._staticClasses;
+                List<Role> list = new List<Role>();
+                for (int i = 0; i < current.Length; i++)
                 {
-                    newRoles.Add(role);
+                    Role role = current[i];
+                    if (role.roleId == RoleId)
+                    {
+                        list.Add(_role);
+                    }
+                    else
+                    {
+                        list.Add(role);
+                    }
                 }
+                Role[] newRoles = list.ToArray();
+                CharacterClassManager._staticClasses = newRoles;
+                foreach (CharacterClassManager ccm in Object.FindObjectsOfType<CharacterClassManager>())
+                    ccm.Classes = newRoles;
             }
-            newRoles.Add(_role);
-            curRoles = newRoles.ToArray();
-            CharacterClassManager._staticClasses = curRoles;
-            foreach (CharacterClassManager ccm in Object.FindObjectsOfType<CharacterClassManager>())
+            catch (System.Exception e)
             {
-                ccm.Classes = curRoles;
+                Log.Add("ClassHelper", e);
             }
-            ReferenceHub.LocalHub.characterClassManager.Classes = curRoles;
-            ReferenceHub.HostHub.characterClassManager.Classes = curRoles;
         }
 
         public Role ToRole() => _role;

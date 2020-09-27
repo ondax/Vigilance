@@ -5,6 +5,7 @@ using Respawning;
 using Respawning.NamingRules;
 using System.Collections.Generic;
 using MEC;
+using GameCore;
 
 namespace Vigilance.API
 {
@@ -49,8 +50,16 @@ namespace Vigilance.API
         }
 
         public static void Start() => CharacterClassManager.ForceRoundStart();
-        public static void End() => RoundSummary.singleton.ForceEnd();
-        public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassListBuilder.Build(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
+        public static void End()
+        {
+            if (CurrentState != RoundState.Started)
+                return;
+            RoundLock = false;
+            LobbyLock = false;
+            RoundSummary.singleton.ForceEnd();
+        }
+
+        public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.Build(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
         public static void Restart() => Server.Host.GetComponent<PlayerStats>().Roundrestart();
 
         public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)
@@ -87,24 +96,5 @@ namespace Vigilance.API
 
         public int CountTeam(TeamType team) => Server.PlayerList.GetPlayers(team).Count;
         public int CountRole(RoleType role) => Server.PlayerList.GetPlayers(role).Count;
-    }
-
-    public static class ClassListBuilder
-    {
-        public static RoundSummary.SumInfo_ClassList Build()
-        {
-            RoundSummary.SumInfo_ClassList classList = new RoundSummary.SumInfo_ClassList()
-            {
-                chaos_insurgents = Round.Info.ChaosInsurgents,
-                class_ds = Round.Info.Class_Ds,
-                mtf_and_guards = Round.Info.MTF,
-                scientists = Round.Info.Scientists,
-                scps_except_zombies = Round.Info.TotalSCPsExceptZombies,
-                time = Round.Info.Seconds,
-                warhead_kills = Round.Info.WarheadKills,
-                zombies = Round.Info.ChangedToZombies
-            };
-            return classList;
-        }
     }
 }
