@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System;
 using Vigilance.API;
-using Vigilance.Extensions;
 using Vigilance.Registered;
-using System.Net;
 
 namespace Vigilance
 {
@@ -52,9 +49,29 @@ namespace Vigilance
             RegisterCommand(new CommandDecontaminate());
             RegisterCommand(new CommandForceEnd());
             RegisterCommand(new CommandAddReservedSlot());
+            RegisterCommand(new CommandListCommands());
+            RegisterCommand(new CommandHelpCommand());
+            RegisterCommand(new CommandHint());
+            RegisterCommand(new CommandPersonalHint());
+            RegisterCommand(new CommandDisablePlugin());
 
             RegisterGameCommand(new UnbanCommand());
             RegisterGameCommand(new OfflineBanCommand());
+        }
+
+        public static void UnregisterCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command))
+                return;
+            CommandHandler commandHandler = GetCommandHandler(command);
+            GameCommandHandler gameCommandHandler = GetGameCommandHandler(command);
+            ConsoleCommandHandler consoleCommandHandler = GetConsoleCommandHandler(command);
+            if (commandHandler != null)
+                _commands.Remove(commandHandler);
+            if (gameCommandHandler != null)
+                _gameCommands.Remove(gameCommandHandler);
+            if (consoleCommandHandler != null)
+                _consoleCommands.Remove(consoleCommandHandler);
         }
 
         public static CommandHandler GetCommandHandler(string command)

@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace Vigilance
 {
-    public static class EventManager
-    {
+	public static class EventManager
+	{
 		private static Dictionary<Type, List<Wrapper>> _events;
 		private static Dictionary<Plugin, Snapshot> _snapshots;
 
 		public static void Enable()
-        {
+		{
 			_events = new Dictionary<Type, List<Wrapper>>();
 			_snapshots = new Dictionary<Plugin, Snapshot>();
-        }
+		}
 
 		public static void Trigger<T>(Event ev) where T : EventHandler
 		{
@@ -24,8 +24,8 @@ namespace Vigilance
 				}
 				catch (Exception e)
 				{
-					Log.Add("EventManager", $"An error occured while handling {ev.GetType().Name}", LogType.Error);
-					Log.Add("EventManager", e);
+					Log.Add($"{e.Source}", $"An error occured while handling {ev.GetType().Name}", LogType.Error);
+					Log.Add($"{e.Source}", e);
 				}
 			}
 		}
@@ -41,6 +41,37 @@ namespace Vigilance
 			}
 		}
 
+		public static void UnregisterHandler(Plugin plugin, EventHandler handler)
+		{
+			foreach (Type type in handler.GetType().GetInterfaces())
+			{
+				if (typeof(EventHandler).IsAssignableFrom(type))
+				{
+					UnregisterHandler(plugin, type, handler);
+				}
+			}
+		}
+
+		public static void UnregisterHandlers(Plugin plugin)
+        {
+			if (!_snapshots.ContainsKey(plugin))
+				return;
+			List<Type> events = new List<Type>();
+			foreach (Snapshot.Entry entry in _snapshots[plugin].Entries)
+				events.Add(entry.Type);
+			_snapshots[plugin].Active = false;
+			_snapshots[plugin].Entries.Clear();
+			foreach (Type type in events)
+            {
+				foreach (Wrapper wrapper in _events[type])
+                {
+					UnregisterHandler(plugin, wrapper.Handler);
+                }
+				_events.Remove(type);
+            }
+			_snapshots.Remove(plugin);
+        }
+
 		public static void RegisterHandler(Plugin plugin, Type eventType, EventHandler handler)
 		{
 			Wrapper wrapper = new Wrapper(plugin, handler);
@@ -48,6 +79,27 @@ namespace Vigilance
 				_snapshots.Add(plugin, new Snapshot());
 			_snapshots[plugin].Entries.Add(new Snapshot.Entry(eventType, wrapper));
 			AddEvent(eventType, wrapper, handler);
+		}
+
+		public static void UnregisterHandler(Plugin plugin, Type eventType, EventHandler handler)
+        {
+			if (!_snapshots.ContainsKey(plugin) || !_events.ContainsKey(eventType))
+				return;
+			foreach (Snapshot.Entry entry in _snapshots[plugin].Entries)
+            {
+				if (entry.Type == eventType)
+                {
+					_snapshots[plugin].Entries.Remove(entry);
+                }
+            }
+			
+			foreach (Wrapper wrapper in _events[eventType])
+            {
+				if (wrapper.Handler == handler && wrapper.Plugin == plugin)
+                {
+					_events[eventType].Remove(wrapper);
+                }
+            }
 		}
 
 		public static void AddEvent(Type eventType, Wrapper wrapper, EventHandler handler)
@@ -100,8 +152,8 @@ namespace Vigilance
 
         public Wrapper(Plugin plugin, EventHandler handler)
         {
-            this.Plugin = plugin;
-            this.Handler = handler;
+            Plugin = plugin;
+            Handler = handler;
         }
     }
 
@@ -112,7 +164,7 @@ namespace Vigilance
 
         public Snapshot()
         {
-            this.Entries = new List<Entry>();
+            Entries = new List<Entry>();
         }
 
         public class Entry
@@ -121,8 +173,8 @@ namespace Vigilance
             public Wrapper Wrapper { get; }
             public Entry(Type type, Wrapper wrapper)
             {
-                this.Type = type;
-                this.Wrapper = wrapper;
+                Type = type;
+                Wrapper = wrapper;
             }
         }
     }

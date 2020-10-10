@@ -112,8 +112,15 @@ namespace Vigilance
 				{
 					if (f.EndsWith(".dll"))
 					{
-						Assembly a = Assembly.LoadFrom(f);
-						assemblies.Add(a);
+						try
+						{
+							Assembly a = Assembly.LoadFrom(f);
+							assemblies.Add(a);
+						}
+						catch (Exception e)
+                        {
+							Log.Add("Paths", e);
+                        }
 					}
 				}
 				return assemblies;
@@ -196,9 +203,8 @@ namespace Vigilance
 								string cfgPath = Paths.GetPluginConfigPath(plugin);
 								Paths.CheckFile(cfgPath);
 								plugin.Config = new YamlConfig(cfgPath);
-								plugin.Config?.Reload();
 								plugin.Enable();
-								PluginManager.Plugins.Add(plugin, assembly);
+								PluginManager.Plugins.Add(assembly.Location, plugin);
 								Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
 							}
 							catch (Exception e)

@@ -230,7 +230,6 @@ namespace Vigilance.API
 
             public static void Reset()
             {
-                Log.Add("PlayerList", "Resetting PlayerList", LogType.Debug);
                 PlayersDict.Clear();
                 UserIdCache.Clear();
                 PlayerIdCache.Clear();
@@ -244,7 +243,6 @@ namespace Vigilance.API
                     return;
                 if (Contains(player))
                     return;
-                Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has joined, adding to list.", LogType.Debug);
                 PlayersDict.Add(player.GameObject, player);
                 UserIdCache.Add(player.UserId, player);
                 PlayerIdCache.Add(player.PlayerId, player);
@@ -259,7 +257,6 @@ namespace Vigilance.API
                     return;
                 if (!Contains(player))
                     return;
-                Log.Add("PlayerList", $"{player.Nick} ({player.UserId}) [{player.IpAddress}] has disconnected, removing from list.", LogType.Debug);
                 PlayersDict.Remove(player.GameObject);
                 UserIdCache.Remove(player.UserId);
                 PlayerIdCache.Remove(player.PlayerId);

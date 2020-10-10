@@ -198,7 +198,11 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			Server.ReloadConfigs();
+			GameCore.ConfigFile.ServerConfig.Reload();
+			GameCore.ConfigFile.ReloadGameConfigs();
+			ServerStatic.PermissionsHandler.RefreshPermissions();
+			ConfigManager.Reload();
+			PluginManager.Reload();
 			return $"Success! Changes will be applied on your server next round.";
 		}
 	}
@@ -213,7 +217,7 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			Server.Restart(true);
+			Server.Restart(false);
 			return $"The server is about to restart! Please wait ..";
 		}
 	}
@@ -835,9 +839,10 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
         {
-			if (Round.CurrentState != RoundState.Started)
+			if (RoundSummary.roundTime < 5)
 				return "The round has not been started yet!";
-			Round.End();
+			RoundSummary.RoundLock = false;
+			RoundSummary.singleton.ForceEnd();
 			return "Done! Forced round end.";
         }
     }
@@ -855,13 +860,115 @@ namespace Vigilance.Registered
 			string userId = args[0];
 			if (Server.AddReservedSlot(userId))
             {
-				GameCore.ConfigFile.ReloadGameConfigs();
+				ReservedSlot.Reload();
 				return $"Succesfully added a reserved slot for {userId}.";
             }
 			else
             {
 				return $"An error occured while adding a slot for {userId}";
             }
+        }
+    }
+
+    public class CommandListCommands : CommandHandler
+    {
+		public string Command => "listcommands";
+		public string Usage => "";
+		public string Aliases => "lc cmds commands";
+
+        public string Execute(Player sender, string[] args)
+        {
+			List<CommandHandler> commands = CommandManager.Commands;
+			string str = $"Commands ({commands.Count}):\n";
+			foreach (CommandHandler commandHandler in commands)
+				str += $"{commandHandler.Command}\n";
+			return str;
+        }
+    }
+
+    public class CommandHelpCommand : CommandHandler
+    {
+		public string Command => "helpcommand";
+		public string Usage => "Missing arguments!\nUsage: helpcommand <command>";
+		public string Aliases => "helpcmd cmd";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			string command = args[0];
+			CommandHandler commandHandler = CommandManager.GetCommandHandler(command);
+			if (commandHandler == null)
+				return "Cannot find that command.";
+			else
+            {
+				string usage = string.IsNullOrEmpty(commandHandler.Usage.Replace("Missing arguments!\nUsage: ", "")) ? "None" : commandHandler.Usage.Replace("Missing arguments!\nUsage: ", "");
+				string aliases = string.IsNullOrEmpty(commandHandler.Aliases) ? "None" : commandHandler.Aliases.Replace(" ", ", ");
+				string str = $"Command: \"{commandHandler.Command}\"\nUsage: {usage}\nAliases: {aliases}";
+				return str;
+            }
+        }
+    }
+
+    public class CommandHint : CommandHandler
+    {
+		public string Command => "hint";
+		public string Usage => "Missing arguments!\nUsage: hint <time> <message>";
+		public string Aliases => "";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 2)
+				return Usage;
+			string message = args.SkipWords(1);
+			if (!int.TryParse(args[0], out int duration))
+				return "Please provide a valid duration.";
+			Map.ShowHint(message, duration);
+			return "Succesfully sent a hint.";
+        }
+    }
+
+    public class CommandPersonalHint : CommandHandler
+    {
+		public string Command => "personalhint";
+		public string Usage => "Missing arguments!\nUsage: personalhint <player> <time> <message>";
+		public string Aliases => "phint";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (!int.TryParse(args[1], out int duration))
+				return "Please provide a valid duration.";
+			Player player = args[0].GetPlayer();
+			if (player.IsHost || player == null)
+				return "Player not found.";
+			string message = args.SkipWords(2);
+			string str = $"<color=#FF0000>[PERSONAL] - {sender.Nick}:</color>\n<i>{message}</i>";
+			player.ShowHint(str, duration);
+			return $"Succesfully shown a hint to {player.Nick}";
+        }
+    }
+
+    public class CommandDisablePlugin : CommandHandler
+    {
+		public string Command => "disableplugin";
+		public string Usage => "Missing arguments!\nUsage: disableplugin <plugin name>";
+		public string Aliases => "";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			Plugin plugin = null;
+			foreach (Plugin pl in PluginManager.Plugins.Values)
+			{
+				if (pl.Name == args.Combine())
+					plugin = pl;
+			}
+
+			if (plugin == null)
+				return "Cannot find a plugin with that name.";
+			PluginManager.Disable(plugin);
+			return $"Succesfully disabled {plugin.Name}";
         }
     }
 }

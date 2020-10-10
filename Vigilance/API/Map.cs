@@ -116,6 +116,8 @@ namespace Vigilance.API
 
 		public static void Broadcast(string message, int duration)
 		{
+			if (string.IsNullOrEmpty(message) || duration < 1)
+				return;
 			foreach (Player player in Server.PlayerList.PlayersDict.Values)
 			{
 				player.Broadcast(message, duration);
@@ -129,6 +131,14 @@ namespace Vigilance.API
 				player.ClearBroadcasts();
 			}
 		}
+
+		public static void ShowHint(string message, int duration)
+        {
+			if (string.IsNullOrEmpty(message) || duration < 1)
+				return;
+			foreach (Player player in Server.PlayerList.PlayersDict.Values)
+				player.ShowHint(message, duration);
+        }
 
 		public static Room GetRoom(RoomType roomType)
 		{

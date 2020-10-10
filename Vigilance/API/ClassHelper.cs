@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.PostProcessing;
 using System.Linq;
+using Vigilance.Extensions;
 
 namespace Vigilance.API
 {
@@ -318,7 +319,7 @@ namespace Vigilance.API
 
         public override string ToString()
         {
-            return RoleId.ToString();
+            return RoleId.AsString();
         }
     }
 }

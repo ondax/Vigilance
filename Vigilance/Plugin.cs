@@ -21,13 +21,17 @@ namespace Vigilance
         public void AddCommand(GameCommandHandler gameCommandHandler) => CommandManager.RegisterGameCommand(gameCommandHandler);
         public void AddCommand(ConsoleCommandHandler handler) => CommandManager.RegisterConsoleCommand(handler);
         public void AddEventHandler(EventHandler eventHandler) => EventManager.RegisterHandler(this, eventHandler);
+		public void RemoveEventHandler(EventHandler eventHandler) => EventManager.UnregisterHandler(this, eventHandler);
+		public void RemoveAllHandlers() => EventManager.UnregisterHandlers(this);
+		public void RemoveCommand(string command) => CommandManager.UnregisterCommand(command);
+
 		public void AddConfig(string description, string key, string value)
 		{
 			try
 			{
 				Paths.CheckFile(Paths.ConfigPath);
-				string[] currentLines = File.ReadAllLines(Paths.ConfigPath);
-				using (StreamWriter writer = new StreamWriter(Paths.ConfigPath, true))
+				string[] currentLines = File.ReadAllLines(Paths.GetPluginConfigPath(this));
+				using (StreamWriter writer = new StreamWriter(Paths.GetPluginConfigPath(this), true))
 				{
 					if (!Paths.ContainsKey(currentLines, key))
 					{
@@ -43,7 +47,7 @@ namespace Vigilance
 			}
 			catch (Exception e)
 			{
-				Log.Add("Plugin", "An error ocurred while adding config", LogType.Error);
+				Log.Add("Plugin", $"{Name} caused an exception while adding config.", LogType.Error);
 				Log.Add("Plugin", e);
 			}
 		}
