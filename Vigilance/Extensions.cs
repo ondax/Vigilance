@@ -905,6 +905,23 @@ namespace Vigilance.Extensions
         }
 	}
 
+	public static class EnumExtensions
+    {
+		public static Achievement GetAchievement(this string str)
+        {
+			Array array = Enum.GetValues(typeof(Achievement));
+			if (array.Length < 0)
+				return Achievement.Unknown;
+			Achievement[] arr = array.ToArray<Achievement>();
+			foreach (Achievement ach in arr)
+            {
+				if (str == ach.ToString())
+					return ach;
+            }
+			return Achievement.Unknown;
+        }
+    }
+
 	public static class RoleExtensions
 	{
 		public static string AsString(this RoleType role)
@@ -1033,6 +1050,8 @@ namespace Vigilance.Extensions
 
 		public static List<ItemType> GetItems(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return new List<ItemType>();
 			try
 			{
 				List<ItemType> items = new List<ItemType>();
@@ -1051,6 +1070,8 @@ namespace Vigilance.Extensions
 
 		public static List<RoleType> GetRoles(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return new List<RoleType>();
 			try
 			{
 				List<RoleType> roles = new List<RoleType>();
@@ -1069,6 +1090,8 @@ namespace Vigilance.Extensions
 
 		public static List<TeamType> GetTeams(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return new List<TeamType>();
 			try
 			{
 				List<TeamType> teams = new List<TeamType>();
@@ -1087,6 +1110,8 @@ namespace Vigilance.Extensions
 
 		public static Vector3 GetVector(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return Vector3.zero;
 			Vector3 vector = Vector3.zero;
 			string[] args = cfg.GetString(key).Split('=');
 			if (float.TryParse(args[0], out float x) && float.TryParse(args[1], out float y) && float.TryParse(args[2], out float z))
@@ -1098,6 +1123,8 @@ namespace Vigilance.Extensions
 
 		public static List<Vector3> GetVectorList(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return new List<Vector3>();
 			List<Vector3> vectors = new List<Vector3>();
 			foreach (string val in cfg.GetStringList(key))
 			{
@@ -1113,6 +1140,8 @@ namespace Vigilance.Extensions
 
 		public static Dictionary<int, int> GetIntDictionary(this YamlConfig cfg, string key)
 		{
+			if (cfg == null)
+				return new Dictionary<int, int>();
 			Dictionary<string, string> stringDictionary = cfg.GetStringDictionary(key);
 			if (stringDictionary.Count == 0)
 				return new Dictionary<int, int>();

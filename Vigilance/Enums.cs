@@ -199,4 +199,25 @@
 		Restarting,
 		Undefined
     }
+
+	public enum Achievement
+    {
+		LarryIsYourFriend,
+		ThatWasClose,
+		TablesHaveTurned,
+		CrisisAverted,
+		DidntEvenFeelThat,
+		WowReally,
+		UnvoluntaryRageQuit,
+		Newb,
+		FirstTime,
+		IWantToBeARocket,
+		Betrayal,
+		PewPew,
+		JustResources,
+		IllPassThanks,
+		TimeToDoItMyself,
+		Friendship,
+		Unknown
+    }
 }

@@ -353,8 +353,8 @@ namespace Vigilance.Patches
                 }
                 string userId = null;
                 string address = user.GetComponent<NetworkIdentity>().connectionToClient.address;
-                Player targetPlayer = user.GetPlayer();
-                Player issuerPlayer = issuer.GetPlayer();
+                Player targetPlayer = Server.PlayerList.GetPlayer(user);
+                Player issuerPlayer = Server.PlayerList.GetPlayer(issuer);
                 reason = string.IsNullOrEmpty(reason) ? "No reason provided." : reason;
                 try
                 {
@@ -1158,7 +1158,6 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-
                 NetworkIdentity component = other.GetComponent<NetworkIdentity>();
                 if (component != null)
                 {
@@ -1175,6 +1174,7 @@ namespace Vigilance.Patches
                         {
                             flag = true;
                         }
+
                         List<string> stringList = ConfigFile.ServerConfig.GetStringList(flag ? "pd_random_exit_rids_after_decontamination" : "pd_random_exit_rids");
                         if (stringList.Count > 0)
                         {
@@ -1197,6 +1197,7 @@ namespace Vigilance.Patches
                                 }
                             }
                         }
+
                         if (__instance.tpPositions == null || __instance.tpPositions.Count == 0)
                         {
                             foreach (GameObject gameObject2 in GameObject.FindGameObjectsWithTag("PD_EXIT"))
@@ -1207,8 +1208,7 @@ namespace Vigilance.Patches
                         Vector3 pos = __instance.tpPositions[UnityEngine.Random.Range(0, __instance.tpPositions.Count)];
                         pos.y += 2f;
                         PlayerMovementSync component3 = other.GetComponent<PlayerMovementSync>();
-                        Player player = Server.PlayerList.GetPlayer(component3.gameObject);
-                        Environment.OnPocketEscape(player, pos, true, out pos, out bool allow);
+                        Environment.OnPocketEscape(Server.PlayerList.GetPlayer(component.gameObject), pos, true, out pos, out bool allow);
                         if (!allow)
                             return false;
                         component3.AddSafeTime(2f);
@@ -1745,7 +1745,7 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                Environment.OnShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow);
+                Environment.OnShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, ItemExtensions.GetWeaponType(__instance._hub.inventory.curItem), true, out bool allow);
                 if (!allow)
                     return false;
                 if (Vector3.Distance(__instance._hub.playerMovementSync.RealModelPosition, sourcePos) > 5.5f)

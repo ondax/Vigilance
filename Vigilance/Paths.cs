@@ -192,25 +192,55 @@ namespace Vigilance
 				Download(url, path);
 				if (File.Exists(path))
 				{
-					Assembly assembly = Assembly.LoadFrom(path);
-					foreach (Type type in assembly.GetTypes())
+					if (!PluginManager.Assemblies.ContainsKey(path) && !PluginManager.Plugins.ContainsKey(path))
 					{
-						if (type.IsSubclassOf(typeof(Plugin)))
+						Assembly assembly = null;
+						try
 						{
-							Plugin plugin = (Plugin)Activator.CreateInstance(type);
-							try
+							assembly = Assembly.LoadFrom(path);
+						}
+						catch (Exception e)
+						{
+							Log.Add("PluginManager", "An error occured while loading! (1)", LogType.Error);
+							Log.Add(e);
+						}
+
+						if (assembly != null)
+						{
+							PluginManager.Assemblies.Add(path, assembly);
+							foreach (Type type in assembly.GetTypes())
 							{
-								string cfgPath = Paths.GetPluginConfigPath(plugin);
-								Paths.CheckFile(cfgPath);
-								plugin.Config = new YamlConfig(cfgPath);
-								plugin.Enable();
-								PluginManager.Plugins.Add(assembly.Location, plugin);
-								Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
-							}
-							catch (Exception e)
-							{
-								Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while enabling.", LogType.Error);
-								Log.Add("PluginManager", e);
+								if (type.IsAssignableFrom(typeof(Plugin)))
+								{
+									Plugin plugin = null;
+									try
+									{
+										plugin = (Plugin)Activator.CreateInstance(type);
+									}
+									catch (Exception e)
+									{
+										Log.Add("PluginManager", "An error occured while loading! (2)", LogType.Error);
+										Log.Add(e);
+									}
+
+									if (plugin != null)
+									{
+										try
+										{
+											string cfg = Paths.GetPluginConfigPath(plugin);
+											Paths.CheckFile(path);
+											plugin.Config = new YamlConfig(cfg);
+											plugin.Enable();
+											PluginManager.Plugins.Add(path, plugin);
+											Log.Add("PluginManager", $"Succesfully loaded {plugin.Name}!", LogType.Info);
+										}
+										catch (Exception e)
+										{
+											Log.Add("PluginManager", $"An error occured while loading {plugin.Name}! (3)", LogType.Error);
+											Log.Add(e);
+										}
+									}
+								}
 							}
 						}
 					}
@@ -238,16 +268,27 @@ namespace Vigilance
 			if (!name.EndsWith(".dll"))
 				name += ".dll";
 			string path = $"{Dependencies}/{name}";
-			try
+			if (!PluginManager.Dependencies.ContainsKey(path))
 			{
-				Download(url, path);
-				Assembly assemly = Assembly.LoadFrom(path);
-				PluginManager.Dependencies.Add(assemly);
-				Log.Add("PluginManager", $"Succesfully loaded dependency \"{assemly.GetName().Name}\"", LogType.Info);
-			}
-			catch (Exception e)
-			{
-				Log.Add("Paths", e);
+				if (path.EndsWith(".dll"))
+				{
+					Assembly assembly = null;
+					try
+					{
+						assembly = Assembly.LoadFrom(path);
+					}
+					catch (Exception e)
+					{
+						Log.Add("PluginManager", "An error occured while loading dependencies! (5)", LogType.Error);
+						Log.Add(e);
+					}
+
+					if (assembly != null)
+					{
+						PluginManager.Dependencies.Add(path, assembly);
+						Log.Add("PluginManager", $"Succesfully loaded {assembly.GetName().Name}", LogType.Info);
+					}
+				}
 			}
 		}
 

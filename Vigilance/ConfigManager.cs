@@ -81,7 +81,6 @@ namespace Vigilance
 				Log.Add("ConfigManager", e);
 			}
 
-			PluginManager.Config.Reload();
 			IsAntiCheatEnabled = PluginManager.Config.GetBool("anticheat_enabled", true);
 			IsAntiFlyEnabled = PluginManager.Config.GetBool("antifly_enabled", true);
 			SpawnBlood = PluginManager.Config.GetBool("enable_blood_spawning", true);
@@ -130,6 +129,7 @@ namespace Vigilance
 			Scp096DestroyDoors = PluginManager.Config.GetBool("scp096_destroy_doors", true);
 
 			VpnApiKey = PluginManager.Config.GetString("vpn_api_key");
+
 			Intercom_Admin = PluginManager.Config.GetString("intercom_admin", "ADMIN IS USING THE INTERCOM NOW");
 			Intercom_Bypass = PluginManager.Config.GetString("intercom_bypass", "TRANSMITTING...BYPASS MODE");
 			Intercom_Muted = PluginManager.Config.GetString("intercom_muted", "YOU ARE MUTED BY ADMIN");
@@ -138,9 +138,19 @@ namespace Vigilance
 			Intercom_Transmit = PluginManager.Config.GetString("intercom_transmitting", "TRANSMITTING...TIME LEFT - %time%");
 		}
 
+		public static bool IsBlacklisted(string command, string role, string userId)
+        {
+			List<string> roleBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{role}");
+			List<string> idBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{userId}");
+			if (roleBlacklist.Contains(command) || idBlacklist.Contains(command))
+				return true;
+			else
+				return false;
+        }
+
 		public static void Validate()
 		{
-			AddConfig("Your server will have the \"Modded\" flag in the server list if you set this to true.", "mark_as_modded", "false");
+			AddConfig("Your server will have the \"Modded\" flag in the server list if you set __instance to true.", "mark_as_modded", "false");
 			AddConfig("Adds a transparent text that specifies the version of Vigilance.", "tracking", "false");
 			AddConfig("Whether or not debug messages should be printed in the server console. This option is usually very spammy.", "debug", "false");
 			AddConfig("Should Vigilance reload all configs when the round restarts?", "reload_configs", "false");
@@ -152,8 +162,8 @@ namespace Vigilance
 			AddConfig("Whether or not should ServerGuard be enabled.", "guard_enabled", "false");
 			AddConfig("List of active ServerGuard modules. Valid values: vpn, vpnshield, steam, steamshield.", "guard_enabled_modules", "[]");
 			AddConfig("You will need a API key used for checking if a specific IP is a VPN connection or not. Warning! GeForce Now is flagged as a VPN too! You can get your key here! \"https://iphub.info/apiKey/newFree\"", "vpn_api_key", "none");
-			AddConfig("ServerGurd will kick players that didnt buy anything on Steam if this is set to true.", "steam_block_new_accounts", "false");
-			AddConfig("ServerGuard will kick non-setup Steam accounts if this is set to true.", "steam_block_non_setup_accounts", "false");
+			AddConfig("ServerGurd will kick players that didnt buy anything on Steam if __instance is set to true.", "steam_block_new_accounts", "false");
+			AddConfig("ServerGuard will kick non-setup Steam accounts if __instance is set to true.", "steam_block_non_setup_accounts", "false");
 		
 			AddConfig("Whether or not should AntiFly kick or kill players for \"cheating\".", "antifly_enabled", "true");
 			AddConfig("Whether or not should AntiCheat teleport players back for \"cheating\".", "anticheat_enabled", "true");
@@ -171,7 +181,7 @@ namespace Vigilance
 			AddConfig("Indicates whether the inventory should be dropped before being set as spectator", "drop_inventory", "true");
 			AddConfig("Should fix the issue with missing items due to inventory being null .. goddamnit NW", "make_sure_to_give_items", "false");
 			AddConfig("If the energy of MicroHID is infinite or not.", "unlimited_micro_energy", "false");
-			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
+			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in __instance specified time, then the player will be kicked.", "max_allowed_timeout", "45");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 
@@ -199,6 +209,8 @@ namespace Vigilance
 			AddConfig("Message to display when Intercom is ready to use.", "intercom_ready", "READY");
 			AddConfig("Message to display while Intercom is restarting. Use %remaining% for remaining cooldown time.", "intercom_restarting", "RESTARTING %remaining%");
 			AddConfig("Message to display when someone is using the Intercom. Use %time% for remaining speech time.", "intercom_transmitting", "TRANSMITTING...TIME LEFT - %time%");
+
+			AddConfig("Custom command blacklist, use this to disable a specific command for a specific UserID or a role.", "# Example: command_blacklist_76561198xxxx@steam", "[help,grenade]");
 		}
 
 		public static void AddConfig(string description, string key, string value)

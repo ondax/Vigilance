@@ -8,24 +8,36 @@ namespace Vigilance
 {
     public class PluginManager
     {
-        public static string Version => "5.2.1";
+        private static bool _enabled = false;
+
+        public static string Version => "5.2.2";
+        public static string CompatibleGameVersion => "10.0.4";
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
-        public static List<Assembly> Dependencies { get; set; }
+        public static Dictionary<string, Assembly> Dependencies { get; set; }
         public static YamlConfig Config { get; set; }
 
         public static void Enable()
         {
             try
             {
+                if (_enabled)
+                    return;
+                if (CustomNetworkManager.CompatibleVersions[0] != CompatibleGameVersion)
+                {
+                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!", LogType.Error);
+                    return;
+                }
+
                 Paths.CheckMainConfig();
                 Config = new YamlConfig(Paths.ConfigPath);
                 CommandManager.Enable();
                 EventManager.Enable();
                 Paths.CheckDirectories();
                 Paths.CheckDependencies();
+                Assemblies = new Dictionary<string, Assembly>();
                 Plugins = new Dictionary<string, Plugin>();
-                Dependencies = new List<Assembly>();
+                Dependencies = new Dictionary<string, Assembly>();
                 ConfigManager.Reload();
 
                 try
@@ -40,7 +52,7 @@ namespace Vigilance
 
                 try
                 {
-                    Load();
+                    Reload();
                 }
                 catch (Exception e)
                 {
@@ -49,8 +61,9 @@ namespace Vigilance
                 }
 
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
-                BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
-                Log.Add("PluginManager", $"Succesfully loaded version \"{Version}\"!", LogType.Info);
+                BuildInfoCommand.ModDescription = $"Vigilance v{Version} for {CompatibleGameVersion} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
+                _enabled = true;
+                Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\" for game version \"{CompatibleGameVersion}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
             }
             catch (Exception e)
             {
@@ -59,145 +72,121 @@ namespace Vigilance
             }
         }
 
-        private static void Load()
+        public static void Reload()
         {
             try
             {
-                foreach (Assembly assembly in Paths.GetAssemblies(Paths.Plugins))
+                Log.Add("Loading dependencies ...", ConsoleColor.Magenta);
+                foreach (string file in System.IO.Directory.GetFiles(Paths.Dependencies))
                 {
-                    try
+                    if (!Dependencies.ContainsKey(file))
                     {
-                        foreach (Type type in assembly.GetTypes())
+                        if (file.EndsWith(".dll"))
                         {
+                            Assembly assembly = null;
                             try
                             {
-                                if (type.IsSubclassOf(typeof(Plugin)))
+                                assembly = Assembly.LoadFrom(file);
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Add("PluginManager", "An error occured while loading dependencies! (5)", LogType.Error);
+                                Log.Add(e);
+                            }
+
+                            if (assembly != null)
+                            {
+                                Dependencies.Add(file, assembly);
+                                Log.Add("PluginManager", $"Succesfully loaded \"{assembly.GetName().Name}\"!", LogType.Info);
+                            }
+                        }
+                    }
+                }
+
+                Log.Add("Loading plugins ...", ConsoleColor.Magenta);
+                foreach (string file in System.IO.Directory.GetFiles(Paths.Plugins))
+                {
+                    if (file.EndsWith(".dll"))
+                    {
+                        bool contains = Assemblies.ContainsKey(file) && Plugins.ContainsKey(file);
+                        if (!Assemblies.ContainsKey(file) && !Plugins.ContainsKey(file))
+                        {
+                            Assembly assembly = null;
+                            try
+                            {
+                                assembly = Assembly.LoadFrom(file);
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Add("PluginManager", "An error occured while loading! (1)", LogType.Error);
+                                Log.Add(e);
+                            }
+
+                            if (assembly != null)
+                            {
+                                Assemblies.Add(file, assembly);
+                                foreach (Type type in assembly.GetTypes())
                                 {
-                                    Plugin plugin = null;
-                                    try
+                                    if (type.IsSubclassOf(typeof(Plugin)) && type != typeof(Plugin))
                                     {
-                                        plugin = (Plugin)Activator.CreateInstance(type);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Log.Add("PluginManager", e);
-                                    }
-
-                                    if (Plugins.ContainsKey(assembly.Location) || Plugins.ContainsValue(plugin))
-                                    {
+                                        Plugin plugin = null;
                                         try
                                         {
-                                            plugin.Reload();
+                                            Log.Add("PluginManager", $"Creating an instance of {type.FullName}", LogType.Debug);
+                                            plugin = (Plugin)Activator.CreateInstance(type);
                                         }
                                         catch (Exception e)
                                         {
-                                            Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while reloading.", LogType.Error);
-                                            Log.Add("PluginManager", e);
+                                            Log.Add("PluginManager", "An error occured while loading! (2)", LogType.Error);
+                                            Log.Add(e);
                                         }
-                                    }
-                                    else
-                                    {
 
-                                        try
+                                        if (plugin != null)
                                         {
-                                            string cfgPath = Paths.GetPluginConfigPath(plugin);
-                                            Paths.CheckFile(cfgPath);
-                                            plugin.Config = new YamlConfig(cfgPath);
-                                            plugin.Enable();
-                                            Plugins.Add(assembly.Location, plugin);
-                                            Log.Add("PluginManager", $"Succesfully loaded plugin \"{plugin.Name}\"", LogType.Info);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while enabling.", LogType.Error);
-                                            Log.Add("PluginManager", e);
+                                            try
+                                            {
+                                                string path = Paths.GetPluginConfigPath(plugin);
+                                                Paths.CheckFile(path);
+                                                plugin.Config = new YamlConfig(path);
+                                                plugin.Enable();
+                                                Plugins.Add(file, plugin);
+                                                Log.Add("PluginManager", $"Succesfully loaded \"{plugin.Name}\"!", LogType.Info);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Log.Add("PluginManager", $"An error occured while loading {plugin.Name}! (3)", LogType.Error);
+                                                Log.Add(e);
+                                            }
                                         }
                                     }
                                 }
                             }
-                            catch (Exception e)
+                        }
+                        else
+                        {
+                            bool success = Plugins.TryGetValue(file, out Plugin plugin);
+                            if (success)
                             {
-                                Log.Add("PluginManager", e);
+                                try
+                                {
+                                    if (plugin.Config != null)
+                                        plugin.Config.Reload();
+                                    plugin.Reload();
+                                }
+                                catch (Exception e)
+                                {
+                                    Log.Add("PluginManager", $"An error occured while reloading {plugin.Name}! (4)", LogType.Error);
+                                    Log.Add(e);
+                                }
                             }
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Log.Add("PluginManager", e);
-                    }
                 }
             }
             catch (Exception e)
             {
-                Log.Add("PluginManager", e);
-            }
-
-            try
-            {
-                foreach (string dep in System.IO.Directory.GetFiles(Paths.Dependencies))
-                {
-                    if (dep.EndsWith(".dll"))
-                    {
-                        Assembly assembly = Assembly.LoadFrom(dep);
-                        Dependencies.Add(assembly);
-                        Log.Add("PluginManager", $"Succesfully loaded dependency ¸\"{assembly.GetName().Name}\"", LogType.Info);
-                    }
-                    else
-                    {
-                        Log.Add($"PluginManager", $"{dep} is not a dependency!", LogType.Warn);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Add("PluginManager", "An error occured while loading dependencies", LogType.Error);
-                Log.Add("PluginManager", e);
-            }
-        }
-
-        public static void Reload()
-        {
-            Log.Add("PluginManager", "Reloading plugins", LogType.Debug);
-            Load();
-        }
-
-        public static void Disable()
-        {
-            Log.Add("PluginManager", "Disabling plugins", LogType.Debug);
-            foreach (Plugin plugin in Plugins.Values)
-            {
-                Disable(plugin);
-            }
-            Plugins.Clear();
-            Dependencies.Clear();
-        }
-
-        public static void ReloadPluginConfigs()
-        {
-            foreach (Plugin plugin in Plugins.Values)
-            {
-                try
-                {
-                    plugin.Config.Reload();
-                }
-                catch (Exception e)
-                {
-                    Log.Add("PluginManager", $"YamlConfig of {plugin.Name} caused an exception while reloading", LogType.Error);
-                    Log.Add("PluginManager", e);
-                }
-            }
-        }
-
-        public static void Disable(Plugin plugin)
-        {
-            try
-            {
-                plugin.Disable();
-            }
-            catch (Exception e)
-            {
-                Log.Add("PluginManager", $"Plugin \"{plugin.Name}\" caused an exception while disabling.", LogType.Error);
-                Log.Add("PluginManager", e);
+                Log.Add("PluginManager", "An error occured while loading! (0)", LogType.Error);
+                Log.Add(e);
             }
         }
     }

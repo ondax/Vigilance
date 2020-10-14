@@ -43,9 +43,14 @@ namespace Vigilance.Patches
 				}
 				if (!ConfigManager.EnableGameCommands || ConfigManager.GameCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.GameCommandsBlacklist.Contains(sender.SenderId))
 				{
-					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Disabled in config")}", false, true, "");
+					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Disabled in config")})", false, true, "");
 					return false;
 				}
+				if (ConfigManager.IsBlacklisted(query[0].ToLower(), playerCommandSender?.CCM._hub.serverRoles.Group.BadgeText, sender.SenderId))
+                {
+					sender.RaReply($"SERVER#You are not allowed to use this command!", false, true, "");
+					return false;
+                }
 				if (q.StartsWith("@", StringComparison.Ordinal))
 				{
 					if (!CheckPermissions(sender, "Admin Chat", PlayerPermissions.AdminChat, string.Empty))
@@ -128,7 +133,7 @@ namespace Vigilance.Patches
 							}
 							else
 							{
-								sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 							}
 						}
 						break;
@@ -145,7 +150,7 @@ namespace Vigilance.Patches
 							}
 							else
 							{
-								sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 							}
 						}
 						break;
@@ -159,7 +164,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length < 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 								break;
 							}
 							if (!ushort.TryParse(query[1], out ushort result11) || result11 < 1)
@@ -264,11 +269,11 @@ namespace Vigilance.Patches
 										{
 											if (num4 == 0 && ConfigFile.ServerConfig.GetBool("broadcast_kicks"))
 											{
-												QueryProcessor.Localplayer.GetComponent<Broadcast>().RpcAddElement(ConfigFile.ServerConfig.GetString("broadcast_kick_text", "%nick% has been kicked from this server.").Replace("%nick%", combinedName), ConfigFile.ServerConfig.GetUShort("broadcast_kick_duration", 5), Broadcast.BroadcastFlags.Normal);
+												QueryProcessor.Localplayer.GetComponent<Broadcast>().RpcAddElement(ConfigFile.ServerConfig.GetString("broadcast_kick_text", "%nick% has been kicked from __instance server.").Replace("%nick%", combinedName), ConfigFile.ServerConfig.GetUShort("broadcast_kick_duration", 5), Broadcast.BroadcastFlags.Normal);
 											}
 											else if (num4 != 0 && ConfigFile.ServerConfig.GetBool("broadcast_bans", def: true))
 											{
-												QueryProcessor.Localplayer.GetComponent<Broadcast>().RpcAddElement(ConfigFile.ServerConfig.GetString("broadcast_ban_text", "%nick% has been banned from this server.").Replace("%nick%", combinedName), ConfigFile.ServerConfig.GetUShort("broadcast_ban_duration", 5), Broadcast.BroadcastFlags.Normal);
+												QueryProcessor.Localplayer.GetComponent<Broadcast>().RpcAddElement(ConfigFile.ServerConfig.GetString("broadcast_ban_text", "%nick% has been banned from __instance server.").Replace("%nick%", combinedName), ConfigFile.ServerConfig.GetUShort("broadcast_ban_duration", 5), Broadcast.BroadcastFlags.Normal);
 											}
 											QueryProcessor.Localplayer.GetComponent<BanPlayer>().BanUser(hub2.gameObject, num4, text10, sender.Nickname);
 										}
@@ -314,22 +319,22 @@ namespace Vigilance.Patches
 									Reason = text10,
 									Issuer = sender.Nickname
 								}, flag10 ? BanHandler.BanType.IP : BanHandler.BanType.UserId);
-								sender.RaReply(query[0].ToUpper() + "#" + (flag10 ? "IP address " : "UserID ") + query[1] + " has been banned from this server.", success: true, logToConsole: true, string.Empty);
+								sender.RaReply(query[0].ToUpper() + "#" + (flag10 ? "IP address " : "UserID ") + query[1] + " has been banned from __instance server.", success: true, logToConsole: true, string.Empty);
 							}
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "GBAN-KICK":
 						if (playerCommandSender == null || (!playerCommandSender.SR.RaEverywhere && !playerCommandSender.SR.Staff))
 						{
-							sender.RaReply(query[0].ToUpper() + "#You don't have permissions to run this command!", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#You don't have permissions to run __instance command!", success: false, logToConsole: true, "");
 						}
 						if (query.Length != 2)
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type exactly 1 argument! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type exactly 1 argument! (some parameters are missing)", success: false, logToConsole: true, "");
 							break;
 						}
 						ServerLogs.AddLog(ServerLogs.Modules.Administrative, logName + " globally banned and kicked " + query[1] + " player.", ServerLogs.ServerLogType.RemoteAdminActivity_GameChanging);
@@ -414,7 +419,7 @@ namespace Vigilance.Patches
 							}
 							if (query.Length < 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 1 argument! (some parameters are missing)", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 1 argument! (some parameters are missing)", success: false, logToConsole: true, "");
 								break;
 							}
 							if (query[1].StartsWith("!") && !ServerStatic.RolesConfig.GetBool("allow_central_server_commands_as_ServerConsoleCommands"))
@@ -464,7 +469,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "PM":
@@ -703,7 +708,7 @@ namespace Vigilance.Patches
 								}
 								ServerStatic.RolesConfig.SetStringDictionaryItem("Members", query[2], text8);
 								ServerStatic.PermissionsHandler = new PermissionsHandler(ref ServerStatic.RolesConfig, ref ServerStatic.SharedGroupsConfig, ref ServerStatic.SharedGroupsMembersConfig);
-								sender.RaReply(query[0].ToUpper() + "#User permissions updated. If user is online, please use \"setgroup\" command to change it now (without this command, new role will be applied during next round).", success: true, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#User permissions updated. If user is online, please use \"setgroup\" command to change it now (without __instance command, new role will be applied during next round).", success: true, logToConsole: true, "");
 							}
 							else if (string.Equals(query[1], "reload", StringComparison.OrdinalIgnoreCase))
 							{
@@ -740,7 +745,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "UNBAN":
@@ -776,7 +781,7 @@ namespace Vigilance.Patches
 						break;
 					case "GROUPS":
 						{
-							string text9 = "Groups defined on this server:";
+							string text9 = "Groups defined on __instance server:";
 							Dictionary<string, UserGroup> allGroups2 = ServerStatic.PermissionsHandler.GetAllGroups();
 							ServerRoles.NamedColor[] namedColors = QueryProcessor.Localplayer.GetComponent<ServerRoles>().NamedColors;
 							foreach (KeyValuePair<string, UserGroup> permentry in allGroups2)
@@ -1059,7 +1064,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "ServerConfigs");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "ServerConfigs");
 						}
 						break;
 					case "FC":
@@ -1076,13 +1081,13 @@ namespace Vigilance.Patches
 							GameObject gameObject9 = GameObject.Find("Host");
 							if (gameObject9 == null)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Please start round before using this command.", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Please start round before using __instance command.", success: false, logToConsole: true, "");
 								break;
 							}
 							CharacterClassManager component3 = gameObject9.GetComponent<CharacterClassManager>();
 							if (component3 == null || !component3.isLocalPlayer || !component3.isServer || !component3.RoundStarted)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Please start round before using this command.", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Please start round before using __instance command.", success: false, logToConsole: true, "");
 								break;
 							}
 							PlayerCommandSender playerCommandSender5;
@@ -1131,7 +1136,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "WARHEAD":
@@ -1219,7 +1224,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "N":
@@ -1266,7 +1271,7 @@ namespace Vigilance.Patches
 							}
 							else
 							{
-								sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
+								sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
 							}
 							break;
 						}
@@ -1294,7 +1299,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "PFX":
@@ -1478,7 +1483,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
 						}
 						break;
 					case "GOD":
@@ -1511,7 +1516,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
 						}
 						break;
 					case "MUTE":
@@ -1545,7 +1550,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type exactly 2 arguments!", success: false, logToConsole: true, "PlayersManagement");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type exactly 2 arguments!", success: false, logToConsole: true, "PlayersManagement");
 						}
 						break;
 					case "INTERCOM-TIMEOUT":
@@ -1649,7 +1654,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "AdminTools");
 						}
 						break;
 					case "BRING":
@@ -1678,7 +1683,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type exactly 2 arguments!", success: false, logToConsole: true, "AdminTools");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type exactly 2 arguments!", success: false, logToConsole: true, "AdminTools");
 						}
 						break;
 					case "GOTO":
@@ -1720,7 +1725,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type exactly 2 arguments!", success: false, logToConsole: true, "AdminTools");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type exactly 2 arguments!", success: false, logToConsole: true, "AdminTools");
 						}
 						break;
 					case "LD":
@@ -1767,7 +1772,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length != 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
 							}
 							else
 							{
@@ -1781,7 +1786,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length != 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
 							}
 							else
 							{
@@ -1795,7 +1800,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length != 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
 							}
 							else
 							{
@@ -1809,7 +1814,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length != 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
 							}
 							else
 							{
@@ -1822,7 +1827,7 @@ namespace Vigilance.Patches
 						{
 							if (query.Length != 2)
 							{
-								sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
+								sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " DoorName", success: false, logToConsole: true, "");
 							}
 							else
 							{
@@ -1838,7 +1843,7 @@ namespace Vigilance.Patches
 						}
 						if (query.Length != 3)
 						{
-							sender.RaReply(query[0].ToUpper() + "#Syntax of this program: " + query[0].ToUpper() + " PlayerIDs DoorName", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#Syntax of __instance program: " + query[0].ToUpper() + " PlayerIDs DoorName", success: false, logToConsole: true, "");
 							break;
 						}
 						ServerLogs.AddLog(ServerLogs.Modules.Administrative, logName + " ran the DoorTp command (Door: " + query[2] + ") on " + query[1] + " players.", ServerLogs.ServerLogType.RemoteAdminActivity_GameChanging);
@@ -1892,7 +1897,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 3 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "CLEAR":
@@ -1919,7 +1924,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "REQUEST_DATA":
@@ -2202,7 +2207,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "PlayerInfo");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "PlayerInfo");
 						}
 						break;
 					case "CONTACT":
@@ -2299,7 +2304,7 @@ namespace Vigilance.Patches
 						}
 						else
 						{
-							sender.RaReply(query[0].ToUpper() + "#To run this program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
+							sender.RaReply(query[0].ToUpper() + "#To run __instance program, type at least 2 arguments! (some parameters are missing)", success: false, logToConsole: true, "");
 						}
 						break;
 					case "HIDETAG":
@@ -2495,7 +2500,7 @@ namespace Vigilance.Patches
 						}
 						if (!ConfigManager.EnableCustomCommands || ConfigManager.CustomCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.CustomCommandsBlacklist.Contains(sender.SenderId))
 						{
-							sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableCustomCommands ? "Blacklisted command or UserID" : "Disabled in config")}", false, true, "");
+							sender.RaReply($"SERVER#You are not allowed to use __instance command ({(ConfigManager.EnableCustomCommands ? "Blacklisted command or UserID" : "Disabled in config")}", false, true, "");
 							return false;
 						}
 						string response = $"{query[0].ToUpper()}#{handler.Execute(sender.GetPlayer(), query.SkipCommand())}";
@@ -2612,7 +2617,7 @@ namespace Vigilance.Patches
 					case "CONTACT":
 						if (PlayerManager.localPlayer == null)
 						{
-							AddLog("You must join a server to execute this command.", Color.red);
+							AddLog("You must join a server to execute __instance command.", Color.red);
 							break;
 						}
 						AddLog("Requesting server-owner's contact email...", Color.yellow);
@@ -2621,7 +2626,7 @@ namespace Vigilance.Patches
 					case "SRVCFG":
 						if (PlayerManager.localPlayer == null)
 						{
-							AddLog("You must join a server to execute this command.", Color.red);
+							AddLog("You must join a server to execute __instance command.", Color.red);
 							break;
 						}
 						AddLog("Requesting server config...", Color.yellow);
@@ -2630,7 +2635,7 @@ namespace Vigilance.Patches
 					case "GROUPS":
 						if (PlayerManager.localPlayer == null)
 						{
-							AddLog("You must join a server to execute this command.", Color.red);
+							AddLog("You must join a server to execute __instance command.", Color.red);
 							break;
 						}
 						AddLog("Requesting server groups...", Color.yellow);
@@ -2741,7 +2746,7 @@ namespace Vigilance.Patches
 							int result3;
 							if (!(PlayerManager.localPlayer.GetComponent<CharacterClassManager>().isServer ? PlayerManager.localPlayer : null))
 							{
-								AddLog("You're not owner of this server!", new Color32(byte.MaxValue, 180, 0, byte.MaxValue));
+								AddLog("You're not owner of __instance server!", new Color32(byte.MaxValue, 180, 0, byte.MaxValue));
 							}
 							else if (array.Length >= 2 && int.TryParse(array[1], out result3))
 							{
@@ -2784,7 +2789,7 @@ namespace Vigilance.Patches
 							}
 							if (!flag3)
 							{
-								AddLog("You're not owner of this server!", new Color32(byte.MaxValue, 180, 0, byte.MaxValue));
+								AddLog("You're not owner of __instance server!", new Color32(byte.MaxValue, 180, 0, byte.MaxValue));
 							}
 							break;
 						}

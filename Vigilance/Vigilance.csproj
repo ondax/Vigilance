@@ -93,6 +93,7 @@
     <Compile Include="API\Room.cs" />
     <Compile Include="API\Round.cs" />
     <Compile Include="API\Server.cs" />
+    <Compile Include="API\WeaponInfo.cs" />
     <Compile Include="CommandManager.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Environment.cs" />

@@ -24,7 +24,7 @@ namespace Vigilance
 				}
 				catch (Exception e)
 				{
-					Log.Add($"{e.Source}", $"An error occured while handling {ev.GetType().Name}", LogType.Error);
+					Log.Add($"{e.Source}", $"An error occured while handling \"{ev.GetType().Name}\"!", LogType.Error);
 					Log.Add($"{e.Source}", e);
 				}
 			}

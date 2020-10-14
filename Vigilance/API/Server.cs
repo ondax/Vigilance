@@ -176,7 +176,6 @@ namespace Vigilance.API
         public static void ReloadConfigs()
         {
             ConfigFile.ReloadGameConfigs(false);
-            PluginManager.Reload();
             ConfigManager.Reload();
             ServerStatic.PermissionsHandler?.RefreshPermissions();
         }

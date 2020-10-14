@@ -198,10 +198,7 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			GameCore.ConfigFile.ServerConfig.Reload();
-			GameCore.ConfigFile.ReloadGameConfigs();
-			ServerStatic.PermissionsHandler.RefreshPermissions();
-			ConfigManager.Reload();
+			Server.ReloadConfigs();
 			PluginManager.Reload();
 			return $"Success! Changes will be applied on your server next round.";
 		}
@@ -584,7 +581,7 @@ namespace Vigilance.Registered
 	{
 		public string Command => "offlineban";
 
-		public string Usage => "oban <UserID/IP> <Duration> <DurationType> <Reason>";
+		public string Usage => "Missing arguments!\nUsage: oban <UserID/IP> <Duration> <DurationType> <Reason>";
 
 		public string Aliases => "oban";
 
@@ -624,48 +621,27 @@ namespace Vigilance.Registered
 
 		public string Aliases => "pos";
 
-        public string Execute(Player sender, string[] args)
-        {
+		public string Execute(Player sender, string[] args)
+		{
 			if (args.Length < 2)
 				return Usage;
-			if (args.Length == 2)
-            {
-				switch (args[0].ToLower())
-                {
-					case "get":
-						return $"Your position: \n[X: {sender.Position.x} | Y: {sender.Position.y} | Z: {sender.Position.z}]\nZone: {sender.CurrentRoom.Zone}\nRoom: {sender.CurrentRoom.Type}\nPocket Dimension?: {sender.IsInPocketDimension.ToString().ToLower()}";
-					case "set":
-						Vector3 pos = CommandPos.ParsePosition(args[1]);
-						sender.Teleport(pos);
-						return $"Succesfully updated your position. [X: {pos.x} | Y: {pos.y} | Z: {pos.z}]";
-					case "add":
-						Vector3 newPos = CommandPos.ParseAdd(args[1], sender);
-						sender.Hub.playerMovementSync.OverridePosition(newPos, sender.Hub.transform.position.y);
-						return $"Succesfully updated your position. [X: {newPos.x} | Y: {newPos.y} | Z: {newPos.z}]";
-					default:
-						return "Please specify a valid operation! [get/set/add]";
-                }
-            }
-			else 
-            {
-				Player player = args[1].GetPlayer();
-				switch (args[0].ToLower())
-				{
-					case "get":
-						return $"Position of {player.Nick}: \n[X: {player.Position.x} | Y: {player.Position.y} | Z: {player.Position.z}]\nZone: {player.CurrentRoom.Zone}\nRoom: {player.CurrentRoom.Type}\nPocket Dimension?: {player.IsInPocketDimension.ToString().ToLower()}";
-					case "set":
-						Vector3 pos = CommandPos.ParsePosition(args[2]);
-						player.Teleport(pos);
-						return $"Succesfully updated {player.Nick}'s position. [X: {pos.x} | Y: {pos.y} | Z: {pos.z}]";
-					case "add":
-						Vector3 newPos = CommandPos.ParseAdd(args[2], player);
-						player.Hub.playerMovementSync.OverridePosition(newPos, sender.Hub.transform.position.y);
-						return $"Succesfully updated {player.Nick}'s position. [X: {newPos.x} | Y: {newPos.y} | Z: {newPos.z}]";
-					default:
-						return "Please specify a valid operation! [get/set/add]";
-				}
+			Player player = args[1].GetPlayer();
+			switch (args[0].ToLower())
+			{
+				case "get":
+					return $"Position of {player.Nick}: \n[X: {player.Position.x} | Y: {player.Position.y} | Z: {player.Position.z}]\nZone: {player.CurrentRoom.Zone}\nRoom: {player.CurrentRoom.Type}\nPocket Dimension?: {player.IsInPocketDimension.ToString().ToLower()}";
+				case "set":
+					Vector3 pos = CommandPos.ParsePosition(args[2]);
+					player.Teleport(pos);
+					return $"Succesfully updated {player.Nick}'s position. [X: {pos.x} | Y: {pos.y} | Z: {pos.z}]";
+				case "add":
+					Vector3 newPos = CommandPos.ParseAdd(args[2], player);
+					player.Hub.playerMovementSync.OverridePosition(newPos, sender.Hub.transform.position.y);
+					return $"Succesfully updated {player.Nick}'s position. [X: {newPos.x} | Y: {newPos.y} | Z: {newPos.z}]";
+				default:
+					return "Please specify a valid operation! [get/set/add]";
 			}
-        }
+		}
 
 		public static Vector3 ParsePosition(string s)
         {
@@ -948,27 +924,22 @@ namespace Vigilance.Registered
         }
     }
 
-    public class CommandDisablePlugin : CommandHandler
+    public class CommandAchieve : CommandHandler
     {
-		public string Command => "disableplugin";
-		public string Usage => "Missing arguments!\nUsage: disableplugin <plugin name>";
+		public string Command => "achieve";
+		public string Usage => "Missing arguments!\nUsage: achieve <target> <achievement>";
 		public string Aliases => "";
 
         public string Execute(Player sender, string[] args)
         {
-			if (args.Length < 1)
+			if (args.Length < 2)
 				return Usage;
-			Plugin plugin = null;
-			foreach (Plugin pl in PluginManager.Plugins.Values)
-			{
-				if (pl.Name == args.Combine())
-					plugin = pl;
-			}
-
-			if (plugin == null)
-				return "Cannot find a plugin with that name.";
-			PluginManager.Disable(plugin);
-			return $"Succesfully disabled {plugin.Name}";
+			Player player = args[0].GetPlayer();
+			Achievement achievement = args[1].GetAchievement();
+			if (achievement == Achievement.Unknown)
+				return "Cannot find an achievement with that name.";
+			player.Achieve(achievement);
+			return $"{player.Nick} succesfuly achieved {achievement}";
         }
     }
 }

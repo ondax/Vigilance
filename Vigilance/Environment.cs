@@ -44,8 +44,8 @@ namespace Vigilance
                 if (handle.Tag.ToLower() == name.ToLower() || handle.Tag.ToLower().Contains(name.ToLower()))
                 {
                     Log.Add("Environment", $"Killed coroutine \"{handle.Tag}\"", LogType.Debug);
-                    ActiveCoroutines.Remove(handle);
                     Timing.KillCoroutines(handle);
+                    ActiveCoroutines.Remove(handle);
                 }
             }
         }

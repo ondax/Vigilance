@@ -85,6 +85,33 @@ namespace Vigilance.API
         public bool IsHost => _hub.characterClassManager.IsHost;
         public bool IsDead => Team == TeamType.Spectator || Role == RoleType.None;
         public Camera079 Camera { get => _hub.scp079PlayerScript.currentCamera; set => _hub.scp079PlayerScript.RpcSwitchCamera(value.cameraId, false); }
+        public WeaponInfo CurrentWeapon
+        {
+            get
+            {
+                ItemType cur = _hub.inventory.curItem;
+                if (!cur.IsWeapon())
+                    return null;
+                return new WeaponInfo(this, _hub.inventory.items.Where(i => i.id == cur).FirstOrDefault());
+            }
+        }
+
+        public List<WeaponInfo> AllWeapons
+        {
+            get
+            {
+                List<WeaponInfo> weapons = new List<WeaponInfo>();
+                foreach (Inventory.SyncItemInfo item in _hub.inventory.items)
+                {
+                    if (item.id.IsWeapon())
+                    {
+                        weapons.Add(new WeaponInfo(this, item));
+                    }
+                }
+                return weapons;
+            }
+        }
+
         public int CameraId { get => Camera.cameraId; set => Camera = Map.GetCamera(value); }
         public bool BadgeHidden
         {
@@ -317,6 +344,18 @@ namespace Vigilance.API
             {
                 Prefab.GrenadeFrag.Spawn(Position, RotationQuaternion, Vector3.one);
             }
+        }
+
+        public void Achieve(Achievement achievement)
+        {
+            if (achievement == Achievement.Unknown)
+                throw new System.InvalidOperationException("Achievement is unknown.");
+            if (achievement == Achievement.JustResources)
+            {
+                _hub.playerStats.TargetStats(Connection, "dboys_killed", "justresources", 50);
+                return;
+            }
+            _hub.playerStats.TargetAchieve(Connection, achievement.ToString().ToLower());
         }
 
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
