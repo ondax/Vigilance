@@ -150,7 +150,7 @@ namespace Vigilance
 
 		public static void Validate()
 		{
-			AddConfig("Your server will have the \"Modded\" flag in the server list if you set __instance to true.", "mark_as_modded", "false");
+			AddConfig("Your server will have the \"Modded\" flag in the server list if you set this to true.", "mark_as_modded", "false");
 			AddConfig("Adds a transparent text that specifies the version of Vigilance.", "tracking", "false");
 			AddConfig("Whether or not debug messages should be printed in the server console. This option is usually very spammy.", "debug", "false");
 			AddConfig("Should Vigilance reload all configs when the round restarts?", "reload_configs", "false");
@@ -162,8 +162,8 @@ namespace Vigilance
 			AddConfig("Whether or not should ServerGuard be enabled.", "guard_enabled", "false");
 			AddConfig("List of active ServerGuard modules. Valid values: vpn, vpnshield, steam, steamshield.", "guard_enabled_modules", "[]");
 			AddConfig("You will need a API key used for checking if a specific IP is a VPN connection or not. Warning! GeForce Now is flagged as a VPN too! You can get your key here! \"https://iphub.info/apiKey/newFree\"", "vpn_api_key", "none");
-			AddConfig("ServerGurd will kick players that didnt buy anything on Steam if __instance is set to true.", "steam_block_new_accounts", "false");
-			AddConfig("ServerGuard will kick non-setup Steam accounts if __instance is set to true.", "steam_block_non_setup_accounts", "false");
+			AddConfig("ServerGurd will kick players that didnt buy anything on Steam if this is set to true.", "steam_block_new_accounts", "false");
+			AddConfig("ServerGuard will kick non-setup Steam accounts if this is set to true.", "steam_block_non_setup_accounts", "false");
 		
 			AddConfig("Whether or not should AntiFly kick or kill players for \"cheating\".", "antifly_enabled", "true");
 			AddConfig("Whether or not should AntiCheat teleport players back for \"cheating\".", "anticheat_enabled", "true");
@@ -181,7 +181,7 @@ namespace Vigilance
 			AddConfig("Indicates whether the inventory should be dropped before being set as spectator", "drop_inventory", "true");
 			AddConfig("Should fix the issue with missing items due to inventory being null .. goddamnit NW", "make_sure_to_give_items", "false");
 			AddConfig("If the energy of MicroHID is infinite or not.", "unlimited_micro_energy", "false");
-			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in __instance specified time, then the player will be kicked.", "max_allowed_timeout", "45");
+			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 
