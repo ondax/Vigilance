@@ -10,6 +10,7 @@ using Scp914;
 using Respawning;
 using System;
 using MEC;
+using System.Linq;
 
 namespace Vigilance
 {
@@ -17,6 +18,16 @@ namespace Vigilance
     {
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
+
+
+        public static IEnumerable<T> GetValues<T>()
+        {
+            if (typeof(T).BaseType != typeof(Enum))
+            {
+                throw new ArgumentException("T must be of type System.Enum");
+            }
+            return Enum.GetValues(typeof(T)).Cast<T>();
+        }
 
         public static CoroutineHandle StartCoroutine(IEnumerator<float> handler, string name = "")
         {

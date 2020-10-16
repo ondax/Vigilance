@@ -909,14 +909,11 @@ namespace Vigilance.Extensions
     {
 		public static Achievement GetAchievement(this string str)
         {
-			Array array = Enum.GetValues(typeof(Achievement));
-			if (array.Length < 0)
-				return Achievement.Unknown;
-			Achievement[] arr = array.ToArray<Achievement>();
-			foreach (Achievement ach in arr)
+			IEnumerable<Achievement> achievements = Environment.GetValues<Achievement>();
+			foreach (Achievement achievement in achievements)
             {
-				if (str == ach.ToString())
-					return ach;
+				if (achievement.ToString().ToLower() == str.ToLower())
+					return achievement;
             }
 			return Achievement.Unknown;
         }

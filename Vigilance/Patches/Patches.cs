@@ -14,7 +14,6 @@ using NorthwoodLib.Pools;
 using Mirror;
 using System.Text;
 using RemoteAdmin;
-using Dissonance.Integrations.MirrorIgnorance;
 using PlayableScps;
 using PlayableScps.Interfaces;
 using Respawning;
@@ -1208,7 +1207,7 @@ namespace Vigilance.Patches
                         Vector3 pos = __instance.tpPositions[UnityEngine.Random.Range(0, __instance.tpPositions.Count)];
                         pos.y += 2f;
                         PlayerMovementSync component3 = other.GetComponent<PlayerMovementSync>();
-                        Environment.OnPocketEscape(Server.PlayerList.GetPlayer(component.gameObject), pos, true, out pos, out bool allow);
+                        Environment.OnPocketEscape(Server.PlayerList.GetPlayer(component3.gameObject), pos, true, out pos, out bool allow);
                         if (!allow)
                             return false;
                         component3.AddSafeTime(2f);
@@ -1327,24 +1326,29 @@ namespace Vigilance.Patches
             try
             {
                 Player player = Server.PlayerList.GetPlayer(person);
+                if (player == null || player.IsHost)
+                    return true;
+
                 switch (command)
                 {
                     case PlayerInteract.Generator079Operations.Door:
-                        __instance.OpenClose(person);
-                        return false;
+                        {
+                            __instance.OpenClose(person);
+                            return false;
+                        }
+
                     case PlayerInteract.Generator079Operations.Tablet:
                         {
                             if (__instance.isTabletConnected || !__instance.isDoorOpen || __instance._localTime <= 0f || Generator079.mainGenerator.forcedOvercharge)
                                 return false;
-                            Inventory component = person.GetComponent<Inventory>();
-                            foreach (Inventory.SyncItemInfo item in component.items)
+                            foreach (Inventory.SyncItemInfo item in player.Hub.inventory.items)
                             {
                                 if (item.id == ItemType.WeaponManagerTablet)
                                 {
                                     Environment.OnGeneratorInsert(__instance, player, true, out bool allow);
                                     if (!allow)
                                         return false;
-                                    component.items.Remove(item);
+                                    player.RemoveItem(item);
                                     __instance.NetworkisTabletConnected = true;
                                 }
                             }
@@ -1355,15 +1359,15 @@ namespace Vigilance.Patches
                     default:
                         return false;
                 }
+
                 Environment.OnGeneratorEject(__instance, player, true, out bool allow2);
                 if (!allow2)
                     return false;
                 __instance.EjectTablet();
                 return false;
             }
-            catch (Exception e)
+            catch (InvalidOperationException)
             {
-                Log.Add("Generator079", e);
                 return true;
             }
         }
@@ -1623,6 +1627,8 @@ namespace Vigilance.Patches
             try
             {
                 Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
+                if (player == null)
+                    return true;
                 Environment.OnPlayerLeave(player, out bool destroy);
                 if (!destroy)
                     return false;
@@ -1948,12 +1954,9 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(CharacterClassManager), nameof(CharacterClassManager.ApplyProperties))]
     public static class SpawnPatch
     {
-        public static bool HasItem(CharacterClassManager ccm, ItemType item)
+        public static bool HasItem(Inventory.SyncListItemInfo items, ItemType item)
         {
-            Inventory inventory = ccm._hub.inventory;
-            if (inventory == null)
-                return false;
-            foreach (Inventory.SyncItemInfo itemInfo in inventory.items)
+            foreach (Inventory.SyncItemInfo itemInfo in items)
                 if (itemInfo.id == item)
                     return true;
             return false;
@@ -1966,13 +1969,14 @@ namespace Vigilance.Patches
                 Environment.OnSpawn(Server.PlayerList.GetPlayer(__instance.gameObject), __instance.transform.position, __instance.CurClass, true, out Vector3 pos, out RoleType role, out bool allow);
                 if (!ConfigManager.MakeSureToGiveItems)
                     return;
-                Timing.CallDelayed(1f, () =>
+                Timing.CallDelayed(2f, () =>
                 {
                     Inventory inventory = __instance._hub.inventory;
                     string nick = __instance._hub.nicknameSync.MyNick;
-                    if (inventory == null)
+
+                    if (inventory == null || __instance._hub == null)
                     {
-                        Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null (1)", LogType.Warn);
+                        Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null, trying to get component .. [1]", LogType.Warn);
                         inventory = __instance.GetComponent<Inventory>();
                     }
 
@@ -1980,14 +1984,17 @@ namespace Vigilance.Patches
                     {
                         if (inventory == null)
                         {
-                            Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null (2)", LogType.Warn);
-                            continue;
+                            Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null, trying to add component .. [2]", LogType.Warn);
+                            inventory = __instance.gameObject.AddComponent<Inventory>();
                         }
 
-                        if (!HasItem(__instance, item))
+                        if (inventory == null)
+                            Log.Add("CharacterClassManager", $"Inventory of {nick} ({__instance.UserId}) is null [3]", LogType.Warn);
+
+                        if (!HasItem(inventory?.items, item))
                         {
                             inventory.AddNewItem(item);
-                            Log.Add("CharacterClassManager", $"Giving {item} to {nick} ({__instance.UserId})", LogType.Debug);
+                            Log.Add("CharacterClassManager", $"Giving {item} to {nick} ({__instance.UserId}) [InventoryIsNull: {(inventory == null).ToString().ToLower()}", LogType.Debug);
                         }
                     }
                 });
@@ -2253,7 +2260,7 @@ namespace Vigilance.Patches
                             }
                             if (referenceHub.characterClassManager.CurClass != RoleType.Spectator)
                                 return false;
-                            if (!ConfigManager.CanScp049ReviveOther && component.owner.DeathCause.GetDamageName() != "SCP-049")
+                            if (!ConfigManager.CanScp049ReviveOther && component.owner.DeathCause.GetDamageInfo() != DamageType.Scp049)
                                 return false;
                             Environment.OnRecall(Server.PlayerList.GetPlayer(__instance.Hub.gameObject), component, true, out bool allow);
                             if (!allow)

@@ -8,22 +8,22 @@ namespace Vigilance.API
 {
     public static class ClassHelper
     {
-        public static Class[] Classes { get; set; }
+        public static Dictionary<RoleType, Class> Classes { get; set; }
         public static bool ClassesSet { get; set; }
 
         public static void SetClasses()
         {
             if (ClassesSet)
                 return;
-            List<Class> classes = new List<Class>();
+            if (Classes == null)
+                Classes = new Dictionary<RoleType, Class>();
             foreach (Role role in CharacterClassManager._staticClasses)
-                classes.Add(Build(role.roleId));
-            Classes = classes.ToArray();
+                Classes.Add(role.roleId, Build(role.roleId));
             ClassesSet = true;
         }
 
-        public static Class Get(RoleType role) => Classes[(int)role];
-        public static Class Get(Role role) => Classes[(int)role.roleId];
+        public static Class Get(RoleType role) => Classes[role];
+        public static Class Get(Role role) => Get(role.roleId);
 
         public static Class Build(RoleType type)
         {
@@ -308,6 +308,8 @@ namespace Vigilance.API
                 CharacterClassManager._staticClasses = newRoles;
                 foreach (CharacterClassManager ccm in Object.FindObjectsOfType<CharacterClassManager>())
                     ccm.Classes = newRoles;
+                ClassHelper.Classes.Remove(RoleId);
+                ClassHelper.Classes.Add(RoleId, this);
             }
             catch (System.Exception e)
             {

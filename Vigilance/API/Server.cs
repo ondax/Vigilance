@@ -204,9 +204,11 @@ namespace Vigilance.API
                     File.Create(path).Close();
                 using (StreamWriter writer = new StreamWriter(path, true))
                 {
+                    writer.WriteLine("");
                     writer.WriteLine(userId);
                     writer.Flush();
                     writer.Close();
+                    FileManager.RemoveEmptyLines(path);
                     return true;
                 }
             }
@@ -238,6 +240,8 @@ namespace Vigilance.API
 
             public static void Add(Player player)
             {
+                if (player == null)
+                    return;
                 if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
                     return;
                 if (Contains(player))
@@ -252,6 +256,8 @@ namespace Vigilance.API
 
             public static void Remove(Player player)
             {
+                if (player == null)
+                    return;
                 if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
                     return;
                 if (!Contains(player))

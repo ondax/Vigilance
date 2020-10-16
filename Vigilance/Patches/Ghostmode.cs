@@ -15,36 +15,45 @@ namespace Vigilance.Patches
     {
         public static List<string> CannotBlock173 { get; set; } = new List<string>();
 
-        public static bool Prefix(PlayerPositionManager __instance)
+        private static bool Prefix(PlayerPositionManager __instance)
         {
             try
             {
-                ++__instance._frame;
-                if (__instance._frame != __instance._syncFrequency)
+                if (++__instance._frame != __instance._syncFrequency)
                     return false;
                 __instance._frame = 0;
                 List<GameObject> players = PlayerManager.players;
                 __instance._usedData = players.Count;
                 if (__instance._receivedData == null || __instance._receivedData.Length < __instance._usedData)
+                {
                     __instance._receivedData = new PlayerPositionData[__instance._usedData * 2];
+                }
                 for (int index = 0; index < __instance._usedData; ++index)
                     __instance._receivedData[index] = new PlayerPositionData(ReferenceHub.GetHub(players[index]));
                 if (__instance._transmitBuffer == null || __instance._transmitBuffer.Length < __instance._usedData)
+                {
                     __instance._transmitBuffer = new PlayerPositionData[__instance._usedData * 2];
+                }
+
                 foreach (GameObject gameObject in players)
                 {
                     Player player = Server.PlayerList.GetPlayer(gameObject);
-                    if (player == null || player.IsHost)
-                        return true;
                     Array.Copy(__instance._receivedData, __instance._transmitBuffer, __instance._usedData);
+
                     if (player.Role.Is939())
                     {
                         for (int index = 0; index < __instance._usedData; ++index)
                         {
-                            if (__instance._transmitBuffer[index].position.y < 800.0)
+                            if (__instance._transmitBuffer[index].position.y < 800f)
                             {
                                 ReferenceHub hub2 = ReferenceHub.GetHub(players[index]);
-                                if (hub2.characterClassManager.CurRole.team != Team.SCP && hub2.characterClassManager.CurRole.team != Team.RIP && !players[index].GetComponent<Scp939_VisionController>().CanSee(player.Hub.characterClassManager.Scp939)) __instance._transmitBuffer[index] = new PlayerPositionData(Vector3.up * 6000f, 0.0f, __instance._transmitBuffer[index].playerID);
+
+                                if (hub2.characterClassManager.CurRole.team != Team.SCP
+                                    && hub2.characterClassManager.CurRole.team != Team.RIP
+                                    && !players[index].GetComponent<Scp939_VisionController>().CanSee(player.Hub.characterClassManager.Scp939))
+                                {
+                                    __instance._transmitBuffer[index] = new PlayerPositionData(Vector3.up * 6000f, 0.0f, __instance._transmitBuffer[index].playerID);
+                                }
                             }
                         }
                     }
@@ -52,6 +61,13 @@ namespace Vigilance.Patches
                     {
                         for (int index = 0; index < __instance._usedData; ++index)
                         {
+                            List<int> targetGhosts;
+                            if (!Server.PlayerList.TargetGhosts.TryGetValue(player.UserId, out targetGhosts))
+                            {
+                                targetGhosts = new List<int>();
+                                Server.PlayerList.TargetGhosts.Add(player.UserId, targetGhosts);
+                            }
+
                             PlayerPositionData ppd = __instance._transmitBuffer[index];
                             Player currentTarget = Server.PlayerList.GetPlayer(players[index]);
                             Scp096 scp096 = player.Hub.scpsController.CurrentScp as Scp096;
@@ -59,68 +75,77 @@ namespace Vigilance.Patches
                             bool shouldRotate = false;
                             if (currentTarget?.Hub == null)
                                 continue;
-                            List<int> targetGhosts = new List<int>();
-                            if (Server.PlayerList.TargetGhosts.TryGetValue(player.UserId, out List<int> list))
-                                targetGhosts = list;
                             if (currentTarget.IsInvisible || targetGhosts.Contains(ppd.playerID))
-                                canSee = false;
-                            Vector3 vector3 = __instance._transmitBuffer[index].position - player.Hub.playerMovementSync.RealModelPosition;
-                            if (Math.Abs(vector3.y) > 35.0)
                             {
                                 canSee = false;
                             }
                             else
                             {
-                                float sqrMagnitude = vector3.sqrMagnitude;
-                                if (player.Hub.playerMovementSync.RealModelPosition.y < 800.0)
-                                {
-                                    if (sqrMagnitude >= 1764.0)
-                                    {
-                                        canSee = false;
-                                        continue;
-                                    }
-                                }
-                                else if (sqrMagnitude >= 7225.0)
+                                Vector3 vector3 = ppd.position - player.Hub.playerMovementSync.RealModelPosition;
+                                if (Math.Abs(vector3.y) > 35f)
                                 {
                                     canSee = false;
-                                    continue;
                                 }
-
-                                if (ReferenceHub.TryGetHub(__instance._transmitBuffer[index].playerID, out ReferenceHub hub2))
+                                else
                                 {
-                                    if (player.Hub.scpsController.CurrentScp is Scp096 currentScp && currentScp.Enraged && (!currentScp.HasTarget(hub2) && hub2.characterClassManager.CurRole.team != Team.SCP))
+                                    float sqrMagnitude = vector3.sqrMagnitude;
+                                    if (player.Hub.playerMovementSync.RealModelPosition.y < 800f)
+                                    {
+                                        if (sqrMagnitude >= 1764f)
+                                        {
+                                            canSee = false;
+                                        }
+                                    }
+                                    else if (sqrMagnitude >= 7225f)
                                     {
                                         canSee = false;
                                     }
-                                    else if (hub2.playerEffectsController.GetEffect<Scp268>().Enabled)
+
+                                    if (canSee)
                                     {
-                                        bool flag = false;
-                                        if (scp096 != null)
-                                            flag = scp096._targets.Contains(hub2);
-                                        canSee = flag;
+                                        if (ReferenceHub.TryGetHub(ppd.playerID, out ReferenceHub hub2))
+                                        {
+                                            if (scp096 != null
+                                                && scp096.Enraged
+                                                && !scp096.HasTarget(hub2)
+                                                && hub2.characterClassManager.CurRole.team != Team.SCP)
+                                            {
+                                                canSee = false;
+                                            }
+                                            else if (hub2.playerEffectsController.GetEffect<Scp268>().Enabled)
+                                            {
+                                                bool flag = false;
+                                                if (scp096 != null)
+                                                    flag = scp096.HasTarget(hub2);
+
+                                                if (player.Role != RoleType.Scp079
+                                                    && player.Role != RoleType.Spectator
+                                                    && !flag)
+                                                {
+                                                    canSee = false;
+                                                }
+                                            }
+                                        }
+
+                                        switch (player.Role)
+                                        {
+                                            case RoleType.Scp173 when (!ConfigManager.CanTutorialBlockScp173 && currentTarget.Role == RoleType.Tutorial) || CannotBlock173.Contains(currentTarget.UserId):
+                                                shouldRotate = true;
+                                                break;
+                                        }
                                     }
                                 }
-
-                                switch (player.Role)
-                                {
-                                    case RoleType.Scp173 when (!ConfigManager.CanTutorialBlockScp173 && currentTarget.Role == RoleType.Tutorial) || CannotBlock173.Contains(currentTarget.UserId):
-                                        shouldRotate = true;
-                                        break;
-                                    case RoleType.Scp096 when !ConfigManager.CanTutorialTriggerScp096 && currentTarget.Role == RoleType.Tutorial:
-                                        shouldRotate = true;
-                                        break;
-                                }
-
-                                if (!canSee)
-                                {
-                                    ppd = new PlayerPositionData(Vector3.up * 6000f, 0.0f, ppd.playerID);
-                                }
-                                else if (shouldRotate)
-                                {
-                                    ppd = new PlayerPositionData(ppd.position, Quaternion.LookRotation(player.Position.FindLookRotation(currentTarget.Position)).eulerAngles.y, ppd.playerID);
-                                }
-                                __instance._transmitBuffer[index] = ppd;
                             }
+
+                            if (!canSee)
+                            {
+                                ppd = new PlayerPositionData(Vector3.up * 6000f, 0f, ppd.playerID);
+                            }
+                            else if (shouldRotate)
+                            {
+                                ppd = new PlayerPositionData(ppd.position, Quaternion.LookRotation(player.Position.FindLookRotation(currentTarget.Position)).eulerAngles.y, ppd.playerID);
+                            }
+                            __instance._transmitBuffer[index] = ppd;
                         }
                     }
 
@@ -139,11 +164,12 @@ namespace Vigilance.Patches
                             networkConnection.Send(new PlayerPositionManager.PositionMessage(__instance._transmitBuffer, count, part), 1);
                     }
                 }
+
                 return false;
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Log.Add("PlayerPositionManager", e);
+                Log.Add(exception);
                 return true;
             }
         }

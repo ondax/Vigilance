@@ -10,12 +10,13 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.2.2";
+        public static string Version => "5.2.3";
         public static string CompatibleGameVersion => "10.0.4";
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
         public static Dictionary<string, Assembly> Dependencies { get; set; }
         public static YamlConfig Config { get; set; }
+        public static HarmonyInstance HarmonyInstance { get; set; }
 
         public static void Enable()
         {
@@ -42,7 +43,8 @@ namespace Vigilance
 
                 try
                 {
-                    HarmonyInstance.Create("vigilance.patches").PatchAll();
+                    HarmonyInstance = HarmonyInstance.Create("vigilance.patches");
+                    HarmonyInstance.PatchAll();
                 }
                 catch (Exception e)
                 {
@@ -132,7 +134,7 @@ namespace Vigilance
                                         Plugin plugin = null;
                                         try
                                         {
-                                            Log.Add("PluginManager", $"Creating an instance of {type.FullName}", LogType.Debug);
+                                            Log.Add("PluginManager", $"Creating an instance of type \"{type.FullName}\"", LogType.Debug);
                                             plugin = (Plugin)Activator.CreateInstance(type);
                                         }
                                         catch (Exception e)
@@ -164,8 +166,7 @@ namespace Vigilance
                         }
                         else
                         {
-                            bool success = Plugins.TryGetValue(file, out Plugin plugin);
-                            if (success)
+                            if (Plugins.TryGetValue(file, out Plugin plugin))
                             {
                                 try
                                 {

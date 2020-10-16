@@ -7,6 +7,7 @@ using Vigilance.Extensions;
 using Vigilance.Enums;
 using RemoteAdmin;
 using System.Linq;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 
 namespace Vigilance.API
 {
@@ -357,6 +358,13 @@ namespace Vigilance.API
             }
             _hub.playerStats.TargetAchieve(Connection, achievement.ToString().ToLower());
         }
+
+        public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : CustomPlayerEffects.PlayerEffect
+        {
+            _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
+        }
+
+        public void DisableEffect<T>() where T : CustomPlayerEffects.PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();
 
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
 
