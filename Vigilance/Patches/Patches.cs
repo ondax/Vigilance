@@ -1641,9 +1641,8 @@ namespace Vigilance.Patches
                     ReferenceHub._localHub = null;
                 return false;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Log.Add("ReferenceHub", e);
                 return true;
             }
         }

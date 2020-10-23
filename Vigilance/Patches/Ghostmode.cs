@@ -167,9 +167,8 @@ namespace Vigilance.Patches
 
                 return false;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Log.Add(exception);
                 return true;
             }
         }
