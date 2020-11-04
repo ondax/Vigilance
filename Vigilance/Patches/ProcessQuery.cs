@@ -36,6 +36,7 @@ namespace Vigilance.Patches
 				PlayerCommandSender playerCommandSender = sender as PlayerCommandSender;
 				QueryProcessor queryProcessor = playerCommandSender?.Processor;
 				Environment.OnRemoteAdminCommand(sender, q, true, out bool allow, out string reply);
+				Player admin = sender.GetPlayer();
 				if (!allow)
 				{
 					sender.RaReply($"SERVER#{reply}", true, true, "");
@@ -46,7 +47,7 @@ namespace Vigilance.Patches
 					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Disabled in config")})", false, true, "");
 					return false;
 				}
-				if (ConfigManager.IsBlacklisted(query[0].ToLower(), playerCommandSender?.CCM._hub.serverRoles.Group.BadgeText, sender.SenderId))
+				if (ConfigManager.IsBlacklisted(query[0].ToLower(), playerCommandSender?.ServerRoles.Group.BadgeText, sender.SenderId))
                 {
 					sender.RaReply($"SERVER#You are not allowed to use this command!", false, true, "");
 					return false;
@@ -88,7 +89,7 @@ namespace Vigilance.Patches
 				GameCommandHandler gameCommandHandler = CommandManager.GetGameCommandHandler(query[0]);
 				if (gameCommandHandler != null)
 				{
-					sender.RaReply($"SERVER#{gameCommandHandler.Execute(sender.GetPlayer(), query.SkipCommand())}", true, true, "");
+					sender.RaReply($"SERVER#{gameCommandHandler.Execute(admin, query.SkipCommand())}", true, true, "");
 					return false;
 				}
 				int failures;
@@ -328,7 +329,7 @@ namespace Vigilance.Patches
 						}
 						break;
 					case "GBAN-KICK":
-						if (playerCommandSender == null || (!playerCommandSender.SR.RaEverywhere && !playerCommandSender.SR.Staff))
+						if (playerCommandSender == null || (!playerCommandSender.ServerRoles.RaEverywhere && !playerCommandSender.ServerRoles.Staff))
 						{
 							sender.RaReply(query[0].ToUpper() + "#You don't have permissions to run __instance command!", success: false, logToConsole: true, "");
 						}
@@ -1664,7 +1665,7 @@ namespace Vigilance.Patches
 						}
 						if (query.Length == 2)
 						{
-							if (playerCommandSender.CCM.CurClass == RoleType.Spectator || playerCommandSender.CCM.GetComponent<CharacterClassManager>().CurClass < RoleType.Scp173)
+							if (playerCommandSender.CharacterClassManager.CurClass == RoleType.Spectator || playerCommandSender.CharacterClassManager.GetComponent<CharacterClassManager>().CurClass < RoleType.Scp173)
 							{
 								sender.RaReply("BRING#Command disabled when you are spectator!", success: false, logToConsole: true, "AdminTools");
 								break;
@@ -1693,7 +1694,7 @@ namespace Vigilance.Patches
 						}
 						if (query.Length == 2)
 						{
-							if (playerCommandSender.CCM.CurClass == RoleType.Spectator || playerCommandSender.CCM.CurClass < RoleType.Scp173)
+							if (playerCommandSender.CharacterClassManager.CurClass == RoleType.Spectator || playerCommandSender.CharacterClassManager.CurClass < RoleType.Scp173)
 							{
 								sender.RaReply("GOTO#Command is disabled when you are spectator!", success: false, logToConsole: true, "AdminTools");
 								break;
@@ -1945,7 +1946,7 @@ namespace Vigilance.Patches
 										bool flag = q.Contains("STAFF", StringComparison.OrdinalIgnoreCase);
 										bool flag2 = CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.ViewHiddenBadges, string.Empty, reply: false);
 										bool flag3 = CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.ViewHiddenGlobalBadges, string.Empty, reply: false);
-										if (playerCommandSender != null && playerCommandSender.SR.Staff)
+										if (playerCommandSender != null && playerCommandSender.ServerRoles.Staff)
 										{
 											flag2 = true;
 											flag3 = true;
@@ -1996,7 +1997,7 @@ namespace Vigilance.Patches
 								case "SHORT-PLAYER":
 									if (query.Length >= 3)
 									{
-										if (string.Equals(query[1], "PLAYER", StringComparison.OrdinalIgnoreCase) && (playerCommandSender == null || !playerCommandSender.SR.Staff) && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.PlayerSensitiveDataAccess))
+										if (string.Equals(query[1], "PLAYER", StringComparison.OrdinalIgnoreCase) && (playerCommandSender == null || !playerCommandSender.ServerRoles.Staff) && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.PlayerSensitiveDataAccess))
 										{
 											break;
 										}
@@ -2029,8 +2030,8 @@ namespace Vigilance.Patches
 											{
 												playerCommandSender3.Processor.GameplayData = flag5;
 											}
-											if (playerCommandSender != null && (playerCommandSender.SR.Staff || playerCommandSender.SR.RaEverywhere))
-											{
+											if (playerCommandSender != null && (playerCommandSender.ServerRoles.Staff || playerCommandSender.ServerRoles.RaEverywhere))
+											{ 
 												flag6 = true;
 											}
 											ReferenceHub hub = ReferenceHub.GetHub(gameObject4.gameObject);
@@ -2059,7 +2060,7 @@ namespace Vigilance.Patches
 											stringBuilder.Append("\nServer role: " + serverRoles.GetColoredRoleString());
 											bool flag7 = CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.ViewHiddenBadges, string.Empty, reply: false);
 											bool flag8 = CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.ViewHiddenGlobalBadges, string.Empty, reply: false);
-											if (playerCommandSender != null && playerCommandSender.SR.Staff)
+											if (playerCommandSender != null && playerCommandSender.ServerRoles.Staff)
 											{
 												flag7 = true;
 												flag8 = true;
@@ -2145,7 +2146,7 @@ namespace Vigilance.Patches
 									}
 									break;
 								case "AUTH":
-									if ((playerCommandSender == null || !playerCommandSender.SR.Staff) && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.PlayerSensitiveDataAccess))
+									if ((playerCommandSender == null || !playerCommandSender.ServerRoles.Staff) && !CheckPermissions(sender, query[0].ToUpper(), PlayerPermissions.PlayerSensitiveDataAccess))
 									{
 										break;
 									}

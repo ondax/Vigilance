@@ -49,6 +49,12 @@ namespace Vigilance
 		public static bool Scp096VisionParticles { get; set; }
 		public static bool Scp096DestroyDoors { get; set; }
 
+		public static float Scp049AttackDistance { get; set; }
+		public static float Scp049KillCooldown { get; set; }
+		public static float Scp049ReviveDistance { get; set; }
+		public static float Scp049ReviveDuration { get; set; }
+		public static float Scp049TimeToRevive { get; set; }
+
 		public static string VpnApiKey { get; set; }
 		public static string Intercom_Ready { get; set; }
 		public static string Intercom_Bypass { get; set; }
@@ -118,15 +124,21 @@ namespace Vigilance
 			GameCommandsBlacklist = PluginManager.Config.GetStringList("game_commands_blacklist");
 			CustomCommandsBlacklist = PluginManager.Config.GetStringList("custom_commands_blacklist");
 
-			Scp096MaxShield = PluginManager.Config.GetInt("scp096_max_shield", 500);
-			Scp096ShieldPerPlayer = PluginManager.Config.GetInt("scp096_shield_per_player", 200);
-			Scp096RechargeRate = PluginManager.Config.GetInt("scp096_shield_recharge_rate", 10);
+			Scp096MaxShield = PluginManager.Config.GetInt("scp096_max_shield", 350);
+			Scp096ShieldPerPlayer = PluginManager.Config.GetInt("scp096_shield_per_player", 70);
+			Scp096RechargeRate = PluginManager.Config.GetInt("scp096_shield_recharge_rate", 5);
 			Scp096PryGates = PluginManager.Config.GetBool("scp096_pry_gates", true);
 			Scp096AddEnrage = PluginManager.Config.GetBool("scp096_add_enrage", true);
 			Scp096CanKillOnlyTargets = PluginManager.Config.GetBool("scp096_can_kill_only_targets", false);
 			Scp096CanRegen = PluginManager.Config.GetBool("scp096_can_regen", true);
 			Scp096VisionParticles = PluginManager.Config.GetBool("scp096_vision_particles", true);
 			Scp096DestroyDoors = PluginManager.Config.GetBool("scp096_destroy_doors", true);
+
+			Scp049AttackDistance = PluginManager.Config.GetFloat("scp049_attack_distance", 2.4f);
+			Scp049KillCooldown = PluginManager.Config.GetFloat("scp049_kill_cooldown", 1.5f);
+			Scp049ReviveDistance = PluginManager.Config.GetFloat("scp049_revive_distance", 3.5f);
+			Scp049ReviveDuration = PluginManager.Config.GetFloat("scp049_revive_duration", 10f);
+			Scp049TimeToRevive = PluginManager.Config.GetFloat("scp049_time_to_revive", 7f);
 
 			VpnApiKey = PluginManager.Config.GetString("vpn_api_key");
 
@@ -140,6 +152,7 @@ namespace Vigilance
 
 		public static bool IsBlacklisted(string command, string role, string userId)
         {
+			role = role.ToLower().Replace(" ", "_");
 			List<string> roleBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{role}");
 			List<string> idBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{userId}");
 			if (roleBlacklist.Contains(command) || idBlacklist.Contains(command))
@@ -171,7 +184,7 @@ namespace Vigilance
 			AddConfig("Whether or not blood should be spawned underneath a player when a player gets hit.", "enable_blood_spawning", "true");
 			AddConfig("Whether or not a black hole should be spawned underneath a player when a player gets taken by SCP-106.", "enable_decal_spawning", "true");
 			AddConfig("Whether or not a ragdoll should spawn when a player dies/disconnects.", "spawn_ragdolls", "true");
-			AddConfig("Whether or not SCP-268 effects should wear off when a player interacts with something.", "keep_scp268", "true");
+			AddConfig("Whether or not SCP-268 effects should wear off when a player interacts with something.", "keep_scp268", "false");
 			AddConfig("Whether or not should radios drain battery.", "unlimited_radio_battery", "false");
 			AddConfig("Should a player see blood on his screen when he gets hit?", "disable_blood_on_screen", "false");
 			AddConfig("Elevator moving speed, pretty obvious.", "elevator_moving_speed", "5");
@@ -179,19 +192,24 @@ namespace Vigilance
 			AddConfig("List of RoleIDs that will be able to trigger tesla gates.", "tesla_triggerable_roles", "[0,1,3,4,5,6,8,9,10,11,12,13,14,15,16,17]");
 			AddConfig("Roles allowed to use SCP-939's V alt voice chat feature.", "alt_voice_allowed_roles", "[16,17]");
 			AddConfig("Indicates whether the inventory should be dropped before being set as spectator", "drop_inventory", "true");
-			AddConfig("Should fix the issue with missing items due to inventory being null .. goddamnit NW", "make_sure_to_give_items", "false");
+			AddConfig("Should fix the issue with missing items", "make_sure_to_give_items", "false");
 			AddConfig("If the energy of MicroHID is infinite or not.", "unlimited_micro_energy", "false");
 			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
+			AddConfig("The distance SCP-049 can attack from", "scp049_attack_distance", "2.4");
+			AddConfig("The cooldown of SCP-049s attack", "scp049_kill_cooldown", "1.5");
+			AddConfig("The distance SCP-049 can revive a ragdoll from", "scp049_revive_distance", "3.5");
+			AddConfig("The time allowed to pass before SCP-049 wont be able to revive", "scp049_revive_duration", "10");
+			AddConfig("How long does it take for SCP-049 to revive", "scp049_revive_duration", "7");
 
 			AddConfig("Whether or not players with tutorial should block SCP-173's movement.", "can_tutorial_block_scp173", "true");
 			AddConfig("How long does SCP-173 have to wait before it can open the gate when the round starts.", "scp173_door_cooldown", "25");
 
 			AddConfig("Whether or not players with tutorial should trigger SCP-096.", "can_tutorial_trigger_scp096", "true");
-			AddConfig("Starting value of AHP for SCP-096.", "scp096_max_shield", "500");
-			AddConfig("How much AHP does SCP-096 gain for every player that looks at it.", "scp096_shield_per_player", "200");
-			AddConfig("Recharge rate of AHP of SCP-096.", "scp096_shield_recharge_rate", "10");
+			AddConfig("Starting value of AHP for SCP-096.", "scp096_max_shield", "350");
+			AddConfig("How much AHP does SCP-096 gain for every player that looks at it.", "scp096_shield_per_player", "70");
+			AddConfig("Recharge rate of AHP of SCP-096.", "scp096_shield_recharge_rate", "5");
 			AddConfig("Whether or not SCP-096 should be able to pry gates.", "scp096_pry_gates", "true");
 			AddConfig("Whether or not SCP-096 should stay enraged for longer when someone looks at it.", "scp096_add_enrage", "true");
 			AddConfig("Whether or not SCP-096 should be able to kill players that didn't look at it.", "scp096_can_kill_only_targets", "false");

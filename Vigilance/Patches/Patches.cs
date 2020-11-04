@@ -27,6 +27,8 @@ using System.Reflection.Emit;
 using Vigilance.Events;
 using Searching;
 using Vigilance.Enums;
+using Org.BouncyCastle.Asn1.Cms;
+using Org.BouncyCastle.Crypto.Engines;
 
 namespace Vigilance.Patches
 {
@@ -47,7 +49,7 @@ namespace Vigilance.Patches
                     b = 1f;
                 else if (Mathf.Abs(SpectatorCamera.Singleton.cam.transform.position.y) < 200f)
                     b = 1f;
-                __instance.AnnouncementAudioSource.volume = Mathf.Lerp(__instance.AnnouncementAudioSource.volume, b, hard ? 1f : (Time.deltaTime * 4f));
+                __instance.AnnouncementAudioSource.volume = Mathf.Lerp(__instance.AnnouncementAudioSource.volume, b, hard ? 1f : (UnityEngine.Time.deltaTime * 4f));
                 return false;
             }
             catch (Exception e)
@@ -182,7 +184,7 @@ namespace Vigilance.Patches
             {
                 if (__instance.RoundStartTime == 0.0)
                 {
-                    if (__instance._disableDecontamination || DecontaminationPatch.DecontDisabled)
+                    if (__instance.disableDecontamination || DecontaminationPatch.DecontDisabled)
                     {
                         __instance.NetworkRoundStartTime = -1.0;
                         __instance._stopUpdating = true;
@@ -778,10 +780,10 @@ namespace Vigilance.Patches
                                 __instance.TargetAchieve(__instance.connectionToClient, "betrayal");
                             }
                         }
-                        if (Time.realtimeSinceStartup - __instance._killStreakTime > 30f || __instance._killStreak == 0)
+                        if (UnityEngine.Time.realtimeSinceStartup - __instance._killStreakTime > 30f || __instance._killStreak == 0)
                         {
                             __instance._killStreak = 0;
-                            __instance._killStreakTime = Time.realtimeSinceStartup;
+                            __instance._killStreakTime = UnityEngine.Time.realtimeSinceStartup;
                         }
                         if (__instance.GetComponent<WeaponManager>().GetShootPermission(characterClassManager, true))
                         {
@@ -1725,7 +1727,7 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.CallCmdShoot))]
     public static class WeaponShootPatch
     {
-        public static bool Prefix(WeaponManager __instance, GameObject target, string hitboxType, Vector3 dir, Vector3 sourcePos, Vector3 targetPos)
+        public static bool Prefix(WeaponManager __instance, GameObject target, HitBoxType hitboxType, Vector3 dir, Vector3 sourcePos, Vector3 targetPos)
         {
             try
             {
@@ -1750,9 +1752,6 @@ namespace Vigilance.Patches
                 {
                     return false;
                 }
-                Environment.OnShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, ItemExtensions.GetWeaponType(__instance._hub.inventory.curItem), true, out bool allow);
-                if (!allow)
-                    return false;
                 if (Vector3.Distance(__instance._hub.playerMovementSync.RealModelPosition, sourcePos) > 5.5f)
                 {
                     __instance.GetComponent<CharacterClassManager>().TargetConsolePrint(__instance.connectionToClient, "Shot rejected - Code W.6 (difference between real source position and provided source position is too big)", "gray");
@@ -1768,6 +1767,10 @@ namespace Vigilance.Patches
                     __instance.GetComponent<CharacterClassManager>().TargetConsolePrint(__instance.connectionToClient, "Shot rejected - Code W.8 (|Y| axis difference between real position and provided source position is too big)", "gray");
                     return false;
                 }
+                Player player = __instance.GetPlayer();
+                Environment.OnShoot(player, target, player.ItemInHand.GetWeaponType(), true, out bool allow);
+                if (!allow)
+                    return false;
                 __instance._hub.inventory.items.ModifyDuration(itemIndex, __instance._hub.inventory.items[itemIndex].durability - 1f);
                 __instance.scp268.ServerDisable();
                 __instance._fireCooldown = 1f / (__instance.weapons[(int)__instance.curWeapon].shotsPerSecond * __instance.weapons[(int)__instance.curWeapon].allEffects.firerateMultiplier) * 0.9f;
@@ -1872,7 +1875,7 @@ namespace Vigilance.Patches
                         {
                             case RoleType.Scp106:
                                 num3 /= 10f;
-                                goto IL_6EF;
+                                goto IL_6D1;
                             case RoleType.NtfScientist:
                             case RoleType.Scientist:
                             case RoleType.ChaosInsurgency:
@@ -1880,44 +1883,43 @@ namespace Vigilance.Patches
                             case RoleType.Scp049:
                             case RoleType.Scp079:
                             case RoleType.Scp096:
-                                goto IL_6EF;
+                                goto IL_6D1;
                             default:
                                 if (curClass - RoleType.Scp93953 <= 1)
                                 {
-                                    goto IL_6EF;
+                                    goto IL_6D1;
                                 }
                                 break;
                         }
-                        string a = hitboxType.ToUpper();
-                        if (!(a == "HEAD"))
+                        if (hitboxType > HitBoxType.ARM)
                         {
-                            if (a == "LEG")
+                            if (hitboxType == HitBoxType.HEAD)
                             {
-                                num3 /= 2f;
+                                num3 *= 4f;
+                                float num4 = 1f / (__instance.weapons[(int)__instance.curWeapon].shotsPerSecond * __instance.weapons[(int)__instance.curWeapon].allEffects.firerateMultiplier);
+                                __instance._headshotsL += 1U;
+                                __instance._headshotsS += 1U;
+                                __instance._headshotsResetS = num4 * 1.86f;
+                                __instance._headshotsResetL = num4 * 2.9f;
+                                if (__instance._headshotsS >= 3U)
+                                {
+                                    __instance._hub.playerMovementSync.AntiCheatKillPlayer("Headshots limit exceeded in time window A\n(debug code: W.10)", "W.10");
+                                    return false;
+                                }
+                                if (__instance._headshotsL >= 4U)
+                                {
+                                    __instance._hub.playerMovementSync.AntiCheatKillPlayer("Headshots limit exceeded in time window B\n(debug code: W.11)", "W.11");
+                                    return false;
+                                }
                             }
                         }
                         else
                         {
-                            num3 *= 4f;
-                            float num4 = 1f / (__instance.weapons[(int)__instance.curWeapon].shotsPerSecond * __instance.weapons[(int)__instance.curWeapon].allEffects.firerateMultiplier);
-                            __instance._headshotsL += 1U;
-                            __instance._headshotsS += 1U;
-                            __instance._headshotsResetS = num4 * 1.86f;
-                            __instance._headshotsResetL = num4 * 2.9f;
-                            if (__instance._headshotsS >= 3U)
-                            {
-                                __instance._hub.playerMovementSync.AntiCheatKillPlayer("Headshots limit exceeded in time window A\n(debug code: W.10)", "W.10");
-                                return false;
-                            }
-                            if (__instance._headshotsL >= 4U)
-                            {
-                                __instance._hub.playerMovementSync.AntiCheatKillPlayer("Headshots limit exceeded in time window B\n(debug code: W.11)", "W.11");
-                                return false;
-                            }
+                            num3 /= 2f;
                         }
                     }
-                IL_6EF:
-                    Environment.OnLateShoot(Server.PlayerList.GetPlayer(__instance.gameObject), target, __instance._hub.inventory.curItem.GetWeaponType(), true, out bool allow2);
+                IL_6D1:
+                    Environment.OnLateShoot(player, target, player.ItemInHand.GetWeaponType(), true, out bool allow2);
                     if (!allow2)
                         return false;
                     num3 *= __instance.weapons[(int)__instance.curWeapon].allEffects.damageMultiplier;
@@ -1929,7 +1931,7 @@ namespace Vigilance.Patches
                 }
                 else
                 {
-                    if (target != null && hitboxType == "window" && target.GetComponent<BreakableWindow>() != null)
+                    if (target != null && hitboxType == HitBoxType.WINDOW && target.GetComponent<BreakableWindow>() != null)
                     {
                         float time = Vector3.Distance(__instance.camera.transform.position, target.transform.position);
                         float damage = __instance.weapons[(int)__instance.curWeapon].damageOverDistance.Evaluate(time);
@@ -1993,7 +1995,7 @@ namespace Vigilance.Patches
                         if (!HasItem(inventory?.items, item))
                         {
                             inventory.AddNewItem(item);
-                            Log.Add("CharacterClassManager", $"Giving {item} to {nick} ({__instance.UserId}) [InventoryIsNull: {(inventory == null).ToString().ToLower()}", LogType.Debug);
+                            Log.Add("CharacterClassManager", $"Giving {item} to {nick} ({__instance.UserId}) [InventoryIsNull: {(inventory == null).ToString().ToLower()}]", LogType.Debug);
                         }
                     }
                 });
@@ -2014,27 +2016,17 @@ namespace Vigilance.Patches
             {
                 if (!ConfigManager.SpawnRagdolls)
                     return false;
-                Role role = __instance.hub.characterClassManager.Classes.SafeGet(classId);
+                Role role = ClassHelper.Classes[(RoleType)classId].Role;
                 if (role.model_ragdoll == null)
                 {
                     return false;
                 }
-                GameObject gameObject = UnityEngine.Object.Instantiate(role.model_ragdoll, pos + role.ragdoll_offset.position, Quaternion.Euler(rot.eulerAngles + role.ragdoll_offset.rotation));
+                GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(role.model_ragdoll, pos + role.ragdoll_offset.position, Quaternion.Euler(rot.eulerAngles + role.ragdoll_offset.rotation));
                 NetworkServer.Spawn(gameObject);
                 Ragdoll component = gameObject.GetComponent<Ragdoll>();
-                Environment.OnSpawnRagdoll(component, true, out bool allow);
-                if (!allow)
-                {
-                    component.Delete();
-                    return false;
-                }
-                if (__instance.cleanupTime > 0)
-                {
-                    component.TimeTillCleanup = __instance.cleanupTime;
-                }
                 component.Networkowner = new Ragdoll.Info(ownerID, ownerNick, ragdollInfo, role, playerId);
                 component.NetworkallowRecall = allowRecall;
-                component.RpcSyncVelo(velocity);
+                component.NetworkPlayerVelo = velocity;
                 return false;
             }
             catch (Exception e)
@@ -2203,11 +2195,17 @@ namespace Vigilance.Patches
                 if (num == 0)
                 {
                     if (!__instance._interactRateLimit.CanExecute(true))
+                    {
                         return false;
+                    }
                     if (go == null)
+                    {
                         return false;
+                    }
                     if (Vector3.Distance(go.transform.position, __instance.Hub.playerMovementSync.RealModelPosition) >= Scp049.AttackDistance * 1.25f)
+                    {
                         return false;
+                    }
                     __instance.Hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(4949f, __instance.Hub.nicknameSync.MyNick + " (" + __instance.Hub.characterClassManager.UserId + ")", DamageTypes.Scp049, __instance.Hub.queryProcessor.PlayerId), go, false);
                     GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Sent 'death time' RPC", MessageImportance.LessImportant, false);
                     __instance.Hub.scpsController.RpcTransmit_Byte(0);
@@ -2220,15 +2218,19 @@ namespace Vigilance.Patches
                         if (num == 2)
                         {
                             if (!__instance._interactRateLimit.CanExecute(true))
+                            {
                                 return false;
+                            }
                             if (go == null)
+                            {
                                 return false;
+                            }
                             Ragdoll component = go.GetComponent<Ragdoll>();
-
                             if (component == null)
+                            {
                                 return false;
+                            }
                             ReferenceHub referenceHub = null;
-
                             foreach (GameObject player in PlayerManager.players)
                             {
                                 ReferenceHub hub = ReferenceHub.GetHub(player);
@@ -2258,10 +2260,12 @@ namespace Vigilance.Patches
                                 return false;
                             }
                             if (referenceHub.characterClassManager.CurClass != RoleType.Spectator)
+                            {
                                 return false;
+                            }
                             if (!ConfigManager.CanScp049ReviveOther && component.owner.DeathCause.GetDamageInfo() != DamageType.Scp049)
                                 return false;
-                            Environment.OnRecall(Server.PlayerList.GetPlayer(__instance.Hub.gameObject), component, true, out bool allow);
+                            Environment.OnRecall(referenceHub.GetPlayer(), component, true, out bool allow);
                             if (!allow)
                                 return false;
                             GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'finish recalling' accepted", MessageImportance.LessImportant, false);
@@ -2269,7 +2273,9 @@ namespace Vigilance.Patches
                             referenceHub.characterClassManager.SetClassID(RoleType.Scp0492);
                             referenceHub.GetComponent<PlayerStats>().Health = (float)referenceHub.characterClassManager.Classes.Get(RoleType.Scp0492).maxHP;
                             if (component.CompareTag("Ragdoll"))
+                            {
                                 NetworkServer.Destroy(component.gameObject);
+                            }
                             __instance._recallInProgressServer = false;
                             __instance._recallObjectServer = null;
                             __instance._recallProgressServer = 0f;
@@ -2277,9 +2283,13 @@ namespace Vigilance.Patches
                         return false;
                     }
                     if (!__instance._interactRateLimit.CanExecute(true))
+                    {
                         return false;
+                    }
                     if (go == null)
+                    {
                         return false;
+                    }
                     Ragdoll component2 = go.GetComponent<Ragdoll>();
                     if (component2 == null)
                     {
@@ -2289,6 +2299,11 @@ namespace Vigilance.Patches
                     if (!component2.allowRecall)
                     {
                         GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'start recalling' rejected; provided object can't be recalled", MessageImportance.LessImportant, false);
+                        return false;
+                    }
+                    if (component2.CurrentTime > Scp049.ReviveEligibilityDuration)
+                    {
+                        GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'start recalling' rejected; provided object has decayed too far", MessageImportance.LessImportant, false);
                         return false;
                     }
                     ReferenceHub referenceHub2 = null;
@@ -2306,8 +2321,22 @@ namespace Vigilance.Patches
                         GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'start recalling' rejected; target not found", MessageImportance.LessImportant, false);
                         return false;
                     }
-                    if (Vector3.Distance(component2.transform.position, __instance.Hub.PlayerCameraReference.transform.position) >= Scp049.ReviveDistance * 1.3f)
+                    bool flag = false;
+                    Rigidbody[] componentsInChildren = component2.GetComponentsInChildren<Rigidbody>();
+                    for (int i = 0; i < componentsInChildren.Length; i++)
+                    {
+                        if (Vector3.Distance(componentsInChildren[i].transform.position, __instance.Hub.PlayerCameraReference.transform.position) <= Scp049.ReviveDistance * 1.3f)
+                        {
+                            flag = true;
+                            referenceHub2.characterClassManager.NetworkDeathPosition = __instance.Hub.playerMovementSync.RealModelPosition;
+                            break;
+                        }
+                    }
+                    if (!flag)
+                    {
+                        GameCore.Console.AddDebugLog("SCPCTRL", "SCP - 049 | Request 'start recalling' rejected; Distance was too great.", MessageImportance.LessImportant, false);
                         return false;
+                    }
                     GameCore.Console.AddDebugLog("SCPCTRL", "SCP-049 | Request 'start recalling' accepted", MessageImportance.LessImportant, false);
                     __instance._recallObjectServer = referenceHub2.gameObject;
                     __instance._recallProgressServer = 0f;
@@ -2640,34 +2669,30 @@ namespace Vigilance.Patches
         {
             try
             {
-                if (!__instance._playerInteractRateLimit.CanExecute(true) || (__instance._hc.CufferId > 0 && !PlayerInteract.CanDisarmedInteract))
+                if (!__instance._playerInteractRateLimit.CanExecute(true) || __instance._hc.CufferId > 0 || (__instance._hc.ForceCuff && !PlayerInteract.CanDisarmedInteract))
+                {
                     return false;
-                if (!UnityEngine.Object.FindObjectOfType<LureSubjectContainer>().allowContain || (__instance._ccm.CurRole.team == Team.SCP && __instance._ccm.CurClass != RoleType.Scp106) || !__instance.ChckDis(GameObject.FindGameObjectWithTag("FemurBreaker").transform.position) || UnityEngine.Object.FindObjectOfType<OneOhSixContainer>().used || __instance._ccm.CurRole.team == Team.RIP)
+                }
+                if (!UnityEngine.Object.FindObjectOfType<LureSubjectContainer>().allowContain || (__instance._ccm.CurRole.team == Team.SCP && __instance._ccm.CurClass != RoleType.Scp106) || !__instance.ChckDis(GameObject.FindGameObjectWithTag("FemurBreaker").transform.position) || OneOhSixContainer.used || __instance._ccm.CurRole.team == Team.RIP)
+                {
                     return false;
+                }
                 bool flag = false;
                 foreach (KeyValuePair<GameObject, ReferenceHub> keyValuePair in ReferenceHub.GetAllHubs())
                 {
-                    if (keyValuePair.Value.characterClassManager.GodMode && keyValuePair.Value.characterClassManager.CurClass == RoleType.Scp106)
+                    if (keyValuePair.Value.characterClassManager.CurClass == RoleType.Scp106 && !keyValuePair.Value.characterClassManager.GodMode)
                     {
                         flag = true;
+                        Environment.OnSCP106Contain(__instance.GetPlayer(), keyValuePair.Value.GetPlayer(), true, out bool allow);
+                        if (!allow)
+                            return false;
+                        keyValuePair.Value.scp106PlayerScript.Contain(__instance._hub);
                     }
                 }
-                bool allow = true;
-                if (!flag)
+                if (flag)
                 {
-                    foreach (KeyValuePair<GameObject, ReferenceHub> keyValuePair2 in ReferenceHub.GetAllHubs())
-                    {
-                        if (keyValuePair2.Value.characterClassManager.CurClass == RoleType.Scp106)
-                        {
-                            Environment.OnSCP106Contain(Server.PlayerList.GetPlayer(__instance.gameObject), Server.PlayerList.GetPlayer(keyValuePair2.Key), true, out allow);
-                            if (allow)
-                                keyValuePair2.Key.GetComponent<Scp106PlayerScript>().Contain(__instance._hub);
-                        }
-                    }
-                    if (!allow)
-                        return false;
                     __instance.RpcContain106(__instance.gameObject);
-                    UnityEngine.Object.FindObjectOfType<OneOhSixContainer>().Networkused = true;
+                    OneOhSixContainer.used = true;
                 }
                 __instance.OnInteract();
                 return false;
@@ -2847,7 +2872,7 @@ namespace Vigilance.Patches
             {
                 if (!__instance._commandRateLimit.CanExecute(true))
                     return false;
-                float num = Time.time - __instance._lastReport;
+                float num = UnityEngine.Time.time - __instance._lastReport;
                 if (num < 2f)
                 {
                     __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] Reporting rate limit exceeded (1).", "red");
@@ -2941,7 +2966,7 @@ namespace Vigilance.Patches
                     __instance.GetComponent<GameConsoleTransmission>().SendToClient(__instance.connectionToClient, "[REPORTING] Invalid report signature.", "red");
                     return false;
                 }
-                __instance._lastReport = Time.time;
+                __instance._lastReport = UnityEngine.Time.time;
                 __instance._reportedPlayersAmount++;
                 Environment.OnGlobalReport(reason, Server.PlayerList.GetPlayer(reporterCcm.gameObject), Server.PlayerList.GetPlayer(reportedCcm.gameObject), true, out bool allow);
                 if (!allow)
@@ -3284,7 +3309,7 @@ namespace Vigilance.Patches
                 }
                 newList.warhead_kills = AlphaWarheadController.Host.detonated ? AlphaWarheadController.Host.warheadKills : -1;
                 yield return float.NegativeInfinity;
-                newList.time = (int)Time.realtimeSinceStartup;
+                newList.time = (int)UnityEngine.Time.realtimeSinceStartup;
                 yield return float.NegativeInfinity;
                 RoundSummary.roundTime = newList.time - roundSummary.classlistStart.time;
                 int num1 = newList.mtf_and_guards + newList.scientists;
@@ -3364,7 +3389,9 @@ namespace Vigilance.Patches
             {
                 if (instruction.opcode == OpCodes.Call)
                 {
-                    if (instruction.operand != null && instruction.operand is MethodBase methodBase && methodBase.Name != nameof(RoundSummary._ProcessServerSideCode))
+                    if (instruction.operand != null
+                        && instruction.operand is MethodBase methodBase
+                        && methodBase.Name != nameof(RoundSummary._ProcessServerSideCode))
                     {
                         yield return instruction;
                     }
@@ -3451,15 +3478,15 @@ namespace Vigilance.Patches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdSetUnic))]
     public static class ChangeItemPatch
     {
-        private static void Prefix(Inventory __instance, int i)
+        private static bool Prefix(Inventory __instance, int i)
         {
             try
             {
                 if (__instance.itemUniq == i)
-                    return;
+                    return false;
                 int oldItemIndex = __instance.GetItemIndex();
                 if (oldItemIndex == -1 && i == -1)
-                    return;
+                    return false;
                 Inventory.SyncItemInfo oldItem = oldItemIndex == -1 ? new Inventory.SyncItemInfo() { id = ItemType.None } : __instance.GetItemInHand();
                 Inventory.SyncItemInfo newItem = new Inventory.SyncItemInfo() { id = ItemType.None };
 
@@ -3470,14 +3497,16 @@ namespace Vigilance.Patches
                 }
                 Environment.OnChangeItem(oldItem, newItem, Server.PlayerList.GetPlayer(__instance.gameObject), true, out newItem, out bool allow);
                 if (!allow)
-                    return;
+                    return false;
                 oldItemIndex = __instance.GetItemIndex();
                 if (oldItemIndex != -1)
                     __instance.items[oldItemIndex] = oldItem;
+                return false;
             }
             catch (Exception e)
             {
                 Log.Add("Inventory", e);
+                return true;
             }
         }
     }

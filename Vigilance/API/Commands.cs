@@ -4,7 +4,6 @@ using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
-using System;
 
 namespace Vigilance.Registered
 {

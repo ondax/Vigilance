@@ -237,6 +237,10 @@ namespace Vigilance.Extensions
 			string id = sender.SenderId;
 			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
 				return Server.PlayerList.Local;
+			if (id == "Sitrep")
+				return Server.PlayerList.Local;
+			if (sender.Nickname == "Sitrep")
+				return Server.PlayerList.Local;
 			foreach (Player player in Server.PlayerList.PlayersDict.Values)
 			{
 				if (player.UserId == sender.SenderId)
@@ -665,7 +669,6 @@ namespace Vigilance.Extensions
 				};
 				clone.AddComponent<WorkStation>();
 				clone.GetComponent<WorkStation>().Networkposition = offset;
-				clone.AddComponent<WorkStationUpgrader>();
 			}
 			return clone;
         }

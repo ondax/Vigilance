@@ -330,7 +330,7 @@ namespace Vigilance.API
 
 			public static void Decontaminate()
             {
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton.KillPlayers();
+				LightContainmentZoneDecontamination.DecontaminationController.KillPlayers();
 				LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
 				LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun = true;
 				LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating = true;

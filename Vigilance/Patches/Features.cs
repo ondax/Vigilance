@@ -36,15 +36,14 @@ namespace Vigilance.Patches
 				{
 					return false;
 				}
+
 				__instance.cooldown = 1f;
 				__instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(65f, __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp939, __instance.GetComponent<QueryProcessor>().PlayerId), target, false);
 				__instance._hub.characterClassManager.RpcPlaceBlood(target.transform.position, 0, 2f);
 				ReferenceHub hub = ReferenceHub.GetHub(target);
-
-				if (hub != null && hub.playerEffectsController != null)
+				if (hub != null && hub.playerEffectsController != null && ConfigManager.Scp939Amnesia)
 				{
-					if (ConfigManager.Scp939Amnesia)
-						hub.playerEffectsController.EnableEffect<Amnesia>(3f, true);
+					hub.playerEffectsController.EnableEffect<Amnesia>(3f, true);
 				}
 				__instance.RpcShoot();
 				return false;
@@ -63,12 +62,6 @@ namespace Vigilance.Patches
 		public static bool Prefix(WeaponManager __instance, ref bool forceFriendlyFire, ref bool __result) => !(__result = __instance.GetPlayer().IsFriendlyFireEnabled || forceFriendlyFire || Round.FriendlyFire);
 	}
 
-	[HarmonyPatch(typeof(PlayerMovementSync), nameof(PlayerMovementSync.AntiFly))]
-	public static class DisableAntiflyPatch
-	{
-		private static bool Prefix() => ConfigManager.IsAntiFlyEnabled;
-	}
-
 	[HarmonyPatch(typeof(Scp096), nameof(Scp096.ParseVisionInformation))]
 	public static class Scp096TriggerPatch
 	{
@@ -79,37 +72,26 @@ namespace Vigilance.Patches
 		{
 			try
 			{
-				if (__instance == null || info == null || info.Source == null || info.Target == null || info.RaycastResult.transform == null || info.RaycastResult.transform.gameObject == null)
+				PlayableScpsController playableScpsController;
+				if (!info.Looking || !info.RaycastHit || !info.RaycastResult.transform.gameObject.TryGetComponent<PlayableScpsController>(out playableScpsController) || playableScpsController.CurrentScp == null || playableScpsController.CurrentScp != __instance || CannotTrigger096.Contains(playableScpsController._hub.characterClassManager.UserId))
+				{
 					return false;
-				PlayableScpsController playableScpsController = info.RaycastResult.transform.gameObject.GetComponent<PlayableScpsController>();
-				if (playableScpsController == null)
-					return false;
-				if (!info.Looking || !info.RaycastHit || playableScpsController == null || playableScpsController.CurrentScp == null || playableScpsController.CurrentScp != __instance)
-					return false;
-				CharacterClassManager ccm = info.Source.GetComponent<CharacterClassManager>();
-				if (ccm == null)
-					return false;
-				QueryProcessor qp = info.Source.GetComponent<QueryProcessor>();
-				if (qp == null)
-					return false;
-				Player player = ccm.GetPlayer();
-				if (player == null)
-					return false;
-				if (CannotTrigger096.Contains(player.UserId))
-					return false;
-				if (!ConfigManager.CanTutorialTriggerScp096 && player.Role == RoleType.Tutorial)
-					return false;
+				}
 				float delay = (1f - info.DotProduct) / 0.25f * (Vector3.Distance(info.Source.transform.position, info.Target.transform.position) * 0.1f);
 				if (!__instance.Calming)
+				{
 					__instance.AddTarget(info.Source);
+				}
 				if (__instance.CanEnrage && info.Source != null)
+				{
 					__instance.PreWindup(delay);
+				}
 				LastVision = info;
 				return false;
 			}
 			catch (Exception e)
             {
-				Log.Add("Scp096", e);
+				Log.Add("Scp096.ParseVisionInformation", e);
 				return true;
             }
 		}
@@ -521,4 +503,17 @@ namespace Vigilance.Patches
 			}
 		}
 	}
+
+	[HarmonyPatch(typeof(Scp049), nameof(Scp049.OnEnable))]
+	public static class Scp049Patch
+    {
+		public static void Postfix(Scp049 __instance)
+        {
+			Scp049.AttackDistance = ConfigManager.Scp049AttackDistance;
+			Scp049.KillCooldown = ConfigManager.Scp049KillCooldown;
+			Scp049.ReviveDistance = ConfigManager.Scp049ReviveDistance;
+			Scp049.ReviveEligibilityDuration = ConfigManager.Scp049ReviveDuration;
+			Scp049.TimeToRevive = ConfigManager.Scp049TimeToRevive;
+        }
+    }
 }

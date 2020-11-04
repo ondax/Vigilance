@@ -86,7 +86,11 @@ namespace Vigilance
                 return false;
         }
 
-        public static void StopAllCoroutines() => Timing.KillCoroutines(ActiveCoroutines);
+        public static void StopAllCoroutines()
+        {
+            foreach (CoroutineHandle handle in ActiveCoroutines)
+                Timing.KillCoroutines(handle);
+        }
 
         public static void OnAnnounceDecontamination(bool global, int id, bool all, out bool isGlobal, out int annId, out bool allow)
         {

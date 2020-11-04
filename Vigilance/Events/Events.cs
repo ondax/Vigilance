@@ -1,12 +1,9 @@
 ﻿using Vigilance.API;
 using Vigilance.Enums;
 using Vigilance.Extensions;
-using Vigilance.Registered;
-using Vigilance.Events;
 using Vigilance.EventHandlers;
 using UnityEngine;
 using Grenades;
-using Dissonance;
 using System;
 using Scp914;
 using System.Collections.Generic;
