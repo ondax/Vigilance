@@ -29,37 +29,11 @@ using Searching;
 using Vigilance.Enums;
 using Org.BouncyCastle.Asn1.Cms;
 using Org.BouncyCastle.Crypto.Engines;
+using Time = UnityEngine.Time;
+using PlayableScps.Messages;
 
 namespace Vigilance.Patches
 {
-    [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.UpdateSpeaker))]
-    public static class AnnounceDecontaminationPatch
-    {
-        private static bool Prefix(DecontaminationController __instance, bool hard)
-        {
-            try
-            {
-                if (AnnounceNTFEntrancePatch.CassieDisabled)
-                    return false;
-                Environment.OnAnnounceDecontamination(hard, __instance._nextPhase, true, out hard, out __instance._nextPhase, out bool allow);
-                if (!allow)
-                    return false;
-                float b = 0f;
-                if (__instance._curFunction == DecontaminationController.DecontaminationPhase.PhaseFunction.Final || __instance._curFunction == DecontaminationController.DecontaminationPhase.PhaseFunction.GloballyAudible)
-                    b = 1f;
-                else if (Mathf.Abs(SpectatorCamera.Singleton.cam.transform.position.y) < 200f)
-                    b = 1f;
-                __instance.AnnouncementAudioSource.volume = Mathf.Lerp(__instance.AnnouncementAudioSource.volume, b, hard ? 1f : (UnityEngine.Time.deltaTime * 4f));
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("DecontaminationController", e);
-                return true;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(NineTailedFoxNamingRule), nameof(NineTailedFoxNamingRule.PlayEntranceAnnouncement))]
     public static class AnnounceNTFEntrancePatch
     {
@@ -134,7 +108,7 @@ namespace Vigilance.Patches
                 if (AnnounceNTFEntrancePatch.CassieDisabled)
                     return false;
                 if (scp == null)
-                    return false;
+                    return true;
                 Player attacker = null;
                 foreach (Player ply in Server.PlayerList.PlayersDict.Values)
                     if (ply.Nick == hit.Attacker)
@@ -175,35 +149,6 @@ namespace Vigilance.Patches
         }
     }
 
-    [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.ServersideSetup))]
-    public static class PreventDeconPatch
-    {
-        public static bool Prefix(DecontaminationController __instance)
-        {
-            try
-            {
-                if (__instance.RoundStartTime == 0.0)
-                {
-                    if (__instance.disableDecontamination || DecontaminationPatch.DecontDisabled)
-                    {
-                        __instance.NetworkRoundStartTime = -1.0;
-                        __instance._stopUpdating = true;
-                    }
-                    else if (RoundStart.singleton.Timer == -1)
-                    {
-                        __instance.NetworkRoundStartTime = NetworkTime.time;
-                    }
-                }
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("DecontaminationController", e);
-                return true;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(DecontaminationController), nameof(DecontaminationController.FinishDecontamination))]
     public static class DecontaminationPatch
     {
@@ -215,9 +160,6 @@ namespace Vigilance.Patches
             {
                 if (NetworkServer.active)
                 {
-                    Environment.OnDecontamination(true, out bool allow);
-                    if (!allow || DecontDisabled)
-                        return false;
                     foreach (Lift lift in Lift.Instances)
                     {
                         if (lift != null)
@@ -243,8 +185,12 @@ namespace Vigilance.Patches
                             decontaminationEvacuationDoor.Close();
                         }
                     }
+                    if (DecontaminationController.AutoDeconBroadcastEnabled && !__instance._decontaminationBegun && __instance._broadcaster != null)
+                    {
+                        __instance._broadcaster.RpcAddElement(DecontaminationController.DeconBroadcastDeconMessage, DecontaminationController.DeconBroadcastDeconMessageTime, Broadcast.BroadcastFlags.Normal);
+                    }
                     __instance._decontaminationBegun = true;
-                    return false;
+                    DecontaminationController.KillPlayers();
                 }
                 return false;
             }
@@ -1507,7 +1453,7 @@ namespace Vigilance.Patches
                 }
                 else
                 {
-                   __instance.RpcDenied(doorId);
+                    __instance.RpcDenied(doorId);
                 }
             }
             catch
@@ -1631,12 +1577,14 @@ namespace Vigilance.Patches
                 Player player = Server.PlayerList.GetPlayer(__instance.gameObject);
                 if (player == null)
                     return true;
+                if (player.IsHost)
+                    return true;
                 Environment.OnPlayerLeave(player, out bool destroy);
                 if (!destroy)
                     return false;
                 Server.PlayerList.Remove(player);
                 ReferenceHub.Hubs.Remove(__instance.gameObject);
-                ReferenceHub.HubIds.Remove(player.PlayerId);
+                ReferenceHub.HubIds.Remove(__instance.queryProcessor.PlayerId);
                 if (ReferenceHub._hostHub == __instance)
                     ReferenceHub._hostHub = null;
                 if (ReferenceHub._localHub == __instance)
@@ -1657,12 +1605,6 @@ namespace Vigilance.Patches
         {
             try
             {
-                if (!NetworkServer.active)
-                {
-                    Debug.LogWarning("[Server] function 'System.Void Handcuffs::ClearTarget()' called on client");
-                    return false;
-                }
-
                 foreach (GameObject player in PlayerManager.players)
                 {
                     Player ply = Server.PlayerList.GetPlayer(player);
@@ -2016,7 +1958,7 @@ namespace Vigilance.Patches
             {
                 if (!ConfigManager.SpawnRagdolls)
                     return false;
-                Role role = ClassHelper.Classes[(RoleType)classId].Role;
+                Role role = __instance.hub.characterClassManager.Classes[classId];
                 if (role.model_ragdoll == null)
                 {
                     return false;
@@ -2621,6 +2563,7 @@ namespace Vigilance.Patches
                 __instance.PlayerState = Scp096PlayerState.Calming;
                 __instance._calmingTime = 6f;
                 __instance._targets.Clear();
+                NetworkServer.SendToClientOfPlayer(__instance.Hub.characterClassManager.netIdentity, new Scp096ToSelfMessage(__instance.EnrageTimeLeft, __instance._chargeCooldown));
                 return false;
             }
             catch (Exception e)
@@ -3475,42 +3418,6 @@ namespace Vigilance.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CallCmdSetUnic))]
-    public static class ChangeItemPatch
-    {
-        private static bool Prefix(Inventory __instance, int i)
-        {
-            try
-            {
-                if (__instance.itemUniq == i)
-                    return false;
-                int oldItemIndex = __instance.GetItemIndex();
-                if (oldItemIndex == -1 && i == -1)
-                    return false;
-                Inventory.SyncItemInfo oldItem = oldItemIndex == -1 ? new Inventory.SyncItemInfo() { id = ItemType.None } : __instance.GetItemInHand();
-                Inventory.SyncItemInfo newItem = new Inventory.SyncItemInfo() { id = ItemType.None };
-
-                foreach (Inventory.SyncItemInfo item in __instance.items)
-                {
-                    if (item.uniq == i)
-                        newItem = item;
-                }
-                Environment.OnChangeItem(oldItem, newItem, Server.PlayerList.GetPlayer(__instance.gameObject), true, out newItem, out bool allow);
-                if (!allow)
-                    return false;
-                oldItemIndex = __instance.GetItemIndex();
-                if (oldItemIndex != -1)
-                    __instance.items[oldItemIndex] = oldItem;
-                return false;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Inventory", e);
-                return true;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(ItemSearchCompletor), nameof(ItemSearchCompletor.Complete))]
     public static class PickupItemPatch
     {
@@ -3641,26 +3548,23 @@ namespace Vigilance.Patches
 
     [HarmonyPatch(typeof(Scp096), nameof(Scp096.AddTarget))]
     public static class AddTargetPatch
-    { 
+    {
         public static bool Prefix(Scp096 __instance, GameObject target)
         {
             try
             {
-                if (!NetworkServer.active)
-                    throw new InvalidOperationException("Called AddTarget from client.");
                 ReferenceHub hub = ReferenceHub.GetHub(target);
-                if (!ConfigManager.CanTutorialTriggerScp096 && hub.characterClassManager.CurClass == RoleType.Tutorial)
-                    return false;
-                Environment.OnScp096AddTarget(Server.PlayerList.GetPlayer(target), true, out bool allow);
-                if (!allow)
-                    return false;
-                if (__instance.CanReceiveTargets && !(hub == null) && !__instance._targets.Contains(hub))
+                if (!__instance.CanReceiveTargets || hub == null || __instance._targets.Contains(hub))
                 {
-                    if (!__instance._targets.IsEmpty() && ConfigManager.Scp096AddEnrage)
-                        __instance.AddReset();
-                    __instance._targets.Add(hub);
-                    __instance.AdjustShield(ConfigManager.Scp096ShieldPerPlayer);
+                    return false;
                 }
+                if (!__instance._targets.IsEmpty())
+                {
+                    __instance.AddReset();
+                }
+                __instance._targets.Add(hub);
+                NetworkServer.SendToClientOfPlayer(hub.characterClassManager.netIdentity, new Scp096ToTargetMessage(hub));
+                __instance.AdjustShield(ConfigManager.Scp096ShieldPerPlayer, true);
                 return false;
             }
             catch (Exception e)

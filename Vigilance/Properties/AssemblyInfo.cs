@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Vigilance")]
-[assembly: AssemblyDescription("Vigilance is a simple API an a plugin loader for SCP: Secret Laboratory.")]
+[assembly: AssemblyDescription("Vigilance is a simple API and a plugin loader for SCP: Secret Laboratory.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Royal Science - Dr. Gaster")]
 [assembly: AssemblyProduct("Vigilance")]
@@ -11,5 +11,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 [assembly: Guid("9f75ae68-99e7-423d-af6d-45b51b5706c7")]
-[assembly: AssemblyVersion("5.2.5")]
-[assembly: AssemblyFileVersion("5.2.5")]
+[assembly: AssemblyVersion("5.2.6")]
+[assembly: AssemblyFileVersion("5.2.6")]
