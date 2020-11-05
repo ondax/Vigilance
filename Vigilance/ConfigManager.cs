@@ -150,11 +150,16 @@ namespace Vigilance
 			Intercom_Transmit = PluginManager.Config.GetString("intercom_transmitting", "TRANSMITTING...TIME LEFT - %time%");
 		}
 
-		public static bool IsBlacklisted(string command, string role, string userId)
+		public static bool IsBlacklisted(CommandSender sender, string[] query)
         {
-			role = role.ToLower().Replace(" ", "_");
+			string command = query[0].ToLower();
+			if (sender.SenderId == "SERVER CONSOLE")
+				return false;
+			if (sender.SenderId == "Sitrep")
+				return false;
+			string role = sender.GetPlayer().RankName.ToLower().Replace(" ", "_");
 			List<string> roleBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{role}");
-			List<string> idBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{userId}");
+			List<string> idBlacklist = PluginManager.Config.GetStringList($"command_blacklist_{sender.SenderId.Replace(" ", "_")}");
 			if (roleBlacklist.Contains(command) || idBlacklist.Contains(command))
 				return true;
 			else

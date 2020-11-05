@@ -8,6 +8,7 @@ using Vigilance.Enums;
 using RemoteAdmin;
 using System.Linq;
 using Org.BouncyCastle.Asn1.X509.Qualified;
+using System.CodeDom;
 
 namespace Vigilance.API
 {
@@ -47,7 +48,21 @@ namespace Vigilance.API
         {
             get
             {
-                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
+                if (_hub == null)
+                    return "LocalPlayer";
+                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(UserId))
+                    return "LocalPlayer";
+                if (_hub.nicknameSync == null)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
+                    return "LocalPlayer";
+                if (_hub.serverRoles == null)
+                    return "LocalPlayer";
+                if (_hub.serverRoles.Group == null)
+                    return "LocalPlayer";
+                if (_hub.serverRoles.Group.BadgeText.IsEmpty())
                     return "LocalPlayer";
                 return _hub.serverRoles.Group.BadgeText;
             }
@@ -134,7 +149,24 @@ namespace Vigilance.API
         public bool IsInvisible { get; set; }
         public ItemType ItemInHand { get => _hub.inventory.curItem; set => _hub.inventory.SetCurItem(value); }
         public int MaxHealth { get => _hub.playerStats.maxHP; set => _hub.playerStats.maxHP = value; }
-        public string Nick { get => _hub.nicknameSync.Network_myNickSync; set => _hub.nicknameSync.Network_myNickSync = value; }
+        public string Nick
+        {
+            get
+            {
+                if (_hub == null)
+                    return "LocalPlayer";
+                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(UserId))
+                    return "LocalPlayer";
+                if (_hub.nicknameSync == null)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
+                    return "LocalPlayer";
+                return _hub.nicknameSync.Network_myNickSync;
+            }
+            set => _hub.nicknameSync.Network_myNickSync = value;
+        }
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
         public bool NoClip { get => _hub.characterClassManager.NetworkNoclipEnabled; set => _hub.characterClassManager.NetworkNoclipEnabled = value; }
         public Vector3 Position { get => _hub.playerMovementSync.GetRealPosition(); set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
@@ -166,6 +198,16 @@ namespace Vigilance.API
         {
             get
             {
+                if (_hub == null)
+                    return "LocalPlayer";
+                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(UserId))
+                    return "LocalPlayer";
+                if (_hub.nicknameSync == null)
+                    return "LocalPlayer";
+                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
+                    return "LocalPlayer";
                 if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
                     return "LocalPlayer";
                 return UserId.Substring(0, UserId.LastIndexOf('@'));
@@ -391,6 +433,6 @@ namespace Vigilance.API
             yield return Timing.WaitForOneFrame;
             BadgeHidden = !BadgeHidden;
         }
-        public override string ToString() => $"[{PlayerId}]: {Nick} [{ParsedUserId}] [{Role.ToString()}]";
+        public override string ToString() => $"[{PlayerId}]: {Nick} [{UserId}] [{IpAddress}] [{Role.AsString()}]";
     }
 }

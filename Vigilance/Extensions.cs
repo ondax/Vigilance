@@ -236,17 +236,17 @@ namespace Vigilance.Extensions
 		{
 			string id = sender.SenderId;
 			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
-				return Server.PlayerList.Local;
+				return new Player(ReferenceHub.LocalHub);
 			if (id == "Sitrep")
-				return Server.PlayerList.Local;
+				return new Player(ReferenceHub.LocalHub);
 			if (sender.Nickname == "Sitrep")
-				return Server.PlayerList.Local;
+				return new Player(ReferenceHub.LocalHub);
 			foreach (Player player in Server.PlayerList.PlayersDict.Values)
 			{
 				if (player.UserId == sender.SenderId)
 					return player;
 			}
-			return Server.PlayerList.Local;
+			return new Player(ReferenceHub.LocalHub);
 		}
 
 		public static List<Player> ToList(IEnumerable<Player> players)

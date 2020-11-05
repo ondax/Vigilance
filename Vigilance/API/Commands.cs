@@ -4,6 +4,8 @@ using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Configuration;
+using Utf8Json.Formatters;
 
 namespace Vigilance.Registered
 {
@@ -85,7 +87,7 @@ namespace Vigilance.Registered
 
 		public string Command => "players";
 
-		public string Aliases => "list";
+		public string Aliases => "plys";
 
         public string Execute(Player sender, string[] args)
 		{
@@ -911,6 +913,8 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
         {
+			if (args.Length < 3)
+				return Usage;
 			if (!int.TryParse(args[1], out int duration))
 				return "Please provide a valid duration.";
 			Player player = args[0].GetPlayer();
@@ -940,5 +944,212 @@ namespace Vigilance.Registered
 			player.Achieve(achievement);
 			return $"{player.Nick} succesfuly achieved {achievement}";
         }
+    }
+
+    public class CommandItemSize : CommandHandler
+    {
+		public string Command => "itemsize";
+		public string Usage => "Missing arguments!\nUsage: itemsize <player> <ItemID> <scale [X=Y=Z]>";
+		public string Aliases => "it";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 3)
+				return Usage;
+			Player player = args[0].GetPlayer();
+			ItemType type = args[1].GetItem();
+			GameObject obj = Prefab.Pickup.Spawn(player.Position, sender.RotationQuaternion, CommandPos.ParsePosition(args[2]));
+			Pickup pickup = obj.GetComponent<Pickup>();
+			if (pickup != null)
+			{
+				pickup.SetIDFull(type);
+				return $"Succesfully spawned a {type} at {player.Nick}";
+			}
+			else
+				return "An error occured: Pickup is null.";
+        }
+    }
+
+    public class CommandList : CommandHandler
+    {
+		public string Command => "list";
+		public string Usage => "Missing arguments!\nUsage: list <item/damagetype/durationtype/grenadetype/useridtype/teamtype/team/zonetype/roomtype/weapontype/ammotype/prefab/achievement>";
+		public string Aliases => "";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			string s = "";
+			if (args[0].ToLower() == "item")
+            {
+				foreach (ItemType item in Environment.GetValues<ItemType>())
+                {
+					if (string.IsNullOrEmpty(s))
+                    {
+						s += $"\n";
+                    }
+					s += $"({(int)item}) {item}\n";
+                }
+				return s;
+            }
+
+			if (args[0].ToLower() == "damagetype")
+			{
+				foreach (DamageType item in Environment.GetValues<DamageType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "durationtype")
+			{
+				foreach (DurationType item in Environment.GetValues<DurationType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "grenadetype")
+			{
+				foreach (GrenadeType item in Environment.GetValues<GrenadeType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "useridtype")
+			{
+				foreach (UserIdType item in Environment.GetValues<UserIdType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "teamtype")
+			{
+				foreach (TeamType item in Environment.GetValues<TeamType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "team")
+			{
+				foreach (Team item in Environment.GetValues<Team>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "zonetype")
+			{
+				foreach (ZoneType item in Environment.GetValues<ZoneType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "roomtype")
+			{
+				foreach (RoomType item in Environment.GetValues<RoomType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "weapontype")
+			{
+				foreach (WeaponType item in Environment.GetValues<WeaponType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "ammotype")
+			{
+				foreach (AmmoType item in Environment.GetValues<AmmoType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "prefab")
+			{
+				foreach (Prefab item in Environment.GetValues<Prefab>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item.GetName()}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "achievement")
+			{
+				foreach (Achievement item in Environment.GetValues<Achievement>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
+			return Usage;
+		}
     }
 }

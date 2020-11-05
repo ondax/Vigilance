@@ -44,10 +44,10 @@ namespace Vigilance.Patches
 				}
 				if (!ConfigManager.EnableGameCommands || ConfigManager.GameCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.GameCommandsBlacklist.Contains(sender.SenderId))
 				{
-					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Disabled in config")})", false, true, "");
+					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Command disabled in config")})!", false, true, "");
 					return false;
 				}
-				if (ConfigManager.IsBlacklisted(query[0].ToLower(), playerCommandSender?.ServerRoles.Group.BadgeText, sender.SenderId))
+				if (ConfigManager.IsBlacklisted(sender, query))
                 {
 					sender.RaReply($"SERVER#You are not allowed to use this command!", false, true, "");
 					return false;

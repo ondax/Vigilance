@@ -10,7 +10,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.2.6";
+        public static string Version => "5.2.7";
         public static string CompatibleGameVersion => "10.1.0";
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
