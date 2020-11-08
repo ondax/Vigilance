@@ -8,6 +8,8 @@ using Vigilance.Enums;
 using RemoteAdmin;
 using System.Linq;
 using Vigilance.Patches.Events;
+using CustomPlayerEffects;
+using Org.BouncyCastle.Asn1.GM;
 
 namespace Vigilance.API
 {
@@ -104,6 +106,46 @@ namespace Vigilance.API
         public bool IsHost => _hub.characterClassManager.IsHost;
         public bool IsDead => Team == TeamType.Spectator || Role == RoleType.None;
         public Camera079 Camera { get => _hub.scp079PlayerScript.currentCamera; set => _hub.scp079PlayerScript.RpcSwitchCamera(value.cameraId, false); }
+        public float SpeedServerside
+        {
+            get
+            {
+                _hub.fpc.staminaController.
+                _hub.fpc.GetSpeed(out float speed, true);
+                return speed;
+            }
+        }
+        public float Speed
+        {
+            get
+            {
+                _hub.fpc.GetSpeed(out float speed, false);
+                return speed;
+            }
+        }
+        public float SpeedMultiplier { get => _hub.weaponManager.SpeedMultiplier; }
+        public float ZoomSlowdown { get => _hub.fpc.ZoomSlowdown; set => _hub.fpc.ZoomSlowdown = value; }
+        public bool WantsToJump { get => _hub.fpc.wantsToJump; set => _hub.fpc.wantsToJump = value; }
+        public bool ToggleSprint { get => _hub.fpc.sprintToggle; set => _hub.fpc.sprintToggle = value; }
+        public float SneakingMultiplier { get => _hub.fpc.sneakingMultiplier; set => _hub.fpc.sneakingMultiplier = value; }
+        public bool Slowdown106 { get => _hub.fpc.Slowdown106; set => _hub.fpc.Slowdown106 = value; }
+        public Vector2 PlayerSpeed { get => _hub.fpc.PlySpeed; set => _hub.fpc.PlySpeed = value; }
+        public bool Noclip { get => _hub.fpc.NoclipEnabled; set => _hub.fpc.NoclipEnabled = value; }
+        public bool Noclip106 { get => _hub.fpc.Noclip106; set => _hub.fpc.Noclip106 = value; }
+        public MovementLockType MovementLock { get => _hub.fpc.MovementLock; set => _hub.fpc.MovementLock = value; }
+        public Vector2 MovementOverride { get => _hub.fpc.NetworkmovementOverride; set => _hub.fpc.NetworkmovementOverride = value; }
+        public Vector2 Input => _hub.fpc.input;
+        public byte SyncStamina { get => _hub.fpc.NetworksyncStamina; set => _hub.fpc.NetworksyncStamina = value; }
+        public float Gravity { get => _hub.fpc.gravity; set => _hub.fpc.gravity = value; }
+        public float Stamina { get => _hub.fpc.GetStamina(); set => _hub.fpc.ModifyStamina(value); }
+        public MouseLook MouseLook => _hub.fpc.GetMouseLook;
+        public Vector3 MoveDirectory => _hub.fpc.GetMoveDir;
+        public bool StopInputs { get => _hub.fpc.NetworkforceStopInputs; set => _hub.fpc.NetworkforceStopInputs = value; }
+        public bool IsSprinting => _hub.fpc.IsSprinting;
+        public bool IsSneaking => _hub.fpc.IsSneaking;
+        public bool IsWalking => _hub.fpc.IsWalking;
+        public bool IsJumping => _hub.fpc.isJumping;
+
 
         public int CameraId { get => Camera.cameraId; set => Camera = Map.GetCamera(value); }
         public bool BadgeHidden
@@ -117,7 +159,16 @@ namespace Vigilance.API
                     _hub.characterClassManager.CallCmdRequestShowTag(false);
             }
         }
-        public Class CurrentClass { get => ClassHelper.Get(Role); }
+        public Class CurrentClass
+        {
+            get
+            {
+                if (!ClassHelper.ClassesSet || ClassHelper.Classes == null)
+                    ClassHelper.SetClasses(_hub.characterClassManager);
+                Class c = ClassHelper.Get(Role);
+                return c;
+            }
+        }
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
@@ -145,28 +196,12 @@ namespace Vigilance.API
             set => _hub.nicknameSync.Network_myNickSync = value;
         }
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
-        public bool NoClip { get => _hub.characterClassManager.NetworkNoclipEnabled; set => _hub.characterClassManager.NetworkNoclipEnabled = value; }
         public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
         public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; set => _hub.characterClassManager.AuthTokenSerial = value; }
         public string UserId
         {
-            get
-            {
-                if (_hub == null)
-                    return "Dedicated Server";
-                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(UserId))
-                    return "Dedicated Server";
-                if (_hub.nicknameSync == null)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "Dedicated Server";
-                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
-                    return "Dedicated Server";
-                return _hub.characterClassManager.UserId;
-            }
+            get => string.IsNullOrEmpty(_hub.characterClassManager.UserId) ? "Dedicated Server" : _hub.characterClassManager.UserId;
             set => _hub.characterClassManager.UserId = value;
         }
         public string CustomUserId { get => _hub.characterClassManager.UserId2; set => _hub.characterClassManager.UserId2 = value; }
@@ -315,6 +350,7 @@ namespace Vigilance.API
         public T GetComponent<T>() where T : Component => _hub.gameObject.GetComponent<T>();
         public T AddComponent<T>() where T : Component => _hub.gameObject.AddComponent<T>();
         public bool HasItem(ItemType item) => _hub.inventory.items.Select(h => h.id).Contains(item);
+        public void ResetStamina() => _hub.fpc.ResetStamina();
 
         public void ShowHint(string message, float duration = 10f)
         {
@@ -424,7 +460,7 @@ namespace Vigilance.API
                 if (script.iAm106 && !script.goingViaThePortal && Physics.Raycast(new Ray(script.transform.position, -script.transform.up), out raycastHit, 10f, script.teleportPlacementMask))
                 {
                     Vector3 pos = raycastHit.point - Vector3.up;
-                        script.SetPortalPosition(pos);
+                    script.SetPortalPosition(pos);
                 }
             }
         }
@@ -455,8 +491,12 @@ namespace Vigilance.API
             _hub.scp106PlayerScript.CallCmdUsePortal();
         }
 
-        public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : CustomPlayerEffects.PlayerEffect => _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
-        public void DisableEffect<T>() where T : CustomPlayerEffects.PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();
+        public void Teleport(Room room) => Teleport(room.Position);
+        public void Teleport(Rid rid) => Teleport(rid.transform.position);
+
+        public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : PlayerEffect => _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
+        public void DisableEffect<T>() where T : PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();
+        public T GetEffect<T>() where T : PlayerEffect => _hub.playerEffectsController.GetEffect<T>();
 
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));
 

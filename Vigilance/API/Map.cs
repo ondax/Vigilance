@@ -30,6 +30,7 @@ namespace Vigilance.API
 		public static List<TeslaGate> TeslaGates { get; } = FindObjects<TeslaGate>();
 		public static List<Generator079> Generators => Generator079.Generators;
 		public static List<Lift.Elevator> Elevators => Lifts.FirstOrDefault().elevators.ToList();
+		public static List<Rid> RoomIDs { get; } = GameObject.FindGameObjectsWithTag("RoomID").Select(h => h.GetComponent<Rid>()).ToList();
 		public static Vector3 PocketDimension { get; } = new Vector3(0f, -1998.5f, 0f);
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
@@ -49,7 +50,7 @@ namespace Vigilance.API
             {
 				try
 				{
-					if (_rooms == null)
+					if (_rooms == null || _rooms.Count < RoomIDs.Count)
 					{
 						_rooms = new List<Room>();
 						_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
@@ -131,15 +132,25 @@ namespace Vigilance.API
             }
 		}
 
+		public static Rid GetRoomID(string name)
+        {
+			foreach (Rid rid in RoomIDs)
+            {
+				if (rid.id.ToLower() == name.ToLower() || rid.id.ToLower().Contains(name.ToLower()) || name.ToLower().Contains(rid.id.ToLower()))
+					return rid;
+            }
+			return null;
+        }
+
 		public static Room GetRoom(string name)
 		{
 			try
 			{
-				foreach (Room room in Rooms)
-				{
-					if (room.Name.ToLower() == name.ToLower() || room.Name.ToLower().Contains(name.ToLower()))
-						return room;
-				}
+				foreach (RoomType type in Environment.GetValues<RoomType>())
+                {
+					if (type.ToString().ToLower() == name.ToLower())
+						return GetRoom(type);
+                }
 				return null;
 			}
 			catch (Exception e)

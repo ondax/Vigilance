@@ -10,7 +10,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.3.0-B";
+        public static string Version => "5.3.1";
         public static string CompatibleGameVersion => "10.1.1";
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -26,7 +26,7 @@ namespace Vigilance
                     return;
                 if (CustomNetworkManager.CompatibleVersions[0] != CompatibleGameVersion)
                 {
-                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!", LogType.Error);
+                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!\nRequired version: {CompatibleGameVersion}", LogType.Error);
                     return;
                 }
 

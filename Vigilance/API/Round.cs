@@ -10,6 +10,9 @@ namespace Vigilance.API
     public static class Round
     {
         private static RoundInfo _info;
+        private static float _sprintSpeed = 0f;
+        private static float _walkSpeed = 0f;
+
         public static bool RoundLock { get => Server.RoundLock; set => Server.RoundLock = value; }
         public static bool LobbyLock { get => Server.LobbyLock; set => Server.LobbyLock = value; }
         public static bool FriendlyFire { get => ServerConsole.FriendlyFire; set => ServerConsole.FriendlyFire = value; }
@@ -43,6 +46,22 @@ namespace Vigilance.API
                 UnitName = unit
             };
             RespawnManager.Singleton.NamingManager.AllUnitNames.Add(syncUnit);
+        }
+
+        public static void SetSpeed(float value)
+        {
+            if (_sprintSpeed == 0f)
+                _sprintSpeed = ServerConfigSynchronizer.Singleton.NetworkHumanSprintSpeedMultiplier;
+            if (_walkSpeed == 0f)
+                _walkSpeed = ServerConfigSynchronizer.Singleton.NetworkHumanWalkSpeedMultiplier;
+            ServerConfigSynchronizer.Singleton.NetworkHumanSprintSpeedMultiplier = value;
+            ServerConfigSynchronizer.Singleton.NetworkHumanWalkSpeedMultiplier = value / 1.5f;
+        }
+
+        public static void ResetSpeed()
+        {
+            ServerConfigSynchronizer.Singleton.NetworkHumanWalkSpeedMultiplier = _walkSpeed;
+            ServerConfigSynchronizer.Singleton.NetworkHumanSprintSpeedMultiplier = _sprintSpeed;
         }
     }
 

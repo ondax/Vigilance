@@ -6,6 +6,7 @@ using GameCore;
 using UnityEngine;
 using Vigilance.Extensions;
 using System.IO;
+using RemoteAdmin;
 
 namespace Vigilance.API
 {
@@ -309,6 +310,24 @@ namespace Vigilance.API
                             {
                                 return player;
                             }
+                        }
+                    }
+                }
+                else
+                {
+                    QueryProcessor qp = gameObject.GetComponent<QueryProcessor>();
+                    CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
+                    if (qp != null)
+                    {
+                        if (PlayerIdCache.TryGetValue(qp.PlayerId, out Player player))
+                            return player;
+                    }
+                    else
+                    {
+                        if (ccm != null)
+                        {
+                            if (UserIdCache.TryGetValue(ccm.UserId, out Player player))
+                                return player;
                         }
                     }
                 }

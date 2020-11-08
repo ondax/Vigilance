@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.PostProcessing;
 using System.Linq;
 using Vigilance.Extensions;
+using System;
 
 namespace Vigilance.API
 {
@@ -10,26 +11,65 @@ namespace Vigilance.API
     {
         public static List<GameObject> SpawnedDummies = new List<GameObject>();
         public static Dictionary<RoleType, Class> Classes { get; set; }
-        public static bool ClassesSet { get; set; }
+        public static bool ClassesSet { get; set; } = false;
 
         public static void SetClasses()
         {
-            if (ClassesSet)
-                return;
-            if (Classes == null)
-                Classes = new Dictionary<RoleType, Class>();
-            foreach (Role role in CharacterClassManager._staticClasses)
-                Classes.Add(role.roleId, Build(role.roleId));
-            ClassesSet = true;
+            try
+            {
+                if (ClassesSet)
+                    return;
+                if (Classes == null)
+                    Classes = new Dictionary<RoleType, Class>();
+                if (ReferenceHub.LocalHub.characterClassManager.Classes == null)
+                {
+                    Log.Add(nameof(SetClasses), $"Local CharacterClassManager is null", LogType.Warn);
+                    return;
+                }
+                foreach (Role role in ReferenceHub.LocalHub.characterClassManager.Classes)
+                    Classes.Add(role.roleId, Build(role.roleId, ReferenceHub.LocalHub.characterClassManager));
+                ClassesSet = true;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(SetClasses), e);
+            }
         }
 
-        public static Class Get(RoleType role) => Classes[role];
+        public static void SetClasses(CharacterClassManager ccm)
+        {
+            try
+            {
+                if (ClassesSet)
+                    return;
+                if (Classes == null)
+                    Classes = new Dictionary<RoleType, Class>();
+                if (ccm == null)
+                    return;
+                if (ccm.Classes == null)
+                    return;
+                foreach (Role role in ccm.Classes)
+                    Classes.Add(role.roleId, Build(role.roleId, ccm));
+                ClassesSet = true;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(SetClasses), e);
+            }
+        }
+
+        public static Class Get(RoleType role)
+        {
+            if (Classes == null || !ClassesSet || Classes.Count < 1)
+                SetClasses();
+            return Classes[role];
+        }
         public static Class Get(Role role) => Get(role.roleId);
 
-        public static Class Build(RoleType type)
+        public static Class Build(RoleType type, CharacterClassManager ccm)
         {
-            Role role = CharacterClassManager._staticClasses.SafeGet(type);
-            return new Class(role.roleId, role.fullName, role.description, role.team, role.banClass, role.abilities, role.startItems, role.ammoTypes, role.maxAmmo, role.maxHP, role.bloodType, role.classColor, role.classRecoil, role.forcedCrosshair, role.jumpSpeed, role.runSpeed, role.walkSpeed, role.iconHeightOffset, role.useHeadBob, role.model_offset, role.ragdoll_offset, role.model_player, role.model_ragdoll, role.postprocessingProfile, role.profileSprite, role.stepClips);
+            Role role = ccm.Classes[(int)type];
+            return new Class(role.roleId, role, role.fullName, role.description, role.team, role.banClass, role.abilities, role.startItems, role.ammoTypes, role.maxAmmo, role.maxHP, role.bloodType, role.classColor, role.classRecoil, role.forcedCrosshair, role.jumpSpeed, role.runSpeed, role.walkSpeed, role.iconHeightOffset, role.useHeadBob, role.model_offset, role.ragdoll_offset, role.model_player, role.model_ragdoll, role.postprocessingProfile, role.profileSprite, role.stepClips);
         }
 
         public static RoundSummary.SumInfo_ClassList BuildSumInfo()
@@ -80,9 +120,9 @@ namespace Vigilance.API
         public AudioClip[] StepClips { get; set; }
         public Role Role => _role;
 
-        public Class(RoleType id, string name, string description, Team team, bool ban, List<Ability> abilities, ItemType[] startingItems, uint[] ammoTypes, uint[] ammo, int maxHp, int bloodType, Color color, float recoil, int crosshair, float jumpSpeed, float runSpeed, float walkSpeed, float iconHeight, bool useHeadbob, Offset modelOffset, Offset ragdollOffset, GameObject playerModel, GameObject ragdollModel, PostProcessingProfile ppp, Sprite sprite, AudioClip[] clips)
+        public Class(RoleType id, Role role, string name, string description, Team team, bool ban, List<Ability> abilities, ItemType[] startingItems, uint[] ammoTypes, uint[] ammo, int maxHp, int bloodType, Color color, float recoil, int crosshair, float jumpSpeed, float runSpeed, float walkSpeed, float iconHeight, bool useHeadbob, Offset modelOffset, Offset ragdollOffset, GameObject playerModel, GameObject ragdollModel, PostProcessingProfile ppp, Sprite sprite, AudioClip[] clips)
         {
-            _role = CharacterClassManager._staticClasses.SafeGet(id);
+            _role = role;
             Name = name;
             Description = description;
             RoleId = id;
@@ -291,30 +331,17 @@ namespace Vigilance.API
         {
             try
             {
-                Role[] current = CharacterClassManager._staticClasses;
-                List<Role> list = new List<Role>();
-                for (int i = 0; i < current.Length; i++)
+                for (int i = 0; i < CharacterClassManager._staticClasses.Length; i++)
                 {
-                    Role role = current[i];
-                    if (role.roleId == RoleId)
+                    if (CharacterClassManager._staticClasses[i].roleId == RoleId)
                     {
-                        list.Add(_role);
+                        CharacterClassManager._staticClasses[i] = _role;
                     }
-                    else
-                    {
-                        list.Add(role);
-                    }
-                }
-                Role[] newRoles = list.ToArray();
-                CharacterClassManager._staticClasses = newRoles;
-                foreach (CharacterClassManager ccm in Object.FindObjectsOfType<CharacterClassManager>())
-                    ccm.Classes = newRoles;
-                ClassHelper.Classes.Remove(RoleId);
-                ClassHelper.Classes.Add(RoleId, this);
+                }             
             }
             catch (System.Exception e)
             {
-                Log.Add("ClassHelper", e);
+                Log.Add(nameof(Replace), e);
             }
         }
 

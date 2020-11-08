@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Configuration;
 using Utf8Json.Formatters;
+using Org.BouncyCastle.Asn1.Pkcs;
 
 namespace Vigilance.Registered
 {
@@ -971,7 +972,7 @@ namespace Vigilance.Registered
     public class CommandList : CommandHandler
     {
 		public string Command => "list";
-		public string Usage => "Missing arguments!\nUsage: list <item/damagetype/durationtype/grenadetype/useridtype/teamtype/team/zonetype/roomtype/weapontype/ammotype/prefab/achievement>";
+		public string Usage => "Missing arguments!\nUsage: list <item/rid/role/damagetype/durationtype/grenadetype/useridtype/teamtype/team/zonetype/roomtype/weapontype/ammotype/prefab/achievement>";
 		public string Aliases => "";
 
         public string Execute(Player sender, string[] args)
@@ -991,6 +992,32 @@ namespace Vigilance.Registered
                 }
 				return s;
             }
+
+			if (args[0].ToLower() == "rid")
+			{
+				foreach (Rid item in Map.RoomIDs)
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({item.name}) {item.id}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "role")
+            {
+				foreach (RoleType item in Environment.GetValues<RoleType>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
 
 			if (args[0].ToLower() == "damagetype")
 			{
@@ -1149,5 +1176,65 @@ namespace Vigilance.Registered
 			}
 			return Usage;
 		}
+    }
+
+    public class CommandTpRoom : CommandHandler
+    {
+		public string Command => "tproom";
+		public string Usage => "Missing arguments!\nUsage: tproom <player/*> <room>";
+		public string Aliases => "tr";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 1)
+				return Usage;
+			Room room = Map.GetRoom(args[1]);
+			Rid rid = Map.GetRoomID(args[1]);
+			if (args[0].ToLower() == "*")
+            {
+				if (room == null)
+                {
+					if (rid != null)
+                    {
+						foreach (Player player in Server.Players)
+                        {
+							player.Teleport(rid);
+                        }
+						return $"Succesfully teleported all players to {rid.id}";
+                    }
+					else
+						return "That room does not exist. Use list <roomtype/rid>.";
+                }
+				else
+                {
+					foreach (Player player in Server.Players)
+                    {
+						player.Teleport(room);
+                    }
+					return $"Succesfully teleported all players to {room.Name}";
+                }
+            }
+			else
+            {
+				Player player = args[0].GetPlayer();
+				if (player == null)
+					return "This player does not exist.";
+				if (room == null)
+				{
+					if (rid != null)
+					{
+						player.Teleport(rid);
+						return $"Succesfully teleported {player.Nick} to {rid.id}";
+					}
+					else
+						return "That room does not exist. Use list <room/rid>.";
+				}
+				else
+				{
+					player.Teleport(room);
+					return $"Succesfully teleported {player.Nick} to {room.Name}";
+				}
+			}
+        }
     }
 }

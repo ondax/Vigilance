@@ -104,6 +104,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Patches\Anticheat\PlayerMovementSync_AntiCheatKillPlayer.cs" />
+    <Compile Include="Patches\Anticheat\PlayerMovementSync_AntiFly.cs" />
     <Compile Include="Patches\Anticheat\PlayerMovementSync_ServerUpdateRealModel.cs" />
     <Compile Include="Patches\CommandProccessing\CommandProcessor_ProcessQuery.cs" />
     <Compile Include="Patches\Events\AlphaWarheadController_CancelDetonation.cs" />
