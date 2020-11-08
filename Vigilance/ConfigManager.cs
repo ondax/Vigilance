@@ -31,6 +31,7 @@ namespace Vigilance
 		public static bool UnlimitedMicroEnergy { get; set; }
 		public static bool EnableGameCommands { get; set; }
 		public static bool EnableCustomCommands { get; set; }
+		public static bool AllowCuffWhileHolding { get; set; }
 
 		public static float Scp173DoorCooldown { get; set; }
 		public static float Scp106PocketEnterDamage { get; set; }
@@ -43,7 +44,6 @@ namespace Vigilance
 		public static int Scp096ShieldPerPlayer { get; set; }
 		public static int Scp096RechargeRate { get; set; }
 		public static bool Scp096PryGates { get; set; }
-		public static bool Scp096AddEnrage { get; set; }
 		public static bool Scp096CanKillOnlyTargets { get; set; }
 		public static bool Scp096CanRegen { get; set; }
 		public static bool Scp096VisionParticles { get; set; }
@@ -68,6 +68,8 @@ namespace Vigilance
 		public static List<string> GuardEnabledModules { get; set; }
 		public static List<string> GameCommandsBlacklist { get; set; }
 		public static List<string> CustomCommandsBlacklist { get; set; }
+		public static List<string> IpWhitelist { get; set; }
+		public static List<string> UserIdWhitelist { get; set; }
 
 		public static string[] CurrentLines { get; set; }
 
@@ -110,6 +112,7 @@ namespace Vigilance
 			EnableCustomCommands = PluginManager.Config.GetBool("enable_custom_commands", true);
 			MakeSureToGiveItems = PluginManager.Config.GetBool("make_sure_to_give_items", true);
 			UnlimitedMicroEnergy = PluginManager.Config.GetBool("unlimited_micro_energy", false);
+			AllowCuffWhileHolding = PluginManager.Config.GetBool("allow_cuff_while_holding", false);
 
 			Scp173DoorCooldown = PluginManager.Config.GetFloat("scp173_door_cooldown", 25f);
 			Scp106PocketEnterDamage = PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f);
@@ -128,7 +131,6 @@ namespace Vigilance
 			Scp096ShieldPerPlayer = PluginManager.Config.GetInt("scp096_shield_per_player", 70);
 			Scp096RechargeRate = PluginManager.Config.GetInt("scp096_shield_recharge_rate", 5);
 			Scp096PryGates = PluginManager.Config.GetBool("scp096_pry_gates", true);
-			Scp096AddEnrage = PluginManager.Config.GetBool("scp096_add_enrage", true);
 			Scp096CanKillOnlyTargets = PluginManager.Config.GetBool("scp096_can_kill_only_targets", false);
 			Scp096CanRegen = PluginManager.Config.GetBool("scp096_can_regen", true);
 			Scp096VisionParticles = PluginManager.Config.GetBool("scp096_vision_particles", true);
@@ -148,6 +150,9 @@ namespace Vigilance
 			Intercom_Ready = PluginManager.Config.GetString("intercom_ready", "READY");
 			Intercom_Restart = PluginManager.Config.GetString("intercom_restarting", "RESTARTING %remaining%");
 			Intercom_Transmit = PluginManager.Config.GetString("intercom_transmitting", "TRANSMITTING...TIME LEFT - %time%");
+
+			IpWhitelist = PluginManager.Config.GetStringList("ip_whitelist");
+			UserIdWhitelist = PluginManager.Config.GetStringList("userid_whitelist");
 		}
 
 		public static bool IsBlacklisted(CommandSender sender, string[] query)
@@ -182,6 +187,8 @@ namespace Vigilance
 			AddConfig("You will need a API key used for checking if a specific IP is a VPN connection or not. Warning! GeForce Now is flagged as a VPN too! You can get your key here! \"https://iphub.info/apiKey/newFree\"", "vpn_api_key", "none");
 			AddConfig("ServerGurd will kick players that didnt buy anything on Steam if this is set to true.", "steam_block_new_accounts", "false");
 			AddConfig("ServerGuard will kick non-setup Steam accounts if this is set to true.", "steam_block_non_setup_accounts", "false");
+			AddConfig("List of whitelisted IP adresses.", "ip_whitelist", "[]");
+			AddConfig("List of whitelisted UserIDs", "userid_whitelist", "[]");
 		
 			AddConfig("Whether or not should AntiFly kick or kill players for \"cheating\".", "antifly_enabled", "true");
 			AddConfig("Whether or not should AntiCheat teleport players back for \"cheating\".", "anticheat_enabled", "true");
@@ -200,6 +207,7 @@ namespace Vigilance
 			AddConfig("Should fix the issue with missing items", "make_sure_to_give_items", "false");
 			AddConfig("If the energy of MicroHID is infinite or not.", "unlimited_micro_energy", "false");
 			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
+			AddConfig("Should players be able to handcuff players that are holding an item in hand?", "allow_cuff_while_holding", "false");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 			AddConfig("The distance SCP-049 can attack from", "scp049_attack_distance", "2.4");
@@ -216,7 +224,6 @@ namespace Vigilance
 			AddConfig("How much AHP does SCP-096 gain for every player that looks at it.", "scp096_shield_per_player", "70");
 			AddConfig("Recharge rate of AHP of SCP-096.", "scp096_shield_recharge_rate", "5");
 			AddConfig("Whether or not SCP-096 should be able to pry gates.", "scp096_pry_gates", "true");
-			AddConfig("Whether or not SCP-096 should stay enraged for longer when someone looks at it.", "scp096_add_enrage", "true");
 			AddConfig("Whether or not SCP-096 should be able to kill players that didn't look at it.", "scp096_can_kill_only_targets", "false");
 			AddConfig("Whether or not SCP-096 should be able to regenerate AHP.", "scp096_can_regen", "true");
 			AddConfig("Whether or not SCP-096 should be able to see a red particle on every target.", "scp096_vision_particles", "true");

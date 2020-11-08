@@ -241,7 +241,7 @@ namespace Vigilance.Extensions
 				return new Player(ReferenceHub.LocalHub);
 			if (sender.Nickname == "Sitrep")
 				return new Player(ReferenceHub.LocalHub);
-			foreach (Player player in Server.PlayerList.PlayersDict.Values)
+			foreach (Player player in Server.PlayerList.Players.Values)
 			{
 				if (player.UserId == sender.SenderId)
 					return player;

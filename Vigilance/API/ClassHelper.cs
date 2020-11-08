@@ -8,6 +8,7 @@ namespace Vigilance.API
 {
     public static class ClassHelper
     {
+        public static List<GameObject> SpawnedDummies = new List<GameObject>();
         public static Dictionary<RoleType, Class> Classes { get; set; }
         public static bool ClassesSet { get; set; }
 
@@ -31,7 +32,7 @@ namespace Vigilance.API
             return new Class(role.roleId, role.fullName, role.description, role.team, role.banClass, role.abilities, role.startItems, role.ammoTypes, role.maxAmmo, role.maxHP, role.bloodType, role.classColor, role.classRecoil, role.forcedCrosshair, role.jumpSpeed, role.runSpeed, role.walkSpeed, role.iconHeightOffset, role.useHeadBob, role.model_offset, role.ragdoll_offset, role.model_player, role.model_ragdoll, role.postprocessingProfile, role.profileSprite, role.stepClips);
         }
 
-        public static RoundSummary.SumInfo_ClassList Build()
+        public static RoundSummary.SumInfo_ClassList BuildSumInfo()
         {
             RoundSummary.SumInfo_ClassList classList = new RoundSummary.SumInfo_ClassList()
             {

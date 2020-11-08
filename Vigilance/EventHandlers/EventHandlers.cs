@@ -381,4 +381,19 @@ namespace Vigilance.EventHandlers
     {
         void OnSpawnItem(SpawnItemEvent ev);
     }
+
+    public interface Scp914UpgradeItemHandler : EventHandler
+    {
+        void OnScp914UpgradeItem(Scp914UpgradeItemEvent ev);
+    }
+
+    public interface Scp914UpgradePlayerHandler : EventHandler
+    {
+        void OnScp914UpgradePlayer(Scp914UpgradePlayerEvent ev);
+    }
+
+    public interface Scp914UpgradeHeldItemHandler : EventHandler
+    {
+        void OnScp914UpgradeHeldItem(Scp914UpgradeHeldItemEvent ev);
+    }
 }

@@ -89,12 +89,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\Commands.cs" />
+    <Compile Include="API\Ghostmode.cs" />
     <Compile Include="API\Map.cs" />
     <Compile Include="API\Player.cs" />
     <Compile Include="API\Room.cs" />
     <Compile Include="API\Round.cs" />
     <Compile Include="API\Server.cs" />
-    <Compile Include="API\WeaponInfo.cs" />
     <Compile Include="CommandManager.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Environment.cs" />
@@ -103,12 +103,93 @@
     <Compile Include="Events\Events.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="Patches\Anticheat.cs" />
-    <Compile Include="Patches\Features.cs" />
-    <Compile Include="Patches\Fixes.cs" />
-    <Compile Include="Patches\Ghostmode.cs" />
-    <Compile Include="Patches\Patches.cs" />
-    <Compile Include="Patches\ProcessQuery.cs" />
+    <Compile Include="Patches\Anticheat\PlayerMovementSync_AntiCheatKillPlayer.cs" />
+    <Compile Include="Patches\Anticheat\PlayerMovementSync_ServerUpdateRealModel.cs" />
+    <Compile Include="Patches\CommandProccessing\CommandProcessor_ProcessQuery.cs" />
+    <Compile Include="Patches\Events\AlphaWarheadController_CancelDetonation.cs" />
+    <Compile Include="Patches\Events\AlphaWarheadController_Detonate.cs" />
+    <Compile Include="Patches\Events\AnimationController_CallCmdSyncData.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_ApplyProperties.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_CallCmdRegisterEscape.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_CmdStartRound.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_SetPlayersClass.cs" />
+    <Compile Include="Patches\Events\CheaterReport_CallCmdReport.cs" />
+    <Compile Include="Patches\Events\ConsumableAndWearableItems_CallCmdCancelMedicalItem.cs" />
+    <Compile Include="Patches\Events\ConsumableAndWearableItems_CallCmdUseMedicalItem.cs" />
+    <Compile Include="Patches\Events\Generator079_Interact.cs" />
+    <Compile Include="Patches\Events\GrenadeManager_CallCmdThrowGrenade.cs" />
+    <Compile Include="Patches\Events\Handcuffs_CallCmdCuffTarget.cs" />
+    <Compile Include="Patches\Events\Handcuffs_CallCmdFreeTeammate.cs" />
+    <Compile Include="Patches\Events\Handcuffs_ClearTarget.cs" />
+    <Compile Include="Patches\Events\Intercom_CallCmdSetTransmit.cs" />
+    <Compile Include="Patches\Events\Inventory_CallCmdDropItem.cs" />
+    <Compile Include="Patches\Events\ItemSearchCompletor_Complete.cs" />
+    <Compile Include="Patches\Events\NicknameSync_SetNick.cs" />
+    <Compile Include="Patches\Events\NineTailedFoxNamingRule_PlayEntranceAnnouncement.cs" />
+    <Compile Include="Patches\Events\NineTailedFoxAnnouncer_AnnounceScpTermination.cs" />
+    <Compile Include="Patches\Events\BanPlayer_BanUser.cs" />
+    <Compile Include="Patches\Events\Generator079_CheckFinish.cs" />
+    <Compile Include="Patches\Events\DecontaminationController_FinishDecontamination.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_RpcPlaceBlood.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdChange914Knob.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdContain106.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdDetonateWarhead.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdOpenDoor.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdUse914.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_OnInteract.cs" />
+    <Compile Include="Patches\Events\PlayerStats_Roundrestart.cs" />
+    <Compile Include="Patches\Events\PocketDimensionTeleport_OnTriggerEnter.cs" />
+    <Compile Include="Patches\Events\RagdollManager_SpawnRagdoll.cs" />
+    <Compile Include="Patches\Events\ReferenceHub_OnDestroy.cs" />
+    <Compile Include="Patches\Events\RespawnManager_Spawn.cs" />
+    <Compile Include="Patches\Events\RoundSummary_Start.cs" />
+    <Compile Include="Patches\Events\Scp049_BodyCmd_ByteAndGameObject.cs" />
+    <Compile Include="Patches\Events\Scp079PlayerScript_CallCmdInteract.cs" />
+    <Compile Include="Patches\Events\Scp079PlayerScript_CallRpcGainExp.cs" />
+    <Compile Include="Patches\Events\Scp079PlayerScript_TargetLevelChanged.cs" />
+    <Compile Include="Patches\Events\Scp096_AddTarget.cs" />
+    <Compile Include="Patches\Events\Scp096_Enrage.cs" />
+    <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdMakePortal.cs" />
+    <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdMovePlayer.cs" />
+    <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdUsePortal.cs" />
+    <Compile Include="Patches\Events\Scp914Machine_ProcessItems.cs" />
+    <Compile Include="Patches\Events\Scp914Machine_UpgradeHeldItem.cs" />
+    <Compile Include="Patches\Events\Scp914Machine_UpgradeItemID.cs" />
+    <Compile Include="Patches\Events\Scp914Machine_UpgradePlayer.cs" />
+    <Compile Include="Patches\Events\ServerConsole_AddLog.cs" />
+    <Compile Include="Patches\Events\TeslaGate_PlayerInRange.cs" />
+    <Compile Include="Patches\Events\WeaponManager_CallCmdReload.cs" />
+    <Compile Include="Patches\Events\WeaponManager_CallCmdShoot.cs" />
+    <Compile Include="Patches\Events\WeaponManager_RpcPlaceDecal.cs" />
+    <Compile Include="Patches\Events\PlayerStats_HurtPlayer.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_AllowContain.cs" />
+    <Compile Include="Patches\Events\ServerRoles_SetGroup.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdSwitchAWButton.cs" />
+    <Compile Include="Patches\Features\Scp049_OnEnable.cs" />
+    <Compile Include="Patches\Features\DissonanceUserSetup_CallCmdAltIsActive.cs" />
+    <Compile Include="Patches\Features\Intercom_Start.cs" />
+    <Compile Include="Patches\Features\Intercom_UpdateText.cs" />
+    <Compile Include="Patches\Features\Lift_UseLift.cs" />
+    <Compile Include="Patches\Features\MicroHID_UpdateServerside.cs" />
+    <Compile Include="Patches\Features\Radio_UseBattery.cs" />
+    <Compile Include="Patches\Features\Scp096Target_Start.cs" />
+    <Compile Include="Patches\Features\Scp096_ChargeDoor.cs" />
+    <Compile Include="Patches\Features\Scp096_ChargePlayer.cs" />
+    <Compile Include="Patches\Features\Scp096_get_MaxShield.cs" />
+    <Compile Include="Patches\Features\Scp096_OnEnable.cs" />
+    <Compile Include="Patches\Features\Scp096_ParseVisionInformation.cs" />
+    <Compile Include="Patches\Features\Scp096_PryGate.cs" />
+    <Compile Include="Patches\Features\Scp096_SetupShield.cs" />
+    <Compile Include="Patches\Features\Scp096Target_set_IsTarget.cs" />
+    <Compile Include="Patches\Features\Scp137PlayerScript_FixedUpdate.cs" />
+    <Compile Include="Patches\Features\Scp939PlayerScript_CallCmdShoot.cs" />
+    <Compile Include="Patches\Features\ServerConsole_ReloadServerName.cs" />
+    <Compile Include="Patches\Features\Stamina_ProcessStamina.cs" />
+    <Compile Include="Patches\Features\WeaponManager_GetShootPermission.cs" />
+    <Compile Include="Patches\Fixes\CharacterClassManager_set_NetworkCurClass.cs" />
+    <Compile Include="Patches\Fixes\CharacterClassManager_Start.cs" />
+    <Compile Include="Patches\Ghostmode\PlayerPositionManager_TransmitData.cs" />
     <Compile Include="Paths.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="PluginManager.cs" />
@@ -120,6 +201,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Patches\Events\Generator079_OpenClose.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Patches\Events\Scp096_EndEnrage.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

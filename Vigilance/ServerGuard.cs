@@ -83,6 +83,7 @@ namespace Vigilance
 
         public static class VPNShield
         {
+
             public static bool IsEnabled => EnabledModules.Contains("vpn");
             public static string APIKey => ConfigManager.VpnApiKey;
 
@@ -93,6 +94,8 @@ namespace Vigilance
                 if (APIKey.IsEmpty() || APIKey.ToLower() == "none")
                     return false;
                 string ipAddress = player.IpAddress.Replace("::ffff:", "");
+                if (ConfigManager.IpWhitelist.Contains(ipAddress))
+                    return false;
                 HttpWebResponse response = null;
                 try
                 {
@@ -112,7 +115,7 @@ namespace Vigilance
                 }
                 catch (Exception e)
                 {
-                    Log.Add("ServerGuard", e);
+                    Log.Add(nameof(ServerGuard.VPNShield.CheckIP), e);
                 }
                 return false;
             }
@@ -130,6 +133,8 @@ namespace Vigilance
                 if (!IsEnabled)
                     return false;
                 if (!player.UserId.Contains("@steam") || !player.UserIdType.IsSteam() | player.UserIdType != UserIdType.Steam)
+                    return false;
+                if (ConfigManager.UserIdWhitelist.Contains(player.UserId))
                     return false;
                 ServicePointManager.ServerCertificateValidationCallback = SSLValidation;
                 HttpWebResponse response = null;
@@ -150,7 +155,7 @@ namespace Vigilance
                         }
                         else
                         {
-                            Log.Add("ServerGuard", $"Failed while checking Steam profile [{player.Nick} ({player.ParsedUserId})]", LogType.Warn);
+                            Log.Add(nameof(SteamShield.CheckAccount), $"Failed while checking Steam profile [{player.Nick} ({player.ParsedUserId})]", LogType.Warn);
                             return false;
                         }
                     }
@@ -166,7 +171,7 @@ namespace Vigilance
                 }
                 catch (Exception e)
                 {
-                    Log.Add("ServerGuard", e);
+                    Log.Add(nameof(SteamShield.CheckAccount), e);
                 }
                 return false;
             }

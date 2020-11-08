@@ -7,8 +7,7 @@ using Vigilance.Extensions;
 using Vigilance.Enums;
 using RemoteAdmin;
 using System.Linq;
-using Org.BouncyCastle.Asn1.X509.Qualified;
-using System.CodeDom;
+using Vigilance.Patches.Events;
 
 namespace Vigilance.API
 {
@@ -36,7 +35,6 @@ namespace Vigilance.API
 
         public GameObject GameObject => _hub.gameObject;
         public ReferenceHub Hub => _hub;
-
         public bool PlayerLock { get; set; }
         public bool BypassMode => _hub.serverRoles.BypassMode;
         public bool DoNotTrack => _hub.serverRoles.DoNotTrack;
@@ -49,21 +47,21 @@ namespace Vigilance.API
             get
             {
                 if (_hub == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(UserId))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.nicknameSync == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.serverRoles == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.serverRoles.Group == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.serverRoles.Group.BadgeText.IsEmpty())
-                    return "LocalPlayer";
+                    return "None";
                 return _hub.serverRoles.Group.BadgeText;
             }
             set
@@ -88,12 +86,17 @@ namespace Vigilance.API
                 if (value)
                     Teleport(Map.PocketDimension);
                 else
-                {
-                    System.Random random = new System.Random();
-                    int rnd = random.Next(Map.Rooms.Count);
-                    Vector3 pos = Map.Rooms[rnd].Position;
-                    Teleport(pos);
-                }
+                    Teleport(Map.Rooms[Environment.Random.Next(Map.Rooms.Count)].Type);
+            }
+        }
+
+        public List<Ragdoll> Ragdolls
+        {
+            get
+            {
+                if (!RagdollManager_SpawnRagdoll.Ragdolls.ContainsKey(this))
+                    RagdollManager_SpawnRagdoll.Ragdolls.Add(this, new List<Ragdoll>());
+                return RagdollManager_SpawnRagdoll.Ragdolls[this];
             }
         }
         public PlayerCommandSender PlayerCommandSender => _hub.queryProcessor._sender;
@@ -101,32 +104,6 @@ namespace Vigilance.API
         public bool IsHost => _hub.characterClassManager.IsHost;
         public bool IsDead => Team == TeamType.Spectator || Role == RoleType.None;
         public Camera079 Camera { get => _hub.scp079PlayerScript.currentCamera; set => _hub.scp079PlayerScript.RpcSwitchCamera(value.cameraId, false); }
-        public WeaponInfo CurrentWeapon
-        {
-            get
-            {
-                ItemType cur = _hub.inventory.curItem;
-                if (!cur.IsWeapon())
-                    return null;
-                return new WeaponInfo(this, _hub.inventory.items.Where(i => i.id == cur).FirstOrDefault());
-            }
-        }
-
-        public List<WeaponInfo> AllWeapons
-        {
-            get
-            {
-                List<WeaponInfo> weapons = new List<WeaponInfo>();
-                foreach (Inventory.SyncItemInfo item in _hub.inventory.items)
-                {
-                    if (item.id.IsWeapon())
-                    {
-                        weapons.Add(new WeaponInfo(this, item));
-                    }
-                }
-                return weapons;
-            }
-        }
 
         public int CameraId { get => Camera.cameraId; set => Camera = Map.GetCamera(value); }
         public bool BadgeHidden
@@ -154,25 +131,44 @@ namespace Vigilance.API
             get
             {
                 if (_hub == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(UserId))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.nicknameSync == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 return _hub.nicknameSync.Network_myNickSync;
             }
             set => _hub.nicknameSync.Network_myNickSync = value;
         }
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
         public bool NoClip { get => _hub.characterClassManager.NetworkNoclipEnabled; set => _hub.characterClassManager.NetworkNoclipEnabled = value; }
-        public Vector3 Position { get => _hub.playerMovementSync.GetRealPosition(); set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
+        public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
         public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; set => _hub.characterClassManager.AuthTokenSerial = value; }
-        public string UserId { get => _hub.characterClassManager.UserId; set => _hub.characterClassManager.UserId = value; }
+        public string UserId
+        {
+            get
+            {
+                if (_hub == null)
+                    return "Dedicated Server";
+                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
+                    return "Dedicated Server";
+                if (string.IsNullOrEmpty(UserId))
+                    return "Dedicated Server";
+                if (_hub.nicknameSync == null)
+                    return "Dedicated Server";
+                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
+                    return "Dedicated Server";
+                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
+                    return "Dedicated Server";
+                return _hub.characterClassManager.UserId;
+            }
+            set => _hub.characterClassManager.UserId = value;
+        }
         public string CustomUserId { get => _hub.characterClassManager.UserId2; set => _hub.characterClassManager.UserId2 = value; }
         public string NtfUnit { get => _hub.characterClassManager.NetworkCurUnitName; set => _hub.characterClassManager.NetworkCurUnitName = value; }
         public NetworkConnection Connection => _hub.scp079PlayerScript.connectionToClient;
@@ -199,17 +195,17 @@ namespace Vigilance.API
             get
             {
                 if (_hub == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(UserId))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (_hub.nicknameSync == null)
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
-                    return "LocalPlayer";
+                    return "Dedicated Server";
                 return UserId.Substring(0, UserId.LastIndexOf('@'));
             }
         }
@@ -294,7 +290,8 @@ namespace Vigilance.API
         public void ClearBroadcasts() => Server.Host.GetComponent<Broadcast>().TargetClearElements(Connection);
         public void ConsoleMessage(string message, string color = "green") => _hub.characterClassManager.TargetConsolePrint(Connection, message, color);
         public void RemoteAdminMessage(string message) => _hub.queryProcessor._sender.SendRemoteAdminMessage(message);
-        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "Server", DamageTypes.None, 0), this.GameObject);
+        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "WORLD", DamageTypes.None, 0), this.GameObject);
+        public void Damage(int amount, DamageTypes.DamageType type) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "WORLD", type, 0), GameObject, false);
         public void Kill() => Damage(100000);
         public void Teleport(Vector3 pos) => _hub.playerMovementSync.OverridePosition(pos, _hub.PlayerCameraReference.rotation.y);
         public void Teleport(RoomType room) => Teleport(Map.GetRoom(room).Position);
@@ -303,10 +300,21 @@ namespace Vigilance.API
         public void RemoveHeldItem() => _hub.inventory.items.Remove(_hub.inventory.GetItemInHand());
         public void RemoveItem(Inventory.SyncItemInfo item) => _hub.inventory.items.Remove(item);
         public void ClearInventory() => _hub.inventory.Clear();
-        public void AddItem(ItemType item) => _hub.inventory.AddNewItem(item);
+        public void AddItem(ItemType item)
+        {
+            if (_hub.inventory.items.Count == 8)
+            {
+                Map.SpawnItem(item, Position, RotationQuaternion);
+            }
+            else
+                _hub.inventory.AddNewItem(item);
+        }
         public void ResetInventory(List<Inventory.SyncItemInfo> newItems) => ResetInventory(newItems.Select(item => item.id).ToList());
         public void DropAllItems() => Hub.inventory.ServerDropAll();
         public int GetAmmo(AmmoType ammoType) => (int)_hub.ammoBox[(int)ammoType];
+        public T GetComponent<T>() where T : Component => _hub.gameObject.GetComponent<T>();
+        public T AddComponent<T>() where T : Component => _hub.gameObject.AddComponent<T>();
+        public bool HasItem(ItemType item) => _hub.inventory.items.Select(h => h.id).Contains(item);
 
         public void ShowHint(string message, float duration = 10f)
         {
@@ -398,14 +406,56 @@ namespace Vigilance.API
                 _hub.playerStats.TargetStats(Connection, "dboys_killed", "justresources", 50);
                 return;
             }
-            _hub.playerStats.TargetAchieve(Connection, achievement.ToString().ToLower());
+            PlayerManager.localPlayer.GetComponent<PlayerStats>().TargetAchieve(Connection, achievement.ToString().ToLower());
         }
 
-        public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : CustomPlayerEffects.PlayerEffect
+        public void CreatePortal(Player target = null)
         {
-            _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
+            if (target == null)
+            {
+                _hub.scp106PlayerScript.CallCmdMakePortal();
+            }
+            else
+            {
+                Scp106PlayerScript script = _hub.scp106PlayerScript;
+                Transform transform = target.GameObject.transform;
+                Debug.DrawRay(transform.position, -transform.up, Color.red, 10f);
+                RaycastHit raycastHit;
+                if (script.iAm106 && !script.goingViaThePortal && Physics.Raycast(new Ray(script.transform.position, -script.transform.up), out raycastHit, 10f, script.teleportPlacementMask))
+                {
+                    Vector3 pos = raycastHit.point - Vector3.up;
+                        script.SetPortalPosition(pos);
+                }
+            }
         }
 
+        public void CreatePortal(Vector3 pos)
+        {
+            if (pos == Vector3.zero)
+            {
+                _hub.scp106PlayerScript.CallCmdMakePortal();
+            }
+            else
+            {
+                Scp106PlayerScript script = _hub.scp106PlayerScript;
+                Debug.DrawRay(pos, -Vector3.up, Color.red, 10f);
+                RaycastHit raycastHit;
+                if (script.iAm106 && !script.goingViaThePortal && Physics.Raycast(new Ray(script.transform.position, -script.transform.up), out raycastHit, 10f, script.teleportPlacementMask))
+                {
+                    Vector3 position = raycastHit.point - Vector3.up;
+                    script.SetPortalPosition(position);
+                }
+            }
+        }
+
+        public void UsePortal()
+        {
+            if (Role != RoleType.Scp106)
+                return;
+            _hub.scp106PlayerScript.CallCmdUsePortal();
+        }
+
+        public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : CustomPlayerEffects.PlayerEffect => _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
         public void DisableEffect<T>() where T : CustomPlayerEffects.PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();
 
         public void Rocket(float speed) => Timing.RunCoroutine(DoRocket(this, speed));

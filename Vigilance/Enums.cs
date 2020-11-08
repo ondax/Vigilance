@@ -191,9 +191,7 @@
 	public enum RoundState
     {
 		WaitingForPlayers,
-		JustStarted,
 		Started,
-		JustEnded,
 		Ended,
 		ShowingSummary,
 		Restarting,

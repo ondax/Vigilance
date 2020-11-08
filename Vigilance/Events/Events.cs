@@ -9,6 +9,7 @@ using Scp914;
 using System.Collections.Generic;
 using PlayableScps;
 using Respawning;
+using System.Linq;
 
 namespace Vigilance.Events
 {
@@ -741,12 +742,14 @@ namespace Vigilance.Events
         public Player Player { get; }
         public bool Hurt { get; set; }
         public bool Allow { get; set; }
+        public float Damage { get; set; }
 
-        public PocketEnterEvent(Player ply, bool damage, bool allow)
+        public PocketEnterEvent(Player ply, bool damage, float dmg, bool allow)
         {
             Player = ply;
             Hurt = damage;
             Allow = allow;
+            Damage = dmg;
         }
 
         public override void Execute(EventHandler handler)
@@ -1122,7 +1125,7 @@ namespace Vigilance.Events
 
         public TeamRespawnEvent(List<GameObject> plys, SpawnableTeamType team, bool allow)
         {
-            Players = plys?.GetPlayers();
+            Players = plys.Select(h => Server.PlayerList.GetPlayer(h)).ToList();
             Team = team;
             Allow = allow;
         }
@@ -1287,11 +1290,13 @@ namespace Vigilance.Events
     public class SCP079GainLvlEvent : Event
     {
         public Player Player { get; }
+        public int Level { get; set; }
         public bool Allow { get; set; }
 
-        public SCP079GainLvlEvent(Player ply, bool allow)
+        public SCP079GainLvlEvent(Player ply, int level, bool allow)
         {
             Player = ply;
+            Level = level;
             Allow = allow;
         }
 
@@ -1441,6 +1446,53 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((SpawnItemEventHandler)handler).OnSpawnItem(this);
+        }
+    }
+
+    public class Scp914UpgradeItemEvent : Event
+    {
+        public Pickup Input { get; }
+        public ItemType Output { get; set; }
+
+        public Scp914UpgradeItemEvent(Pickup input)
+        {
+            Input = input;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((Scp914UpgradeItemHandler)handler).OnScp914UpgradeItem(this);
+        }
+    }
+
+    public class Scp914UpgradePlayerEvent : Event
+    {
+        public Player Player { get; set; }
+        public bool Allow { get; set; }
+
+        public Scp914UpgradePlayerEvent(Player player) => Player = player;
+
+        public override void Execute(EventHandler handler)
+        {
+            ((Scp914UpgradePlayerHandler)handler).OnScp914UpgradePlayer(this);
+        }
+    }
+
+    public class Scp914UpgradeHeldItemEvent : Event
+    {
+        public Player Player { get; }
+        public Inventory.SyncItemInfo Input { get; set; }
+        public Inventory.SyncItemInfo Output { get; set; }
+
+        public Scp914UpgradeHeldItemEvent(Player player, Inventory.SyncItemInfo item)
+        {
+            Player = player;
+            Input = item;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((Scp914UpgradeHeldItemHandler)handler).OnScp914UpgradeHeldItem(this);
         }
     }
 }

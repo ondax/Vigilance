@@ -32,7 +32,7 @@ namespace Vigilance.API
             RoundSummary.singleton.ForceEnd();
         }
 
-        public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.Build(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
+        public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.BuildSumInfo(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
         public static void Restart() => Server.Host.GetComponent<PlayerStats>().Roundrestart();
 
         public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)
@@ -54,7 +54,7 @@ namespace Vigilance.API
         public int Scientists => CountRole(RoleType.Scientist);
         public int MTF => CountTeam(TeamType.NineTailedFox);
         public int TotalSCPs => CountTeam(TeamType.SCP);
-        public int TotalSCPsExceptZombies => Server.PlayerList.PlayersDict.Values.Where(h => h.Team == TeamType.SCP && h.Role != RoleType.Scp0492).Count();
+        public int TotalSCPsExceptZombies => Server.PlayerList.Players.Values.Where(h => h.Team == TeamType.SCP && h.Role != RoleType.Scp0492).Count();
         public int Seconds => RoundSummary.roundTime;
         public int Minutes => RoundSummary.roundTime / 60;
         public TimeSpan Time => GameCore.RoundStart.RoundLenght;

@@ -10,154 +10,143 @@ using Object = UnityEngine.Object;
 using RemoteAdmin;
 using MEC;
 using Scp914;
-using scp = Scp914.Scp914Machine;
+using LightContainmentZoneDecontamination;
+using System;
 
 namespace Vigilance.API
 {
 	public static class Map
 	{
-		private static List<Ragdoll> _ragdolls;
-		private static List<FlickerableLight> _lights;
-		private static List<BlastDoor> _blastDoors;
-		private static List<Door> _doors;
-		private static List<Lift> _lifts;
-		private static List<TeslaGate> _gate;
-		private static List<Room> _rooms;
-		private static Vector3 _pd;
+		public static List<Room> _rooms = null;
 
-		public static List<Ragdoll> Ragdolls
-		{
-			get
-			{
-				if (_ragdolls == null)
-					_ragdolls = Object.FindObjectsOfType<Ragdoll>().ToList();
-				return _ragdolls;
-			}
-		}
-		public static List<FlickerableLight> FlickerableLights
-		{
-			get
-			{
-				if (_lights == null)
-					_lights = Object.FindObjectsOfType<FlickerableLight>().ToList();
-				return _lights;
-			}
-		}
+		public static List<Ragdoll> Ragdolls { get; } = FindObjects<Ragdoll>();
+		public static List<FlickerableLight> FlickerableLights { get; } = FindObjects<FlickerableLight>();
+		public static List<FlickerableLightController> LightControllers { get; } = FindObjects<FlickerableLightController>();
+		public static List<BlastDoor> BlastDoors { get; } = FindObjects<BlastDoor>();
+		public static List<Camera079> Cameras { get; } = Scp079PlayerScript.allCameras.ToList();
+		public static List<Door> Doors { get; } = FindObjects<Door>();
+		public static List<Lift> Lifts { get; } = FindObjects<Lift>();
+		public static List<Pickup> Pickups { get; } = FindObjects<Pickup>();
+		public static List<TeslaGate> TeslaGates { get; } = FindObjects<TeslaGate>();
+		public static List<Generator079> Generators => Generator079.Generators;
+		public static List<Lift.Elevator> Elevators => Lifts.FirstOrDefault().elevators.ToList();
+		public static Vector3 PocketDimension { get; } = new Vector3(0f, -1998.5f, 0f);
+		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
+		public static Generator079 MainGenerator => Generator079.mainGenerator;
+		public static RespawnEffectsController RespawnController => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
+		public static RandomSeedSync SeedSync { get; } = Server.Host.GetComponent<RandomSeedSync>();
+		public static GameObject FemurBreaker { get; } = GameObject.FindGameObjectWithTag("FemurBreaker");
+		public static LureSubjectContainer LureSubjectContainer { get; } = Find<LureSubjectContainer>();
+		public static OneOhSixContainer OneOhSixContainer { get; } = Find<OneOhSixContainer>();
+		public static GameObject OutsitePanelScript { get; } = GameObject.Find("OutsitePanelScript");
+		public static AlphaWarheadOutsitePanel OutsitePanel { get; } = OutsitePanelScript.GetComponent<AlphaWarheadOutsitePanel>();
+		public static int MapSeed { get; } = SeedSync.seed;
+		public static bool TeslaGatesDisabled { get; set; }
 
 		public static List<Room> Rooms
-		{
+        {
 			get
-			{
-				if (_rooms == null || _rooms.Count == 0)
+            {
+				try
 				{
-					_rooms = new List<Room>();
-					_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
-					_rooms.Add(new Room("Root_*&*Outside Cams", GameObject.Find("Root_*&*Outside Cams").transform, GameObject.Find("Root_*&*Outside Cams").transform.position));
+					if (_rooms == null)
+					{
+						_rooms = new List<Room>();
+						_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
+						_rooms.Add(new Room("Root_*&*Outside Cams", GameObject.Find("Root_*&*Outside Cams").transform, GameObject.Find("Root_*&*Outside Cams").transform.position));
+					}
+					return _rooms;
 				}
-				return _rooms;
-			}
-		}
-
-		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
-		public static Vector3 PocketDimension
-		{
-			get
-			{
-				if (_pd == null || _pd == Vector3.zero || _pd.y != -1998f)
-					_pd = new Vector3(0f, -1998f, 0f);
-				return _pd;
-			}
-		}
-		public static List<BlastDoor> BlastDoors
-		{
-			get
-			{
-				if (_blastDoors == null)
-					_blastDoors = Object.FindObjectsOfType<BlastDoor>().ToList();
-				return _blastDoors;
-			}
-		}
-		public static List<Camera079> Cameras => Scp079PlayerScript.allCameras.ToList();
-		public static List<Door> Doors
-		{
-			get
-			{
-				if (_doors == null)
-					_doors = Object.FindObjectsOfType<Door>().ToList();
-				return _doors;
-			}
-		}
-		public static List<Lift> Lifts
-		{
-			get
-			{
-				if (_lifts == null)
-					_lifts = Object.FindObjectsOfType<Lift>().ToList();
-				return _lifts;
-			}
-		}
-		public static List<Lift.Elevator> Elevators => Lifts[0].elevators.ToList();
-		public static Generator079 MainGenerator => Generator079.mainGenerator;
-		public static List<Pickup> Pickups => Object.FindObjectsOfType<Pickup>().ToList();
-		public static string Seed => Server.Host.GetComponent<RandomSeedSync>().seed.ToString();
-		public static bool TeslaGatesDisabled { get => Patches.TeslaTriggerPatch.GatesDisabled; set => Patches.TeslaTriggerPatch.GatesDisabled = value; }
-		public static bool CassieDisabled { get => Patches.AnnounceNTFEntrancePatch.CassieDisabled; set => Patches.AnnounceNTFEntrancePatch.CassieDisabled = value; }
-		public static List<TeslaGate> TeslaGates
-		{
-			get
-			{
-				if (_gate == null)
-					_gate = Object.FindObjectsOfType<TeslaGate>().ToList();
-				return _gate;
-			}
-		}
-		public static List<Generator079> Generators => Generator079.Generators;
-		public static RespawnEffectsController Respawn => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
+				catch (Exception e)
+                {
+					Log.Add(nameof(Rooms), e);
+					return new List<Room>();
+                }
+            }
+        }
+	
 
 		public static void Broadcast(string message, int duration)
 		{
-			if (string.IsNullOrEmpty(message) || duration < 1)
-				return;
-			foreach (Player player in Server.PlayerList.PlayersDict.Values)
+			try
 			{
-				player.Broadcast(message, duration);
+				if (string.IsNullOrEmpty(message) || duration < 1)
+					return;
+				foreach (Player player in Server.PlayerList.Players.Values)
+				{
+					player.Broadcast(message, duration);
+				}
 			}
+			catch (Exception e)
+            {
+				Log.Add(nameof(Broadcast), e);
+            }
 		}
 
 		public static void ClearBroadcasts()
 		{
-			foreach (Player player in Server.Players)
+			try
 			{
-				player.ClearBroadcasts();
+				foreach (Player player in Server.PlayerList.Players.Values)
+				{
+					player.ClearBroadcasts();
+				}
 			}
+			catch (Exception e)
+            {
+				Log.Add(nameof(ClearBroadcasts), e);
+            }
 		}
 
 		public static void ShowHint(string message, int duration)
         {
-			if (string.IsNullOrEmpty(message) || duration < 1)
-				return;
-			foreach (Player player in Server.PlayerList.PlayersDict.Values)
-				player.ShowHint(message, duration);
+			try
+			{
+				if (string.IsNullOrEmpty(message) || duration < 1)
+					return;
+				foreach (Player player in Server.PlayerList.Players.Values)
+					player.ShowHint(message, duration);
+			}
+			catch (Exception e)
+            {
+				Log.Add(nameof(ShowHint), e);
+            }
         }
 
 		public static Room GetRoom(RoomType roomType)
 		{
-			foreach (Room room in Rooms)
+			try
 			{
-				if (room.Type == roomType)
-					return room;
+				foreach (Room room in Rooms)
+				{
+					if (room.Type == roomType)
+						return room;
+				}
+				return null;
 			}
-			return null;
+			catch (Exception e)
+			{
+				Log.Add(nameof(GetRoom), e);
+				return null;
+            }
 		}
 
 		public static Room GetRoom(string name)
 		{
-			foreach (Room room in Rooms)
+			try
 			{
-				if (room.Name.ToLower() == name.ToLower() || room.Name.ToLower().Contains(name.ToLower()))
-					return room;
+				foreach (Room room in Rooms)
+				{
+					if (room.Name.ToLower() == name.ToLower() || room.Name.ToLower().Contains(name.ToLower()))
+						return room;
+				}
+				return null;
 			}
-			return null;
+			catch (Exception e)
+            {
+				Log.Add(nameof(GetRoom), e);
+				return null;
+            }
 		}
 
 		public static Camera079 GetCamera(int cameraId)
@@ -172,14 +161,12 @@ namespace Vigilance.API
 
 		public static void Announce(string message, bool makeHold = false, bool makeNoise = false)
 		{
-			if (Patches.AnnounceNTFEntrancePatch.CassieDisabled || string.IsNullOrEmpty(message))
-				return;
 			RespawnEffectsController.PlayCassieAnnouncement(message, makeHold, makeNoise);
 		}
 
 		public static void PlayEffect(RespawnEffectType effectType)
 		{
-			Respawn.RpcPlayEffects(new byte[] { (byte)effectType });
+			RespawnController.RpcPlayEffects(new byte[] { (byte)effectType });
 		}
 
 		public static void SummonChopper()
@@ -198,51 +185,77 @@ namespace Vigilance.API
 			PlayEffect(RespawnEffectType.SummonChaosInsurgencyVan);
 		}
 
+		public static T Find<T>() where T : Component
+        {
+			return Object.FindObjectOfType<T>();
+        }
+
+		public static List<T> FindObjects<T>() where T : Component
+        {
+			return Object.FindObjectsOfType<T>().ToList();
+        }
+
 		public static Vector3 GetRandomSpawnpoint(RoleType role) => Server.Host.GetComponent<SpawnpointManager>().GetRandomPosition(role).transform.position;
 		public static void TurnOffLights(float time = 9999f, bool onlyHeavy = false) => Generators[0].ServerOvercharge(time, onlyHeavy);
 		public static Pickup SpawnItem(ItemType itemType, Vector3 position, Quaternion rotation = default, int sight = 0, int barrel = 0, int other = 0) => Server.LocalHub.inventory.SetPickup(itemType, -4.6566467E+11f, position, rotation, sight, barrel, other);
 
 		public static Grenade SpawnGrenade(Player player, GrenadeType grenadeType)
 		{
-			if (grenadeType == GrenadeType.FragGrenade)
+			try
 			{
-				GrenadeManager grenadeManager = player.GameObject.GetComponent<GrenadeManager>();
-				Grenade component = Object.Instantiate<GameObject>(grenadeManager.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFrag).grenadeInstance).GetComponent<Grenade>();
-				component.InitData(grenadeManager, Vector3.zero, Vector3.zero, 0f);
-				NetworkServer.Spawn(component.gameObject);
-				return component;
-			}
+				if (grenadeType == GrenadeType.FragGrenade)
+				{
+					GrenadeManager grenadeManager = player.GameObject.GetComponent<GrenadeManager>();
+					Grenade component = Object.Instantiate<GameObject>(grenadeManager.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFrag).grenadeInstance).GetComponent<Grenade>();
+					component.InitData(grenadeManager, Vector3.zero, Vector3.zero, 0f);
+					NetworkServer.Spawn(component.gameObject);
+					return component;
+				}
 
-			if (grenadeType == GrenadeType.FlashGrenade)
-			{
-				GrenadeManager grenadeManager2 = player.GameObject.GetComponent<GrenadeManager>();
-				Grenade component2 = Object.Instantiate<GameObject>(grenadeManager2.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFlash).grenadeInstance).GetComponent<Grenade>();
-				component2.InitData(grenadeManager2, Vector3.zero, Vector3.zero, 0f);
-				NetworkServer.Spawn(component2.gameObject);
-				return component2;
-			}
+				if (grenadeType == GrenadeType.FlashGrenade)
+				{
+					GrenadeManager grenadeManager2 = player.GameObject.GetComponent<GrenadeManager>();
+					Grenade component2 = Object.Instantiate<GameObject>(grenadeManager2.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFlash).grenadeInstance).GetComponent<Grenade>();
+					component2.InitData(grenadeManager2, Vector3.zero, Vector3.zero, 0f);
+					NetworkServer.Spawn(component2.gameObject);
+					return component2;
+				}
 
-			GrenadeManager grenadeManager3 = player.GameObject.GetComponent<GrenadeManager>();
-			Grenade component3 = Object.Instantiate<GameObject>(grenadeManager3.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.SCP018).grenadeInstance).GetComponent<Grenade>();
-			component3.InitData(grenadeManager3, Vector3.zero, Vector3.zero, 0f);
-			NetworkServer.Spawn(component3.gameObject);
-			return component3;
+				GrenadeManager grenadeManager3 = player.GameObject.GetComponent<GrenadeManager>();
+				Grenade component3 = Object.Instantiate<GameObject>(grenadeManager3.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.SCP018).grenadeInstance).GetComponent<Grenade>();
+				component3.InitData(grenadeManager3, Vector3.zero, Vector3.zero, 0f);
+				NetworkServer.Spawn(component3.gameObject);
+				return component3;
+			}
+			catch (Exception e)
+            {
+				Log.Add(nameof(SpawnGrenade), e);
+				return null;
+            }
 		}
 
 		public static GameObject SpawnDummyModel(Vector3 position, Quaternion rotation, RoleType role, float x, float y, float z)
 		{
-			GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
-			CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
-			ccm.CurClass = role;
-			ccm.RefreshModel(role);
-			obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
-			obj.GetComponent<QueryProcessor>().PlayerId = 9999;
-			obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
-			obj.transform.localScale = new Vector3(x, y, z);
-			obj.transform.position = position;
-			obj.transform.rotation = rotation;
-			NetworkServer.Spawn(obj);
-			return obj;
+			try
+			{
+				GameObject obj = Object.Instantiate(NetworkManager.singleton.spawnPrefabs.FirstOrDefault(p => p.gameObject.name == "Player"));
+				CharacterClassManager ccm = obj.GetComponent<CharacterClassManager>();
+				ccm.CurClass = role;
+				ccm.RefreshModel(role);
+				obj.GetComponent<NicknameSync>().Network_myNickSync = "Dummy";
+				obj.GetComponent<QueryProcessor>().PlayerId = 9999;
+				obj.GetComponent<QueryProcessor>().NetworkPlayerId = 9999;
+				obj.transform.localScale = new Vector3(x, y, z);
+				obj.transform.position = position;
+				obj.transform.rotation = rotation;
+				NetworkServer.Spawn(obj);
+				return obj;
+			}
+			catch (Exception e)
+            {
+				Log.Add(nameof(SpawnDummyModel), e);
+				return null;
+            }
 		}
 
 		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player, role, count));
@@ -277,7 +290,7 @@ namespace Vigilance.API
 
 		public static class Scp914
 		{
-			public static scp Singleton => scp.singleton;
+			public static Scp914Machine Singleton => Scp914Machine.singleton;
 			public static List<Player> Players => Singleton.players.GetPlayers();
 			public static List<Pickup> Items => Singleton.items;
 			public static Vector3 Position => Singleton.transform.position;
@@ -299,14 +312,14 @@ namespace Vigilance.API
 			public static int SpeechTime { get => (int)global::Intercom.host._speechTime; set => global::Intercom.host._speechTime = value; }
 			public static Player Speaker { get => global::Intercom.host.speaker.GetPlayer(); set => SetSpeaker(value); }
 			public static string Text { get => global::Intercom.host.Network_intercomText; set => global::Intercom.host.CustomContent = value; }
-			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone").transform;
+			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone")?.transform;
 
 			public static void Timeout() => global::Intercom.host.speechRemainingTime = -1f;
 			public static void ResetCooldown() => global::Intercom.host.remainingCooldown = -1f;
 
 			public static void SetSpeaker(Player player)
             {
-				if (player.GameObject == null || player == null)
+				if (player == null || player.GameObject == null)
 					return;
 				global::Intercom.host.RequestTransmission(player.GameObject);
             }
@@ -318,22 +331,37 @@ namespace Vigilance.API
 				global::Intercom.host.CustomContent = txt;
 				global::Intercom.host.UpdateText();
             }
+
+			public static void SetContent(global::Intercom singleton, global::Intercom.State state, string content)
+			{
+				if (state == global::Intercom.State.Restarting)
+					content = content.Replace("%remaining%", Mathf.CeilToInt(singleton.remainingCooldown).ToString());
+				else
+					content = content.Replace("%time%", Mathf.CeilToInt(singleton.speechRemainingTime).ToString());
+				if (!string.IsNullOrEmpty(content))
+				{
+					singleton.Network_intercomText = content;
+					singleton.Network_state = global::Intercom.State.Custom;
+				}
+				else
+				{
+					singleton.Network_state = state;
+				}
+			}
 		}
 
 		public static class Decontamination
 		{
-			public static bool HasBegun => LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun;
-			public static bool IsDecontaminated => LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating;
-			public static AudioSource AudioSource => LightContainmentZoneDecontamination.DecontaminationController.Singleton.AnnouncementAudioSource;
-			public static double RoundStartTime => LightContainmentZoneDecontamination.DecontaminationController.Singleton.NetworkRoundStartTime;
-			public static bool IsDisabled { get => Patches.DecontaminationPatch.DecontDisabled; set => Patches.DecontaminationPatch.DecontDisabled = value; }
+			public static DecontaminationController Controller { get; } = DecontaminationController.Singleton;
+			public static bool HasBegun => Controller._decontaminationBegun;
+			public static bool IsDecontaminated => Controller._stopUpdating;
+			public static AudioSource AudioSource => Controller.AnnouncementAudioSource;
+			public static double RoundStartTime => Controller.NetworkRoundStartTime;
+			public static bool IsDisabled { get => Controller.disableDecontamination; set => Controller.disableDecontamination = value; }
 
 			public static void Decontaminate()
             {
-				LightContainmentZoneDecontamination.DecontaminationController.KillPlayers();
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton.FinishDecontamination();
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton._decontaminationBegun = true;
-				LightContainmentZoneDecontamination.DecontaminationController.Singleton._stopUpdating = true;
+				Controller.FinishDecontamination();
 			}
 		}
 	}

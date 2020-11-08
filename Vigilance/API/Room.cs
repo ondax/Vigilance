@@ -29,9 +29,7 @@ namespace Vigilance.API
 
         public void TurnOffLights(float duration)
         {
-            if (LightController == null)
-                return;
-            LightController.ServerFlickerLights(duration);
+            LightController?.ServerFlickerLights(duration);
         }
 
         private ZoneType FindZone()

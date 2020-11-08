@@ -163,7 +163,7 @@ namespace Vigilance.Registered
 		{
 			if (args.Length < 2)
 				return Usage;
-			IEnumerable<Player> admins = Server.PlayerList.PlayersDict.Values.Where(h => h.RemoteAdmin);
+			IEnumerable<Player> admins = Server.PlayerList.Players.Values.Where(h => h.RemoteAdmin);
 			string message = args.SkipWords(1);
 			foreach (Player admin in admins)
 			{
@@ -698,17 +698,15 @@ namespace Vigilance.Registered
             if (args.Length < 2)
 				return Usage;
 			Player player = args[0].GetPlayer();
-			if (!Server.PlayerList.TargetGhosts.ContainsKey(player.UserId))
-				Server.PlayerList.TargetGhosts.Add(player.UserId, new List<int>());
 			Player two = args[1].GetPlayer();
-			if (Server.PlayerList.TargetGhosts[player.UserId].Contains(two.PlayerId))
+			if (Ghostmode.GetTargets(player).Contains(two.UserId))
             {
-				Server.PlayerList.TargetGhosts[player.UserId].Remove(two.PlayerId);
+				Ghostmode.RemoveTarget(player, two);
 				return $"Succesfully removed {two.Nick} from {player.Nick}'s target ghosts.";
             }
 			else
             {
-				Server.PlayerList.TargetGhosts[player.UserId].Add(two.PlayerId);
+				Ghostmode.AddTarget(player, two);
 				return $"Succesfully added {two.Nick} to {player.Nick}'s target ghosts.";
             }
         }
@@ -855,8 +853,8 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
         {
-			List<CommandHandler> commands = CommandManager.Commands;
-			string str = $"Commands ({commands.Count}):\n";
+			IEnumerable<CommandHandler> commands = CommandManager.Commands.Values;
+			string str = $"Commands ({commands.Count()}):\n";
 			foreach (CommandHandler commandHandler in commands)
 				str += $"{commandHandler.Command}\n";
 			return str;

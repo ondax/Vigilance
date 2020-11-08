@@ -19,7 +19,6 @@ namespace Vigilance
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
 
-
         public static IEnumerable<T> GetValues<T>()
         {
             if (typeof(T).BaseType != typeof(Enum))
@@ -48,14 +47,18 @@ namespace Vigilance
             }
         }
 
+        public static void KillCoroutine(CoroutineHandle handle)
+        {
+            Timing.KillCoroutines(new CoroutineHandle[] { handle });
+        }
+
         public static void StopCoroutine(string name)
         {
             foreach (CoroutineHandle handle in ActiveCoroutines)
             {
                 if (handle.Tag.ToLower() == name.ToLower() || handle.Tag.ToLower().Contains(name.ToLower()))
                 {
-                    Log.Add("Environment", $"Killed coroutine \"{handle.Tag}\"", LogType.Debug);
-                    Timing.KillCoroutines(handle);
+                    KillCoroutine(handle);
                     ActiveCoroutines.Remove(handle);
                 }
             }
@@ -63,13 +66,6 @@ namespace Vigilance
 
         public static float GetRandomNumber() => Random.Next(1, 10000) / 100f;
         public static float GetRandomNumber(int max) => Random.Next(1, max);
-        public static bool GetBoolChance(float chance)
-        {
-            if (chance >= GetRandomNumber())
-                return true;
-            else
-                return false;
-        }
         public static bool GetRandomBool()
         {
             if (GetRandomNumber() < 100)
@@ -703,20 +699,22 @@ namespace Vigilance
             }
         }
 
-        public static void OnPocketEnter(Player ply, bool dmg, bool all, out bool hurt, out bool allow)
+        public static void OnPocketEnter(Player ply, bool dmg, float dmgAmount, bool all, out bool hurt, out float damage, out bool allow)
         {
             try
             {
-                PocketEnterEvent ev = new PocketEnterEvent(ply, dmg, all);
+                PocketEnterEvent ev = new PocketEnterEvent(ply, dmg, dmgAmount, all);
                 EventManager.Trigger<PocketEnterHandler>(ev);
                 hurt = ev.Hurt;
                 allow = ev.Allow;
+                damage = ev.Damage;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
                 hurt = dmg;
                 allow = all;
+                damage = dmgAmount;
             }
         }
 
@@ -741,16 +739,7 @@ namespace Vigilance
         {
             try
             {
-                Player issue = null;
-                foreach (Player player in Server.PlayerList.PlayersDict.Values)
-                {
-                    if (player.UserId == issuer.SenderId)
-                        issue = player;
-                }
-                if (issuer.SenderId == "SERVER CONSOLE")
-                {
-                    issue = Server.PlayerList.Local;
-                }
+                Player issue = issuer.GetPlayer();
                 if (issue != null)
                 {
                     RemoteAdminCommandEvent ev = new RemoteAdminCommandEvent(issue, cmd, "SERVER#Unknown command!", all);
@@ -761,7 +750,7 @@ namespace Vigilance
                 else
                 {
                     allow = all;
-                    response = "An error occured.";
+                    response = "SERVER#An error occured.";
                 }
             }
             catch (Exception e)
@@ -776,8 +765,7 @@ namespace Vigilance
         {
             try
             {
-                Round.CurrentState = RoundState.JustEnded;
-                Timing.CallDelayed(timeToRestart - 3, () => Round.CurrentState = RoundState.Ended);
+                Round.CurrentState = RoundState.Ended;
                 RoundEndEvent ev = new RoundEndEvent(leadingTeam, endList, timeToRestart, all);
                 EventManager.Trigger<RoundEndHandler>(ev);
                 toRestart = ev.TimeToRestart;
@@ -798,10 +786,10 @@ namespace Vigilance
             try
             {
                 EventManager.Trigger<RoundStartHandler>(new RoundStartEvent());
-                Round.CurrentState = RoundState.JustStarted;
-                Timing.CallDelayed(5f, () => Round.CurrentState = RoundState.Started);
-                foreach (BreakableWindow window in UnityEngine.Object.FindObjectsOfType<BreakableWindow>())
-                    window.health = ConfigManager.WindowHealth;
+                Round.CurrentState = RoundState.Started;
+                if (ConfigManager.WindowHealth != 30f)
+                    foreach (BreakableWindow window in UnityEngine.Object.FindObjectsOfType<BreakableWindow>())
+                        window.health = ConfigManager.WindowHealth == -1f ? float.MaxValue : ConfigManager.WindowHealth;
             }
             catch (Exception e)
             {
@@ -1104,7 +1092,7 @@ namespace Vigilance
             try
             {
                 EventManager.Trigger<WaitingForPlayersHandler>(new WaitingForPlayersEvent());
-                Round.CurrentState = RoundState.ShowingSummary;
+                Round.CurrentState = RoundState.WaitingForPlayers;
             }
             catch (Exception e)
             {
@@ -1205,18 +1193,20 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP079GainLvl(Player ply, bool all, out bool allow)
+        public static void OnSCP079GainLvl(Player ply, int lvl, bool all, out int level, out bool allow)
         {
             try
             {
-                SCP079GainLvlEvent ev = new SCP079GainLvlEvent(ply, all);
+                SCP079GainLvlEvent ev = new SCP079GainLvlEvent(ply, lvl, all);
                 EventManager.Trigger<SCP079GainLvlHandler>(ev);
                 allow = ev.Allow;
+                level = ev.Level;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
                 allow = all;
+                level = lvl;
             }
         }
 
@@ -1239,7 +1229,7 @@ namespace Vigilance
         {
             try
             {
-                ServerCommandEvent ev = new ServerCommandEvent(cmd, "Unknown command!", all);
+                ServerCommandEvent ev = new ServerCommandEvent(cmd, "SERVER#Unknown command!", all);
                 EventManager.Trigger<ServerCommandHandler>(ev);
                 response = ev.Response;
                 allow = ev.Allow;
@@ -1342,6 +1332,68 @@ namespace Vigilance
                 position = pos;
                 rotation = rot;
                 allow = all;
+            }
+        }
+
+        public static void OnScp914UpgradeItem(Pickup input, out ItemType outputId)
+        {
+            try
+            {
+                Scp914UpgradeItemEvent ev = new Scp914UpgradeItemEvent(input);
+                ev.Output = Map.Scp914.Singleton.UpgradeItemID(input.itemId);
+                EventManager.Trigger<Scp914UpgradeItemHandler>(ev);
+                outputId = ev.Output;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(Environment.OnScp914UpgradeItem), e);
+                outputId = Map.Scp914.Singleton.UpgradeItemID(input.itemId);
+            }
+        }
+
+        public static void OnScp914UpgradeHeldItem(Player player, Inventory.SyncItemInfo input, out Inventory.SyncItemInfo output)
+        {
+            try
+            {
+                Scp914UpgradeHeldItemEvent ev = new Scp914UpgradeHeldItemEvent(player, input);
+                Inventory.SyncItemInfo info = new Inventory.SyncItemInfo();
+                info.durability = input.durability;
+                info.id = Map.Scp914.Singleton.UpgradeItemID(input.id);
+                info.modBarrel = input.modBarrel;
+                info.modOther = input.modOther;
+                info.modSight = input.modSight;
+                info.uniq = input.uniq;
+                ev.Output = info;
+                EventManager.Trigger<Scp914UpgradeHeldItemHandler>(ev);
+                output = ev.Output;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(Environment.OnScp914UpgradeHeldItem), e);
+                Inventory.SyncItemInfo info = new Inventory.SyncItemInfo();
+                info.durability = input.durability;
+                info.id = Map.Scp914.Singleton.UpgradeItemID(input.id);
+                info.modBarrel = input.modBarrel;
+                info.modOther = input.modOther;
+                info.modSight = input.modSight;
+                info.uniq = input.uniq;
+                output = info;
+            }
+        }
+
+        public static void OnScp914UpgradePlayer(Player player, out bool allow)
+        {
+            try
+            {
+                Scp914UpgradePlayerEvent ev = new Scp914UpgradePlayerEvent(player);
+                ev.Allow = true;
+                EventManager.Trigger<Scp914UpgradePlayerHandler>(ev);
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(Environment.OnScp914UpgradePlayer), e);
+                allow = true;
             }
         }
     }

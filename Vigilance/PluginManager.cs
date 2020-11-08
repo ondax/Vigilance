@@ -10,8 +10,8 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.2.7";
-        public static string CompatibleGameVersion => "10.1.0";
+        public static string Version => "5.3.0-B";
+        public static string CompatibleGameVersion => "10.1.1";
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
         public static Dictionary<string, Assembly> Dependencies { get; set; }
@@ -29,6 +29,9 @@ namespace Vigilance
                     Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!", LogType.Error);
                     return;
                 }
+
+                if (Version.Contains("-"))
+                    Log.Add("PluginManager", "This is a development version in testing. Except to see some bugs.", LogType.Warn);
 
                 Paths.CheckMainConfig();
                 Config = new YamlConfig(Paths.ConfigPath);

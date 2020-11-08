@@ -15,7 +15,7 @@ namespace Vigilance.API
         public static GameObject Host => ReferenceHub.LocalHub.gameObject;
         public static GameObject GameManager => GameObject.Find("GameManager");
         public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
-        public static IEnumerable<Player> Players => PlayerList.PlayersDict.Values;
+        public static IEnumerable<Player> Players => PlayerList.Players.Values;
         public static int Port => ServerStatic.ServerPortSet ? ServerStatic.ServerPort : 7777;
         public static int MaxPlayers => ConfigFile.ServerConfig.GetInt("max_players", 20);
         public static bool RoundLock { get => RoundSummary.RoundLock; set => RoundSummary.RoundLock = value; }
@@ -214,67 +214,54 @@ namespace Vigilance.API
             }
             catch (Exception e)
             {
-                Log.Add("Server", e);
+                Log.Add(nameof(AddReservedSlot), e);
                 return false;
             }
         }
 
         public static class PlayerList
         {
-            public static Dictionary<GameObject, Player> PlayersDict { get; set; } = new Dictionary<GameObject, Player>();
+            public static Dictionary<ReferenceHub, Player> Players { get; set; } = new Dictionary<ReferenceHub, Player>();
             public static Dictionary<string, Player> UserIdCache { get; set; } = new Dictionary<string, Player>();
             public static Dictionary<int, Player> PlayerIdCache { get; set; } = new Dictionary<int, Player>();
-            public static List<Player> OfflinePlayersCache { get; set; } = new List<Player>();
-            public static Dictionary<string, List<int>> TargetGhosts { get; set; } = new Dictionary<string, List<int>>();
             public static Player Local { get; set; } = new Player(ReferenceHub.LocalHub);
             public static Player Host { get; set; } = new Player(ReferenceHub.HostHub);
 
             public static void Reset()
             {
-                PlayersDict.Clear();
+                Players.Clear();
                 UserIdCache.Clear();
                 PlayerIdCache.Clear();
-                TargetGhosts.Clear();
-                OfflinePlayersCache.Clear();
+                Ghostmode.ClearAll();
             }
 
-            public static void Add(Player player)
+            public static void Add(ReferenceHub player)
             {
                 if (player == null)
-                    return;
-                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
                     return;
                 if (Contains(player))
                     return;
-                PlayersDict.Add(player.GameObject, player);
-                UserIdCache.Add(player.UserId, player);
-                PlayerIdCache.Add(player.PlayerId, player);
-                TargetGhosts.Add(player.UserId, new List<int>());
-                if (OfflinePlayersCache.Contains(player))
-                    OfflinePlayersCache.Remove(player);
+                Players.Add(player, new Player(player));
+                UserIdCache.Add(player.characterClassManager.UserId, Players[player]);
+                PlayerIdCache.Add(player.queryProcessor.PlayerId, Players[player]);
             }
 
-            public static void Remove(Player player)
+            public static void Remove(ReferenceHub player)
             {
                 if (player == null)
                     return;
-                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
-                    return;
                 if (!Contains(player))
                     return;
-                PlayersDict.Remove(player.GameObject);
-                UserIdCache.Remove(player.UserId);
-                PlayerIdCache.Remove(player.PlayerId);
-                TargetGhosts.Remove(player.UserId);
-                if (!OfflinePlayersCache.Contains(player))
-                    OfflinePlayersCache.Add(player);
+                Ghostmode.RemoveAllTargets(Players[player]);
+                Ghostmode.RemoveGhost(Players[player]);
+                Players.Remove(player);
+                UserIdCache.Remove(player.characterClassManager.UserId);
+                PlayerIdCache.Remove(player.queryProcessor.PlayerId);
             }
 
-            public static bool Contains(Player player)
+            public static bool Contains(ReferenceHub player)
             {
-                if (player.IsHost || string.IsNullOrEmpty(player.UserId) || player.IpAddress == "localClient" || player == null)
-                    return false;
-                if (PlayersDict.ContainsValue(player) && UserIdCache.ContainsKey(player.UserId) && PlayerIdCache.ContainsKey(player.PlayerId))
+                if (Players.ContainsKey(player) && UserIdCache.ContainsKey(player.characterClassManager.UserId) && PlayerIdCache.ContainsKey(player.queryProcessor.PlayerId))
                     return true;
                 else
                     return false;
@@ -283,7 +270,7 @@ namespace Vigilance.API
             public static List<Player> GetPlayers(RoleType role)
             {
                 List<Player> players = new List<Player>();
-                foreach (Player player in PlayersDict.Values)
+                foreach (Player player in Players.Values)
                 {
                     if (player.Role == role)
                         players.Add(player);
@@ -294,7 +281,7 @@ namespace Vigilance.API
             public static List<Player> GetPlayers(TeamType team)
             {
                 List<Player> players = new List<Player>();
-                foreach (Player player in PlayersDict.Values)
+                foreach (Player player in Players.Values)
                 {
                     if (player.Team == team)
                         players.Add(player);
@@ -304,63 +291,73 @@ namespace Vigilance.API
 
             public static Player GetPlayer(GameObject gameObject)
             {
-                Player ply = null;
-                if (PlayersDict.TryGetValue(gameObject, out ply))
-                    return ply;
-                else
+                if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
                 {
-                    RemoteAdmin.QueryProcessor qp = gameObject.GetComponent<RemoteAdmin.QueryProcessor>();
-                    CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
-                    if (qp != null)
+                    if (Players.TryGetValue(hub, out Player player))
                     {
-                        if (PlayerIdCache.TryGetValue(qp.PlayerId, out ply))
-                            return ply;
+                        return player;
                     }
                     else
                     {
-                        if (ccm != null)
+                        if (PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
                         {
-                            if (UserIdCache.TryGetValue(ccm.UserId, out ply))
-                                return ply;
+                            return player;
                         }
                         else
-                            return Local;
+                        {
+                            if (UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
+                            {
+                                return player;
+                            }
+                        }
                     }
                 }
-                return Local;
+                return null;
             }
 
             public static Player GetPlayer(ReferenceHub hub)
             {
-                return GetPlayer(hub.gameObject);
+                if (Players.TryGetValue(hub, out Player player))
+                {
+                    return player;
+                }
+                else
+                {
+                    if (PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
+                    {
+                        return player;
+                    }
+                    else
+                    {
+                        if (UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
+                        {
+                            return player;
+                        }
+                    }
+                }
+                return null;
             }
 
             public static Player GetPlayer(int playerId)
             {
                 if (!PlayerIdCache.TryGetValue(playerId, out Player player))
                 {
-                    foreach (Player ply in PlayersDict.Values)
+                    foreach (Player ply in Players.Values)
                         if (ply.PlayerId == playerId)
                             return ply;
-                    foreach (Player offline in OfflinePlayersCache)
-                        if (offline.PlayerId == playerId)
-                            return offline;
                 }
-                return player;
+                return null;
             }
 
             public static Player GetPlayerByUserId(string id)
             {
                 if (!UserIdCache.TryGetValue(id, out Player ply))
                 {
-                    foreach (Player player in PlayersDict.Values)
+                    foreach (Player player in Players.Values)
                         if (player.UserId == id || player.ParsedUserId == id)
                             return player;
-                    foreach (Player offline in OfflinePlayersCache)
-                        if (offline.ParsedUserId == id || offline.UserId == id)
-                            return offline;
                 }
-                return ply;
+                return null;
             }
 
             public static Player GetPlayer(string args)
@@ -368,7 +365,6 @@ namespace Vigilance.API
                 try
                 {
                     Player playerFound = null;
-
                     foreach (string userId in UserIdCache.Keys)
                     {
                         if (userId == args)
@@ -390,7 +386,7 @@ namespace Vigilance.API
                             return null;
                         int maxNameLength = 31, lastnameDifference = 31;
                         string firstString = args.ToLower();
-                        foreach (Player player in PlayersDict.Values)
+                        foreach (Player player in Players.Values)
                         {
                             if (!player.Nick.ToLower().Contains(args.ToLower()))
                                 continue;
@@ -411,34 +407,12 @@ namespace Vigilance.API
                                 }
                             }
                         }
-
-                        foreach (Player offline in OfflinePlayersCache)
-                        {
-                            if (!offline.Nick.ToLower().Contains(args.ToLower()))
-                                continue;
-                            if (firstString.Length < maxNameLength)
-                            {
-                                int x = maxNameLength - firstString.Length;
-                                int y = maxNameLength - offline.Nick.Length;
-                                string secondString = offline.Nick;
-                                for (int i = 0; i < x; i++)
-                                    firstString += "z";
-                                for (int i = 0; i < y; i++)
-                                    secondString += "z";
-                                int nameDifference = firstString.GetDistance(secondString);
-                                if (nameDifference < lastnameDifference)
-                                {
-                                    lastnameDifference = nameDifference;
-                                    playerFound = offline;
-                                }
-                            }
-                        }
                     }
                     return playerFound;
                 }
                 catch (Exception exception)
                 {
-                    Log.Add("PlayerList", exception);
+                    Log.Add(nameof(PlayerList.GetPlayer), exception);
                     return null;
                 }
             }

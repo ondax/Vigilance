@@ -1,23 +1,21 @@
 ﻿using System.Collections.Generic;
 using Vigilance.API;
+using Vigilance.Extensions;
 using Vigilance.Registered;
 
 namespace Vigilance
 {
     public static class CommandManager
     {
-        private static List<CommandHandler> _commands;
-        private static List<GameCommandHandler> _gameCommands;
-        private static List<ConsoleCommandHandler> _consoleCommands;
-        public static List<CommandHandler> Commands => _commands;
-        public static List<GameCommandHandler> GameCommands => _gameCommands;
-        public static List<ConsoleCommandHandler> ConsoleCommands => _consoleCommands;
+        public static Dictionary<string, CommandHandler> Commands { get; set; }
+        public static Dictionary<string, GameCommandHandler> GameCommands { get; set; }
+        public static Dictionary<string, ConsoleCommandHandler> ConsoleCommands { get; set; }
 
         public static void Enable()
         {
-            _commands = new List<CommandHandler>();
-            _gameCommands = new List<GameCommandHandler>();
-            _consoleCommands = new List<ConsoleCommandHandler>();
+            Commands = new Dictionary<string, CommandHandler>();
+            GameCommands = new Dictionary<string, GameCommandHandler>();
+            ConsoleCommands = new Dictionary<string, ConsoleCommandHandler>();
 
             RegisterCommand(new CommandClean());
             RegisterCommand(new CommandDropAll());
@@ -65,20 +63,21 @@ namespace Vigilance
         {
             if (string.IsNullOrEmpty(command))
                 return;
+            command = command.ToUpper();
             CommandHandler commandHandler = GetCommandHandler(command);
             GameCommandHandler gameCommandHandler = GetGameCommandHandler(command);
             ConsoleCommandHandler consoleCommandHandler = GetConsoleCommandHandler(command);
             if (commandHandler != null)
-                _commands.Remove(commandHandler);
+                Commands.Remove(command);
             if (gameCommandHandler != null)
-                _gameCommands.Remove(gameCommandHandler);
+                GameCommands.Remove(command);
             if (consoleCommandHandler != null)
-                _consoleCommands.Remove(consoleCommandHandler);
+                ConsoleCommands.Remove(command);
         }
 
         public static CommandHandler GetCommandHandler(string command)
         {
-            foreach (CommandHandler handler in _commands)
+            foreach (CommandHandler handler in Commands.Values)
             {
                 if (handler.Command.ToUpper() == command.ToUpper())
                     return handler;
@@ -93,7 +92,7 @@ namespace Vigilance
 
         public static GameCommandHandler GetGameCommandHandler(string command)
         {
-            foreach (GameCommandHandler handler in _gameCommands)
+            foreach (GameCommandHandler handler in GameCommands.Values)
             {
                 if (handler.Command.ToUpper() == command.ToUpper())
                     return handler;
@@ -108,7 +107,7 @@ namespace Vigilance
 
         public static ConsoleCommandHandler GetConsoleCommandHandler(string command)
         {
-            foreach (ConsoleCommandHandler cch in _consoleCommands)
+            foreach (ConsoleCommandHandler cch in ConsoleCommands.Values)
             {
                 if (cch.Command.ToUpper() == command.ToUpper())
                     return cch;
@@ -119,6 +118,59 @@ namespace Vigilance
                             return cch;
             }
             return null;
+        }
+
+        public static bool CallCommand(Player sender, string[] query, out string reply)
+        {
+            CommandHandler handler = GetCommandHandler(query[0].ToUpper());
+            GameCommandHandler gch = GetGameCommandHandler(query[0].ToUpper());
+
+            if (handler != null)
+            {
+                reply = $"{query[0].ToUpper()}#{handler.Execute(sender, query.SkipCommand())}";
+                return true;
+            }
+
+            if (gch != null)
+            {
+                reply = $"{query[0].ToUpper()}#{gch.Execute(sender, query.SkipCommand())}";
+                return true;
+            }
+
+            if (HandlerExists(query[0].ToUpper()))
+            {
+                reply = "SERVER#An error occured while executing this command.";
+                return true;
+            }
+
+            reply = "SERVER#Unknown command!";
+            return false;
+        }
+
+        public static bool HandlerExists(string command)
+        {
+            foreach (CommandHandler handler in Commands.Values)
+            {
+                if (handler.Command.ToUpper() == command.ToUpper())
+                    return true;
+                else
+                    if (!handler.Aliases.IsEmpty())
+                    foreach (string alias in handler.Aliases.Split(' '))
+                        if (alias.ToUpper() == command.ToUpper())
+                            return true;
+            }
+
+            foreach (GameCommandHandler gch in GameCommands.Values)
+            {
+                if (gch.Command.ToUpper() == command.ToUpper())
+                    return true;
+                else
+                    if (!gch.Aliases.IsEmpty())
+                    foreach (string alias in GetAliases(gch))
+                        if (alias.ToUpper() == command.ToUpper())
+                            return true;
+            }
+            return false;
         }
 
         public static string[] GetAliases(string str)
@@ -141,9 +193,26 @@ namespace Vigilance
             return GetAliases(handler.Aliases);
         }
 
-        public static void RegisterCommand(CommandHandler handler) => _commands.Add(handler);
-        public static void RegisterGameCommand(GameCommandHandler handler) => _gameCommands.Add(handler);
-        public static void RegisterConsoleCommand(ConsoleCommandHandler handler) => _consoleCommands.Add(handler);
+        public static void RegisterCommand(CommandHandler handler)
+        {
+            string s = handler.Command.ToUpper();
+            if (!Commands.ContainsKey(s))
+                Commands.Add(s, handler);
+        }
+
+        public static void RegisterGameCommand(GameCommandHandler handler)
+        {
+            string s = handler.Command.ToUpper();
+            if (!GameCommands.ContainsKey(s))
+                GameCommands.Add(s, handler);
+        }
+
+        public static void RegisterConsoleCommand(ConsoleCommandHandler handler)
+        {
+            string s = handler.Command.ToUpper();
+            if (!ConsoleCommands.ContainsKey(s))
+                ConsoleCommands.Add(s, handler);
+        }
     }
 
     public interface CommandHandler
