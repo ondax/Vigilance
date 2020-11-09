@@ -262,6 +262,8 @@ namespace Vigilance.API
 
             public static bool Contains(ReferenceHub player)
             {
+                if (player == null)
+                    return false;
                 if (Players.ContainsKey(player) && UserIdCache.ContainsKey(player.characterClassManager.UserId) && PlayerIdCache.ContainsKey(player.queryProcessor.PlayerId))
                     return true;
                 else
@@ -292,6 +294,8 @@ namespace Vigilance.API
 
             public static Player GetPlayer(GameObject gameObject)
             {
+                if (gameObject == null)
+                    return null;
                 if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
                 {
                     if (Players.TryGetValue(hub, out Player player))
@@ -336,19 +340,21 @@ namespace Vigilance.API
 
             public static Player GetPlayer(ReferenceHub hub)
             {
+                if (hub == null)
+                    return null;
                 if (Players.TryGetValue(hub, out Player player))
                 {
                     return player;
                 }
                 else
                 {
-                    if (PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
+                    if (hub.queryProcessor != null && PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
                     {
                         return player;
                     }
                     else
                     {
-                        if (UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
+                        if (hub.characterClassManager != null && UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
                         {
                             return player;
                         }
@@ -362,10 +368,16 @@ namespace Vigilance.API
                 if (!PlayerIdCache.TryGetValue(playerId, out Player player))
                 {
                     foreach (Player ply in Players.Values)
+                    {
                         if (ply.PlayerId == playerId)
-                            return ply;
+                        {
+                            player = ply;
+                            break;
+                        }
+                    }
+
                 }
-                return null;
+                return player;
             }
 
             public static Player GetPlayerByUserId(string id)
@@ -373,10 +385,15 @@ namespace Vigilance.API
                 if (!UserIdCache.TryGetValue(id, out Player ply))
                 {
                     foreach (Player player in Players.Values)
+                    {
                         if (player.UserId == id || player.ParsedUserId == id)
-                            return player;
+                        {
+                            ply = player;
+                            break;
+                        }
+                    }
                 }
-                return null;
+                return ply;
             }
 
             public static Player GetPlayer(string args)
@@ -401,8 +418,6 @@ namespace Vigilance.API
                     }
                     else
                     {
-                        if (args == "WORLD" || args == "SCP-018" || args == "SCP-575" || args == "SCP-207")
-                            return null;
                         int maxNameLength = 31, lastnameDifference = 31;
                         string firstString = args.ToLower();
                         foreach (Player player in Players.Values)

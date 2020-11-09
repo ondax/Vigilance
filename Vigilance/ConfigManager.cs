@@ -190,8 +190,8 @@ namespace Vigilance
 			AddConfig("List of whitelisted IP adresses.", "ip_whitelist", "[]");
 			AddConfig("List of whitelisted UserIDs", "userid_whitelist", "[]");
 		
-			AddConfig("Whether or not should AntiFly kick or kill players for \"cheating\".", "antifly_enabled", "true");
-			AddConfig("Whether or not should AntiCheat teleport players back for \"cheating\".", "anticheat_enabled", "true");
+			AddConfig("Whether or not should AntiFly kick or kill players for \"cheating\". WARNING! Setting this to false breaks VSR!", "antifly_enabled", "true");
+			AddConfig("Whether or not should AntiCheat teleport players back for \"cheating\". WARNING! Setting this to false breaks VSR!", "anticheat_enabled", "true");
 
 			AddConfig("Whether or not blood should be spawned underneath a player when a player gets hit.", "enable_blood_spawning", "true");
 			AddConfig("Whether or not a black hole should be spawned underneath a player when a player gets taken by SCP-106.", "enable_decal_spawning", "true");

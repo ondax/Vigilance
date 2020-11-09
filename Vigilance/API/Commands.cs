@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using Utf8Json.Formatters;
 using Org.BouncyCastle.Asn1.Pkcs;
+using System;
 
 namespace Vigilance.Registered
 {
@@ -56,6 +57,8 @@ namespace Vigilance.Registered
 			if (args.Length < 1)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			player.DropAllItems();
 			return $"Succesfully dropped all items for {player.Nick}";
 		}
@@ -118,6 +121,8 @@ namespace Vigilance.Registered
 			if (args.Length < 2)
 				return Usage;
 			Player p = args[1].GetPlayer();
+			if (p == null)
+				return "An error occured: Player is null.";
 			Vector3 teleportTo = p.Position;
 			if (args[0].ToLower() == "*" || args[0].ToLower() == "all")
 			{
@@ -128,6 +133,8 @@ namespace Vigilance.Registered
 				return $"Succesfully teleported all players to {p.Nick}";
 			}
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			player.Teleport(teleportTo);
 			return $"Succesfully teleported {player.Nick} to {p.Nick}";
 		}
@@ -146,6 +153,8 @@ namespace Vigilance.Registered
 			if (args.Length < 3)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			int time = int.Parse(args[1]);
 			player.Broadcast($"<b><color=red>[Personal]</color></b>\n<b>{sender.Nick}</b>:\n<i>{args.SkipWords(2)}</i>", time);
 			return $"Success!\nDuration: {time}\nMessage: {args.SkipWords(2)}\nPlayer: {player.Nick} ({player.UserId})";
@@ -240,6 +249,8 @@ namespace Vigilance.Registered
 				return $"Succesfully spawned a frag grenade at all players.";
 			}
 			Player player1 = args[0].GetPlayer();
+			if (player1 == null)
+				return "An error occured: Player is null.";
 			Map.SpawnGrenade(player1, GrenadeType.FragGrenade);
 			return $"Succesfully spawned a frag grenade at {player1.Nick}";
 		}
@@ -264,6 +275,8 @@ namespace Vigilance.Registered
 				return "Succesfully spawned a flash grenade at all players.";
 			}
 			Player ply = args[0].GetPlayer();
+			if (ply == null)
+				return "An error occured: Player is null.";
 			Map.SpawnGrenade(ply, GrenadeType.FlashGrenade);
 			return $"Succesfully spawned a flash grenade at {ply.Nick}";
 		}
@@ -288,6 +301,8 @@ namespace Vigilance.Registered
 				return "Succesfully spawned a SCP-018 at all players.";
 			}
 			Player ply = args[0].GetPlayer();
+			if (ply == null)
+				return "An error occured: Player is null.";
 			Map.SpawnGrenade(ply, GrenadeType.Scp018);
 			return $"Succesfully spawned a SCP-018 at {ply.Nick}";
 		}
@@ -316,6 +331,8 @@ namespace Vigilance.Registered
 				return $"Succesfully spawned {amount} {(amount > 1 ? "ragdolls" : "ragdoll")} of {(RoleType)role} at all players.";
 			}
 			Player player1 = args[0].GetPlayer();
+			if (player1 == null)
+				return "An error occured: Player is null.";
 			Map.SpawnRagdolls(player1, role, amount);
 			return $"Succesfully spawned {amount} {(amount > 1 ? "ragdolls" : "ragdoll")} of {(RoleType)role} at {player1.Nick}";
 		}
@@ -347,6 +364,8 @@ namespace Vigilance.Registered
 				return $"Succesfully spawned a dummy model of {role} at all players.";
 			}
 			Player ply = args[0].GetPlayer();
+			if (ply == null)
+				return "An error occured: Player is null.";
 			Map.SpawnDummyModel(ply.Position, ply.RotationQuaternion, role, x, y, z);
 			return $"Succesfully spawned a dummy model of {role} at {ply.Nick}";
 		}
@@ -375,6 +394,8 @@ namespace Vigilance.Registered
 				return "Succesfully spawned a workbench at all players.";
 			}
 			Player ply = args[0].GetPlayer();
+			if (ply == null)
+				return "An error occured: Player is null.";
 			Prefab.WorkStation.Spawn(ply.Position, ply.RotationQuaternion, new Vector3(x, y, z));
 			return $"Succesfully spawned a workbench at {ply.Nick}";
 		}
@@ -404,6 +425,8 @@ namespace Vigilance.Registered
 				return $"Succesfully launched all players into space.";
 			}
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			if (!player.IsAlive)
 				return $"{player.Nick} is a spectator!";
 			player.Rocket(speed);
@@ -434,6 +457,8 @@ namespace Vigilance.Registered
 				return "Succesfully changed size of all players.";
 			}
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			player.Scale = new Vector3(x, y, z);
 			return $"Succesfully changed size of {player.Nick}";
 		}
@@ -452,6 +477,8 @@ namespace Vigilance.Registered
 			if (args.Length < 2)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			string unit = args.SkipWords(1);
 			player.NtfUnit = unit;
 			return $"Succesfully set unit of {player.Nick} to {player.NtfUnit}";
@@ -628,6 +655,8 @@ namespace Vigilance.Registered
 			if (args.Length < 2)
 				return Usage;
 			Player player = args[1].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			switch (args[0].ToLower())
 			{
 				case "get":
@@ -647,8 +676,22 @@ namespace Vigilance.Registered
 
 		public static Vector3 ParsePosition(string s)
         {
-			string[] args = s.Split('=');
-			return new Vector3(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]));
+			try
+			{
+				string[] args = s.Split('=');
+				if (!s.Contains("=") || args.Length < 3 || !float.TryParse(args[0], out float x) || !float.TryParse(args[1], out float y) || !float.TryParse(args[2], out float z))
+                {
+					Log.Add($"Vigilance.Registered.CommandPos.ParsePosition", $"Input string is not in correct format!", LogType.Error);
+					return Vector3.zero;
+                }
+				return new Vector3(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]));
+			}
+			catch (Exception e)
+            {
+				Log.Add($"Vigilance.Registered.CommandPos.ParsePosition", $"Input string is not in correct format!", LogType.Error);
+				Log.Add($"Vigilance.Registered.CommandPos.ParsePosition", e.Message, LogType.Error);
+				return Vector3.zero;
+            }
         }
 
 		public static Vector3 ParseAdd(string s, Player player)
@@ -680,6 +723,8 @@ namespace Vigilance.Registered
 			if (args.Length < 1)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			bool value = !player.IsInvisible;
 			player.IsInvisible = value;
 			return $"Succesfully set ghostmode of {player.Nick} to {value.ToString().ToLower()}";
@@ -699,7 +744,11 @@ namespace Vigilance.Registered
             if (args.Length < 2)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			Player two = args[1].GetPlayer();
+			if (two == null)
+				return "An error occured: Player is null.";
 			if (Ghostmode.GetTargets(player).Contains(two.UserId))
             {
 				Ghostmode.RemoveTarget(player, two);
@@ -727,7 +776,7 @@ namespace Vigilance.Registered
 				return Usage;
 			Prefab prefab = args.SkipWords(2).GetPrefab();
 			if (prefab == Prefab.None)
-				return $"NetworkManager was unable to find a prefab with that name.";
+				return $"An error occured: Prefab is none.";
 			Vector3 scale = CommandPos.ParsePosition(args[1]);
 			if (args[0].ToLower() == "all" || args[0] == "*")
             {
@@ -743,6 +792,8 @@ namespace Vigilance.Registered
 			else
             {
 				Player player = args[0].GetPlayer();
+				if (player == null)
+					return "An error occured: Player is null.";
 				if (player.IsAlive)
 				{
 					prefab.Spawn(player.Position, player.RotationQuaternion, scale);
@@ -783,6 +834,8 @@ namespace Vigilance.Registered
 			else
             {
 				Player player = args[0].GetPlayer();
+				if (player == null)
+					return "An error occured: Player is null.";
 				if (player.IsAlive)
 				{
 					player.Explode(force);
@@ -917,8 +970,8 @@ namespace Vigilance.Registered
 			if (!int.TryParse(args[1], out int duration))
 				return "Please provide a valid duration.";
 			Player player = args[0].GetPlayer();
-			if (player.IsHost || player == null)
-				return "Player not found.";
+			if (player == null)
+				return "An error occured: Player is null.";
 			string message = args.SkipWords(2);
 			string str = $"<color=#FF0000>[PERSONAL] - {sender.Nick}:</color>\n<i>{message}</i>";
 			player.ShowHint(str, duration);
@@ -937,6 +990,8 @@ namespace Vigilance.Registered
 			if (args.Length < 2)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			Achievement achievement = args[1].GetAchievement();
 			if (achievement == Achievement.Unknown)
 				return "Cannot find an achievement with that name.";
@@ -956,8 +1011,13 @@ namespace Vigilance.Registered
 			if (args.Length < 3)
 				return Usage;
 			Player player = args[0].GetPlayer();
+			if (player == null)
+				return "An error occured: Player is null.";
 			ItemType type = args[1].GetItem();
-			GameObject obj = Prefab.Pickup.Spawn(player.Position, sender.RotationQuaternion, CommandPos.ParsePosition(args[2]));
+			Vector3 pos = CommandPos.ParsePosition(args[2]);
+			if (pos == Vector3.zero)
+				return "An error occured: Vector is null.";
+			GameObject obj = Prefab.Pickup.Spawn(player.Position, sender.RotationQuaternion, pos);
 			Pickup pickup = obj.GetComponent<Pickup>();
 			if (pickup != null)
 			{
@@ -1218,7 +1278,7 @@ namespace Vigilance.Registered
             {
 				Player player = args[0].GetPlayer();
 				if (player == null)
-					return "This player does not exist.";
+					return "An error occured: Player is null.";
 				if (room == null)
 				{
 					if (rid != null)

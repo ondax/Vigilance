@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Vigilance.API;
+using System.Diagnostics.Contracts;
 
 namespace Vigilance.Extensions
 {
@@ -474,6 +475,23 @@ namespace Vigilance.Extensions
 		{
 			return array.Skip(1).ToArray();
 		}
+
+		public static string AsString(this List<string> list)
+        {
+			string s = "";
+			foreach (string item in list)
+            {
+				if (string.IsNullOrEmpty(s))
+                {
+					s += item;
+                }
+				else
+                {
+					s += $", {item}";
+                }
+            }
+			return s;
+        }
 
 		public static int GetDistance(this string firstString, string secondString)
 		{

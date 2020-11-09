@@ -31,6 +31,8 @@ namespace Vigilance
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
+        public static void Add(string tag, string message, ConsoleColor color) => Add($"[{tag}]: {message}", color);
+
         public static void Add(string tag, Exception e)
         {
             Add(tag, e.ToString(), LogType.Error);

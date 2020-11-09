@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using CommandSystem.Commands;
 using Harmony;
+using Vigilance.API;
+using Vigilance.Extensions;
 
 namespace Vigilance
 {
@@ -10,8 +12,8 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.3.1";
-        public static string CompatibleGameVersion => "10.1.1";
+        public static string Version => "5.3.2";
+        public static List<string> CompatibleVersions = new List<string>() { "10.1.1" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
         public static Dictionary<string, Assembly> Dependencies { get; set; }
@@ -24,9 +26,9 @@ namespace Vigilance
             {
                 if (_enabled)
                     return;
-                if (CustomNetworkManager.CompatibleVersions[0] != CompatibleGameVersion)
+                if (!CompatibleVersions.Contains(Server.Version))
                 {
-                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!\nRequired version: {CompatibleGameVersion}", LogType.Error);
+                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!\nCompatible versions: {CompatibleVersions.AsString()}", LogType.Error);
                     return;
                 }
 
@@ -66,9 +68,9 @@ namespace Vigilance
                 }
 
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
-                BuildInfoCommand.ModDescription = $"Vigilance v{Version} for {CompatibleGameVersion} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
+                BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
-                Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\" for game version \"{CompatibleGameVersion}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
+                Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
             }
             catch (Exception e)
             {
