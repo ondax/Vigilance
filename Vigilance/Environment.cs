@@ -57,6 +57,12 @@ namespace Vigilance
             Timing.KillCoroutines(new CoroutineHandle[] { handle });
         }
 
+        public static void KillCoroutines(IEnumerable<CoroutineHandle> handles)
+        {
+            foreach (CoroutineHandle handle in handles)
+                KillCoroutine(handle);
+        }
+
         public static void StopCoroutine(string name)
         {
             foreach (CoroutineHandle handle in ActiveCoroutines)
@@ -79,13 +85,7 @@ namespace Vigilance
                 return false;
         }
 
-        public static bool GetChance(float chance)
-        {
-            if (chance >= (Random.Next(1, 10000) / 100f))
-                return true;
-            else
-                return false;
-        }
+        public static bool GetChance(float chance) => chance >= (Random.Next(1, 10000) / 100f);
 
         public static void StopAllCoroutines()
         {

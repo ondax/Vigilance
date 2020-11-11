@@ -140,7 +140,6 @@
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
     <Compile Include="Patches\Events\PlayerInteract_OnInteract.cs" />
     <Compile Include="Patches\Events\PlayerStats_Roundrestart.cs" />
-    <Compile Include="Patches\Events\PocketDimensionTeleport_OnTriggerEnter.cs" />
     <Compile Include="Patches\Events\RagdollManager_SpawnRagdoll.cs" />
     <Compile Include="Patches\Events\ReferenceHub_OnDestroy.cs" />
     <Compile Include="Patches\Events\RespawnManager_Spawn.cs" />
