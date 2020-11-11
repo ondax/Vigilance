@@ -32,6 +32,7 @@ namespace Vigilance
 		public static bool EnableGameCommands { get; set; }
 		public static bool EnableCustomCommands { get; set; }
 		public static bool AllowCuffWhileHolding { get; set; }
+		public static bool DisableLocksOnRestart { get; set; }
 
 		public static float Scp173DoorCooldown { get; set; }
 		public static float Scp106PocketEnterDamage { get; set; }
@@ -113,6 +114,7 @@ namespace Vigilance
 			MakeSureToGiveItems = PluginManager.Config.GetBool("make_sure_to_give_items", true);
 			UnlimitedMicroEnergy = PluginManager.Config.GetBool("unlimited_micro_energy", false);
 			AllowCuffWhileHolding = PluginManager.Config.GetBool("allow_cuff_while_holding", false);
+			DisableLocksOnRestart = PluginManager.Config.GetBool("disable_locks_on_restart", false);
 
 			Scp173DoorCooldown = PluginManager.Config.GetFloat("scp173_door_cooldown", 25f);
 			Scp106PocketEnterDamage = PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f);
@@ -208,6 +210,7 @@ namespace Vigilance
 			AddConfig("If the energy of MicroHID is infinite or not.", "unlimited_micro_energy", "false");
 			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
 			AddConfig("Should players be able to handcuff players that are holding an item in hand?", "allow_cuff_while_holding", "false");
+			AddConfig("Should RoundLock and LobbyLock be disabled when the round restarts?", "disable_locks_on_restart", "false");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 			AddConfig("The distance SCP-049 can attack from", "scp049_attack_distance", "2.4");

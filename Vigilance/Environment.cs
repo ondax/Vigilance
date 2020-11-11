@@ -28,6 +28,11 @@ namespace Vigilance
             return Enum.GetValues(typeof(T)).Cast<T>();
         }
 
+        public static Vector3 FindSafePosition(Vector3 pos)
+        {
+            return new Vector3(pos.x, pos.y + 2f, pos.z);
+        }
+
         public static CoroutineHandle StartCoroutine(IEnumerator<float> handler, string name = "")
         {
             if (handler == null)

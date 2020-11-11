@@ -9,8 +9,6 @@ using RemoteAdmin;
 using System.Linq;
 using Vigilance.Patches.Events;
 using CustomPlayerEffects;
-using Org.BouncyCastle.Asn1.GM;
-
 namespace Vigilance.API
 {
     public class Player
@@ -18,18 +16,6 @@ namespace Vigilance.API
         private ReferenceHub _hub;
         public Player(ReferenceHub hub)
         {
-            _hub = hub;
-            IsInvisible = false;
-            PlayerLock = false;
-        }
-
-        public Player(GameObject obj)
-        {
-            if (obj == null)
-                return;
-            ReferenceHub hub = ReferenceHub.GetHub(obj);
-            if (hub == null)
-                return;
             _hub = hub;
             IsInvisible = false;
             PlayerLock = false;
@@ -110,7 +96,6 @@ namespace Vigilance.API
         {
             get
             {
-                _hub.fpc.staminaController.
                 _hub.fpc.GetSpeed(out float speed, true);
                 return speed;
             }
@@ -308,7 +293,7 @@ namespace Vigilance.API
                 }
                 catch (System.Exception e)
                 {
-                    Log.Add("Player", e);
+                    Log.Add("Viilance.API.Player.set_Scale", e);
                 }
             }
         }
@@ -325,7 +310,7 @@ namespace Vigilance.API
         public void ClearBroadcasts() => Server.Host.GetComponent<Broadcast>().TargetClearElements(Connection);
         public void ConsoleMessage(string message, string color = "green") => _hub.characterClassManager.TargetConsolePrint(Connection, message, color);
         public void RemoteAdminMessage(string message) => _hub.queryProcessor._sender.SendRemoteAdminMessage(message);
-        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "WORLD", DamageTypes.None, 0), this.GameObject);
+        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, "WORLD", DamageTypes.None, 0), this.GameObject);
         public void Damage(int amount, DamageTypes.DamageType type) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)amount, "WORLD", type, 0), GameObject, false);
         public void Kill() => Damage(100000);
         public void Teleport(Vector3 pos) => _hub.playerMovementSync.OverridePosition(pos, _hub.PlayerCameraReference.rotation.y);
@@ -337,7 +322,7 @@ namespace Vigilance.API
         public void ClearInventory() => _hub.inventory.Clear();
         public void AddItem(ItemType item)
         {
-            if (_hub.inventory.items.Count == 8)
+            if (_hub.inventory.items.Count >= 8)
             {
                 Map.SpawnItem(item, Position, RotationQuaternion);
             }
@@ -367,19 +352,28 @@ namespace Vigilance.API
             _hub.inventory.items.Remove(item);
         }
 
-        public void SetRole(RoleType newRole, bool lite = false, bool isEscaped = false)
+        public void SetRole(RoleType newRole, bool keepPos = false, bool isEscaped = false)
         {
-            _hub.characterClassManager.SetPlayersClass(newRole, GameObject, lite, isEscaped);
+            _hub.characterClassManager.SetPlayersClass(newRole, GameObject, keepPos, isEscaped);
         }
 
         public void Handcuff(Player cuffer)
         {
-            if (cuffer?.Hub == null)
+            if (cuffer == null)
+            {
+                Hub.handcuffs.NetworkForceCuff = true;
                 return;
+            }
             if (!IsCuffed && cuffer.Hub.inventory.items.Any(item => item.id == ItemType.Disarmer) && Vector3.Distance(Position, cuffer.Position) <= 130f)
             {
                 CufferId = cuffer.PlayerId;
             }
+        }
+
+        public void Uncuff()
+        {
+            Hub.handcuffs.NetworkForceCuff = false;
+            Hub.handcuffs.CufferId = -1;
         }
 
         public void ResetInventory(List<ItemType> newItems)
@@ -431,6 +425,22 @@ namespace Vigilance.API
             {
                 Prefab.GrenadeFrag.Spawn(Position, RotationQuaternion, Vector3.one);
             }
+
+            foreach (Player player in Server.Players)
+            {
+                if (player.Distance(Position) <= 5f && !player.GodMode && player.IsAlive)
+                {
+                    player.Kill();
+                }
+            }
+
+            foreach (Door door in Map.Doors)
+            {
+                if (Distance(door.transform.position) < 10f && !door.Networkdestroyed)
+                {
+                    door.Networkdestroyed = true;
+                }
+            }
         }
 
         public void Achieve(Achievement achievement)
@@ -445,8 +455,34 @@ namespace Vigilance.API
             PlayerManager.localPlayer.GetComponent<PlayerStats>().TargetAchieve(Connection, achievement.ToString().ToLower());
         }
 
+        public float Distance(Vector3 pos) => Vector3.Distance(Position, pos);
+
+        public Inventory.SyncItemInfo GetWeapon(WeaponType weapon)
+        {
+            foreach (Inventory.SyncItemInfo item in Hub.inventory.items)
+            {
+                if (item.id == ItemType.GunCOM15 && weapon == WeaponType.Com15)
+                    return item;
+                if (item.id == ItemType.GunE11SR && weapon == WeaponType.Epsilon11)
+                    return item;
+                if (item.id == ItemType.GunLogicer && weapon == WeaponType.Logicer)
+                    return item;
+                if (item.id == ItemType.GunMP7 && weapon == WeaponType.MP7)
+                    return item;
+                if (item.id == ItemType.GunProject90 && weapon == WeaponType.Project90)
+                    return item;
+                if (item.id == ItemType.GunUSP && weapon == WeaponType.USP)
+                    return item;
+                if (item.id == ItemType.MicroHID && weapon == WeaponType.MicroHID)
+                    return item;
+            }
+            return default;
+        }
+
         public void CreatePortal(Player target = null)
         {
+            if (Role != RoleType.Scp106)
+                return;
             if (target == null)
             {
                 _hub.scp106PlayerScript.CallCmdMakePortal();
@@ -467,6 +503,8 @@ namespace Vigilance.API
 
         public void CreatePortal(Vector3 pos)
         {
+            if (Role != RoleType.Scp106)
+                return;
             if (pos == Vector3.zero)
             {
                 _hub.scp106PlayerScript.CallCmdMakePortal();
@@ -491,8 +529,8 @@ namespace Vigilance.API
             _hub.scp106PlayerScript.CallCmdUsePortal();
         }
 
-        public void Teleport(Room room) => Teleport(room.Position);
-        public void Teleport(Rid rid) => Teleport(rid.transform.position);
+        public void Teleport(Room room) => Teleport(Environment.FindSafePosition(room.Position));
+        public void Teleport(Rid rid) => Teleport(Environment.FindSafePosition(rid.transform.position));
 
         public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : PlayerEffect => _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
         public void DisableEffect<T>() where T : PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Vigilance.API;
 using System.Diagnostics.Contracts;
+using Harmony;
 
 namespace Vigilance.Extensions
 {
@@ -66,7 +67,10 @@ namespace Vigilance.Extensions
 				return DamageType.Disconnect;
 			return info.GetDamageType().AsDamageType();
         }
+	}
 
+	public static class DamageExtensions
+	{
 		public static DamageType AsDamageType(this DamageTypes.DamageType dmgType)
 		{
 			if (string.IsNullOrEmpty(dmgType.name))
@@ -145,39 +149,19 @@ namespace Vigilance.Extensions
 	{
 		public static Player GetOwner(this Ragdoll ragdoll)
         {
-			Player player = Server.PlayerList.GetPlayer(ragdoll.owner.PlayerId);
-			if (player == null)
-				return Server.PlayerList.Local;
-			else
-				return player;
+			foreach (Player player in Server.Players)
+            {
+				if (player.Ragdolls.Contains(ragdoll))
+					return player;
+            }
+			return null;
         }
 
 		public static void Delete(this Ragdoll ragdoll) => ragdoll?.gameObject.Destroy();
 	}
 
-	public static class PlayerExtensions
-	{
-		public static Inventory.SyncItemInfo GetWeapon(this Player player, WeaponType weapon)
-        {
-			foreach (Inventory.SyncItemInfo item in player.Hub.inventory.items)
-            {
-				if (item.id == ItemType.GunCOM15 && weapon == WeaponType.Com15)
-					return item;
-				if (item.id == ItemType.GunE11SR && weapon == WeaponType.Epsilon11)
-					return item;
-				if (item.id == ItemType.GunLogicer && weapon == WeaponType.Logicer)
-					return item;
-				if (item.id == ItemType.GunMP7 && weapon == WeaponType.MP7)
-					return item;
-				if (item.id == ItemType.GunProject90 && weapon == WeaponType.Project90)
-					return item;
-				if (item.id == ItemType.GunUSP && weapon == WeaponType.USP)
-					return item;
-				if (item.id == ItemType.MicroHID && weapon == WeaponType.MicroHID)
-					return item;
-            }
-			return default;
-        }
+	public static class CommandSenderExtensions
+    {
 		public static void SendRemoteAdminMessage(this CommandSender sender, string message, string command)
 		{
 			sender.RaReply(command.ToUpper() + "#" + message, true, true, string.Empty);
@@ -188,6 +172,27 @@ namespace Vigilance.Extensions
 			sender.SendRemoteAdminMessage(message, "server");
 		}
 
+		public static Player GetPlayer(this CommandSender sender)
+		{
+			string id = sender.SenderId;
+			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
+				return new Player(ReferenceHub.LocalHub);
+			if (id == "Sitrep")
+				return new Player(ReferenceHub.LocalHub);
+			if (sender.Nickname == "Sitrep")
+				return new Player(ReferenceHub.LocalHub);
+			foreach (Player player in Server.PlayerList.Players.Values)
+			{
+				if (player.UserId == sender.SenderId)
+					return player;
+			}
+			return new Player(ReferenceHub.LocalHub);
+		}
+	}
+
+
+	public static class PlayerExtensions
+	{
 		public static void SendRemoteAdminMessage(this Player player, string message)
 		{
 			player.Hub.queryProcessor._sender.RaReply($"SERVER#{message}", true, true, string.Empty);
@@ -233,36 +238,9 @@ namespace Vigilance.Extensions
 			return manager._hub.GetPlayer();
 		}
 
-		public static Player GetPlayer(this CommandSender sender)
-		{
-			string id = sender.SenderId;
-			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
-				return new Player(ReferenceHub.LocalHub);
-			if (id == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
-			if (sender.Nickname == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
-			foreach (Player player in Server.PlayerList.Players.Values)
-			{
-				if (player.UserId == sender.SenderId)
-					return player;
-			}
-			return new Player(ReferenceHub.LocalHub);
-		}
-
 		public static List<Player> ToList(IEnumerable<Player> players)
 		{
 			return new List<Player>(players);
-		}
-
-		public static List<Player> GetPlayers(this RoleType role)
-		{
-			return Server.PlayerList.GetPlayers(role);
-		}
-
-		public static List<Player> GetPlayers(this TeamType team)
-		{
-			return Server.PlayerList.GetPlayers(team);
 		}
 
 		public static List<Player> GetPlayers(this List<GameObject> gameObjects)
@@ -924,6 +902,16 @@ namespace Vigilance.Extensions
 				return AmmoType.Nato_9mm;
 			return AmmoType.None;
         }
+
+		public static List<Player> GetPlayers(this RoleType role)
+		{
+			return Server.PlayerList.GetPlayers(role);
+		}
+
+		public static List<Player> GetPlayers(this TeamType team)
+		{
+			return Server.PlayerList.GetPlayers(team);
+		}
 	}
 
 	public static class EnumExtensions
@@ -937,6 +925,40 @@ namespace Vigilance.Extensions
 					return achievement;
             }
 			return Achievement.Unknown;
+        }
+
+		public static T GetEnum<T>(this string str)
+        {
+			IEnumerable<Assembly> assemblies = PluginManager.Assemblies.Values;
+			assemblies.Add(Assembly.LoadFrom($"{Paths.Managed}/Assembly-CSharp.dll"));
+			assemblies.Add(Assembly.LoadFrom($"{Paths.VigilanceFile}"));
+			List<Type> valid = new List<Type>();
+			foreach (Assembly assembly in assemblies)
+            {
+				foreach (Type type in assembly.GetTypes())
+                {
+					if (type.BaseType == typeof(Enum))
+                    {
+						valid.Add(type);
+                    }
+                }
+            }
+
+			List<T> res = valid.Cast<T>().ToList();
+			foreach (T t in res)
+            {
+				if (t.ToString().ToLower() == str.ToLower() || t.ToString().ToLower().Contains(str.ToLower()))
+                {
+					return t;
+                }
+            }
+
+			IEnumerable<int> res2 = valid.Cast<int>();
+			if (int.TryParse(str, out int id))
+            {
+				return res[res2.Where(h => h == id).FirstOrDefault()];
+            }
+			return default;
         }
     }
 

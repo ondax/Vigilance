@@ -236,38 +236,75 @@ namespace Vigilance.API
                 Ghostmode.ClearAll();
             }
 
-            public static void Add(ReferenceHub player)
+            public static Player Add(ReferenceHub player)
             {
-                if (player == null)
-                    return;
-                if (Contains(player))
-                    return;
-                Players.Add(player, new Player(player));
-                UserIdCache.Add(player.characterClassManager.UserId, Players[player]);
-                PlayerIdCache.Add(player.queryProcessor.PlayerId, Players[player]);
+                try
+                {
+                    if (player == null)
+                        return null;
+                    object obj = Contains(player);
+                    if (obj == null)
+                        return null;
+                    if ((bool)obj)
+                        return null;
+                    Player ply = new Player(player);
+                    Players.Add(player, ply);
+                    UserIdCache.Add(player.characterClassManager.UserId, ply);
+                    PlayerIdCache.Add(player.queryProcessor.PlayerId, ply);
+                    return ply;
+                }
+                catch (Exception e)
+                {
+                    Log.Add(nameof(Add), e);
+                    return null;
+                }
             }
 
-            public static void Remove(ReferenceHub player)
+            public static bool Remove(ReferenceHub player)
             {
-                if (player == null)
-                    return;
-                if (!Contains(player))
-                    return;
-                Ghostmode.RemoveAllTargets(Players[player]);
-                Ghostmode.RemoveGhost(Players[player]);
-                Players.Remove(player);
-                UserIdCache.Remove(player.characterClassManager.UserId);
-                PlayerIdCache.Remove(player.queryProcessor.PlayerId);
-            }
-
-            public static bool Contains(ReferenceHub player)
-            {
-                if (player == null)
-                    return false;
-                if (Players.ContainsKey(player) && UserIdCache.ContainsKey(player.characterClassManager.UserId) && PlayerIdCache.ContainsKey(player.queryProcessor.PlayerId))
+                try
+                {
+                    if (player == null)
+                        return false;
+                    object obj = Contains(player);
+                    if (obj == null)
+                        return false;
+                    if (!(bool)obj)
+                        return false;
+                    Ghostmode.RemoveAllTargets(Players[player]);
+                    Ghostmode.RemoveGhost(Players[player]);
+                    Players.Remove(player);
+                    UserIdCache.Remove(player.characterClassManager.UserId);
+                    PlayerIdCache.Remove(player.queryProcessor.PlayerId);
                     return true;
-                else
+                }
+                catch (Exception e)
+                {
+                    Log.Add(nameof(Remove), e);
                     return false;
+                }
+            }
+
+            public static object Contains(ReferenceHub player)
+            {
+                try
+                {
+                    if (player == null)
+                        return null;
+                    if (player.characterClassManager == null || string.IsNullOrEmpty(player.characterClassManager.UserId))
+                        return null;
+                    if (player.queryProcessor == null || player.queryProcessor.PlayerId < 1)
+                        return null;
+                    if (Players.ContainsKey(player) && UserIdCache.ContainsKey(player.characterClassManager.UserId) && PlayerIdCache.ContainsKey(player.queryProcessor.PlayerId))
+                        return true;
+                    else
+                        return false;
+                }
+                catch (Exception e)
+                {
+                    Log.Add(nameof(Contains), e);
+                    return null;
+                }
             }
 
             public static List<Player> GetPlayers(RoleType role)
@@ -294,73 +331,89 @@ namespace Vigilance.API
 
             public static Player GetPlayer(GameObject gameObject)
             {
-                if (gameObject == null)
-                    return null;
-                if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
+                try
                 {
+                    if (gameObject == null)
+                        return null;
+                    if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
+                    {
+                        if (Players.TryGetValue(hub, out Player player))
+                        {
+                            return player;
+                        }
+                        else
+                        {
+                            if (hub.queryProcessor != null && hub.queryProcessor.PlayerId > 0 && PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
+                            {
+                                return player;
+                            }
+                            else
+                            {
+                                if (hub.characterClassManager != null && !string.IsNullOrEmpty(hub.characterClassManager.UserId) && UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
+                                {
+                                    return player;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        QueryProcessor qp = gameObject.GetComponent<QueryProcessor>();
+                        if (qp != null && qp.PlayerId > 0)
+                        {
+                            if (PlayerIdCache.TryGetValue(qp.PlayerId, out Player player))
+                                return player;
+                        }
+                        else
+                        {
+                            CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
+                            if (ccm != null && !string.IsNullOrEmpty(ccm.UserId))
+                            {
+                                if (UserIdCache.TryGetValue(ccm.UserId, out Player player))
+                                    return player;
+                            }
+                        }
+                    }
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    Log.Add(nameof(GetPlayer), e);
+                    return null;
+                }
+            }
+
+            public static Player GetPlayer(ReferenceHub hub)
+            {
+                try
+                {
+                    if (hub == null)
+                        return null;
                     if (Players.TryGetValue(hub, out Player player))
                     {
                         return player;
                     }
                     else
                     {
-                        if (PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
+                        if (hub.queryProcessor != null && hub.queryProcessor.PlayerId > 0 && PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
                         {
                             return player;
                         }
                         else
                         {
-                            if (UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
+                            if (hub.characterClassManager != null && !string.IsNullOrEmpty(hub.characterClassManager.UserId) && UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
                             {
                                 return player;
                             }
                         }
                     }
-                }
-                else
-                {
-                    QueryProcessor qp = gameObject.GetComponent<QueryProcessor>();
-                    CharacterClassManager ccm = gameObject.GetComponent<CharacterClassManager>();
-                    if (qp != null)
-                    {
-                        if (PlayerIdCache.TryGetValue(qp.PlayerId, out Player player))
-                            return player;
-                    }
-                    else
-                    {
-                        if (ccm != null)
-                        {
-                            if (UserIdCache.TryGetValue(ccm.UserId, out Player player))
-                                return player;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            public static Player GetPlayer(ReferenceHub hub)
-            {
-                if (hub == null)
                     return null;
-                if (Players.TryGetValue(hub, out Player player))
-                {
-                    return player;
                 }
-                else
+                catch (Exception e)
                 {
-                    if (hub.queryProcessor != null && PlayerIdCache.TryGetValue(hub.queryProcessor.PlayerId, out player))
-                    {
-                        return player;
-                    }
-                    else
-                    {
-                        if (hub.characterClassManager != null && UserIdCache.TryGetValue(hub.characterClassManager.UserId, out player))
-                        {
-                            return player;
-                        }
-                    }
+                    Log.Add(nameof(GetPlayer), e);
+                    return null;
                 }
-                return null;
             }
 
             public static Player GetPlayer(int playerId)
