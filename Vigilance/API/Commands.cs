@@ -4,9 +4,6 @@ using System.Linq;
 using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Configuration;
-using Utf8Json.Formatters;
-using Org.BouncyCastle.Asn1.Pkcs;
 using System;
 
 namespace Vigilance.Registered
@@ -39,7 +36,7 @@ namespace Vigilance.Registered
 						item = pickup.ItemId;
 					}
 				}
-				return $"Succesfully cleared all {item}s";
+				return $"Succesfully cleared all {item}s!";
 			}
 		}
 	}
