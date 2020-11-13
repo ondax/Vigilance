@@ -39,7 +39,7 @@ namespace Vigilance.Registered
 						item = pickup.ItemId;
 					}
 				}
-				return $"Succesfully cleared all {item}s!";
+				return $"Succesfully cleared all {item}s";
 			}
 		}
 	}

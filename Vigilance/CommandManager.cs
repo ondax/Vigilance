@@ -140,7 +140,7 @@ namespace Vigilance
 
             if (HandlerExists(query[0].ToUpper()))
             {
-                reply = "SERVER#An error occured while executing this command.";
+                reply = "SERVER#An error occured while executing __instance command.";
                 return true;
             }
 
