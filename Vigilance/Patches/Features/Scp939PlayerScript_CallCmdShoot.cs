@@ -13,18 +13,15 @@ namespace Vigilance.Patches.Features
 		{
 			try
 			{
-				if (!__instance._iawRateLimit.CanExecute(true))
-					return false;
-				if (target == null)
-					return false;
-				if (!__instance.iAm939 || Vector3.Distance(target.transform.position, __instance.transform.position) >= __instance.attackDistance * 1.2f || __instance.cooldown > 0f)
+				if (target == null || !__instance.iAm939 || __instance.cooldown > 0f || Vector3.Distance(target.transform.position, __instance.transform.position) >= __instance.attackDistance * 1.2f)
 					return false;
 				__instance.cooldown = 1f;
 				__instance._hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(65f, __instance._hub.LoggedNameFromRefHub(), DamageTypes.Scp939, __instance.GetComponent<QueryProcessor>().PlayerId), target, false);
-				__instance._hub.characterClassManager.RpcPlaceBlood(target.transform.position, 0, 2f);
 				ReferenceHub hub = ReferenceHub.GetHub(target);
 				if (hub != null && hub.playerEffectsController != null && ConfigManager.Scp939Amnesia)
+				{
 					hub.playerEffectsController.EnableEffect<Amnesia>(3f, true);
+				}
 				__instance.RpcShoot();
 				return false;
 			}

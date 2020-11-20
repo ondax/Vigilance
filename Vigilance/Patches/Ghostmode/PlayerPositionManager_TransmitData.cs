@@ -85,7 +85,6 @@ namespace Vigilance.Patches.Ghostmode
 
                                 if (scp096 != null && scp096.EnragedOrEnraging && !scp096.HasTarget(currentTarget.Hub) && currentTarget.Team != TeamType.SCP)
                                 {
-                                    Log.Add(nameof(PlayerPositionManager.TransmitData), $"{player.UserId} cannot see {currentTarget.UserId}", LogType.Debug);
                                     API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
                                 }
 

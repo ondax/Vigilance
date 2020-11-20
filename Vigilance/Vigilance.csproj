@@ -179,7 +179,6 @@
     <Compile Include="Patches\Features\Scp096_ChargePlayer.cs" />
     <Compile Include="Patches\Features\Scp096_get_MaxShield.cs" />
     <Compile Include="Patches\Features\Scp096_OnEnable.cs" />
-    <Compile Include="Patches\Features\Scp096_ParseVisionInformation.cs" />
     <Compile Include="Patches\Features\Scp096_PryGate.cs" />
     <Compile Include="Patches\Features\Scp096_SetupShield.cs" />
     <Compile Include="Patches\Features\Scp096Target_set_IsTarget.cs" />

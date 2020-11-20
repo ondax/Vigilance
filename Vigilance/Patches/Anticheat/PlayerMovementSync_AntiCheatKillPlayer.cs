@@ -8,7 +8,7 @@ namespace Vigilance.Patches.Anticheat
 	{
 		public static bool Prefix(PlayerMovementSync __instance, string message, string code)
 		{
-			if (!ConfigManager.IsAntiFlyEnabled)
+			if (!ConfigManager.IsAntiFlyEnabled || !ConfigManager.IsAntiCheatEnabled)
 				return false;
 			try
 			{

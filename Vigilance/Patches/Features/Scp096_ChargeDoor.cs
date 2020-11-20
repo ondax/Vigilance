@@ -12,21 +12,19 @@ namespace Vigilance.Patches.Features
 		{
 			try
 			{
-				if (!door.destroyed)
+				if (door.isOpen || door.destroyed)
+					return false;
+				Door.DoorTypes doorType = door.doorType;
+				if (doorType == Door.DoorTypes.Standard)
 				{
-					switch (door.doorType)
-					{
-						case Door.DoorTypes.Standard:
-							if (ConfigManager.Scp096DestroyDoors)
-								door.DestroyDoor096();
-							break;
-						case Door.DoorTypes.HeavyGate:
-							__instance.Hub.fpc.NetworkmovementOverride = Vector2.zero;
-							__instance._chargeCooldown = 0f;
-							__instance.PryGate(door);
-							break;
-					}
+					door.DestroyDoor096();
+					return false;
 				}
+				if (doorType != Door.DoorTypes.HeavyGate)
+					return false;
+				__instance.Hub.fpc.NetworkmovementOverride = Vector2.zero;
+				__instance._chargeCooldown = 0f;
+				__instance.PryGate(door);
 				return false;
 			}
 			catch (Exception e)
