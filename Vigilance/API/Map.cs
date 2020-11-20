@@ -31,6 +31,7 @@ namespace Vigilance.API
 		public static List<Generator079> Generators => Generator079.Generators;
 		public static List<Lift.Elevator> Elevators => Lifts.FirstOrDefault().elevators.ToList();
 		public static List<Rid> RoomIDs { get; } = GameObject.FindGameObjectsWithTag("RoomID").Select(h => h.GetComponent<Rid>()).ToList();
+		public static List<RoomInformation> RoomList { get; } = FindObjects<RoomInformation>();
 		public static Vector3 PocketDimension { get; } = new Vector3(0f, -1998.5f, 0f);
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
@@ -41,6 +42,7 @@ namespace Vigilance.API
 		public static OneOhSixContainer OneOhSixContainer { get; } = Find<OneOhSixContainer>();
 		public static GameObject OutsitePanelScript { get; } = GameObject.Find("OutsitePanelScript");
 		public static AlphaWarheadOutsitePanel OutsitePanel { get; } = OutsitePanelScript.GetComponent<AlphaWarheadOutsitePanel>();
+		public static AlphaWarheadNukesitePanel NukesitePanel { get; } = AlphaWarheadOutsitePanel.nukeside;
 		public static int MapSeed { get; } = SeedSync.seed;
 		public static bool TeslaGatesDisabled { get; set; }
 
@@ -53,8 +55,11 @@ namespace Vigilance.API
 					if (_rooms == null || _rooms.Count < RoomIDs.Count)
 					{
 						_rooms = new List<Room>();
-						_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r.transform, r.transform.position)));
-						_rooms.Add(new Room("Root_*&*Outside Cams", GameObject.Find("Root_*&*Outside Cams").transform, GameObject.Find("Root_*&*Outside Cams").transform.position));
+						_rooms.AddRange(GameObject.FindGameObjectsWithTag("Room").Select(r => new Room(r.name, r, r.transform.position)));
+						_rooms.Add(new Room("Root_*&*Outside Cams", GameObject.Find("Root_*&*Outside Cams"), GameObject.Find("Root_*&*Outside Cams").transform.position));
+						RoomInformation pocket = FindObjects<RoomInformation>().Where(h => h.CurrentRoomType == RoomInformation.RoomType.POCKET).FirstOrDefault();
+						if (pocket != null)
+							_rooms.Add(new Room("PocketDimension", pocket.gameObject, pocket.transform.position));
 					}
 					return _rooms;
 				}
@@ -139,8 +144,46 @@ namespace Vigilance.API
 				if (rid.id.ToLower() == name.ToLower() || rid.id.ToLower().Contains(name.ToLower()) || name.ToLower().Contains(rid.id.ToLower()))
 					return rid;
             }
+			RoomInformation info = GetRoomInformation(name);
+			if (info != null)
+				return info.GetComponent<Rid>();
 			return null;
         }
+
+		public static RoomInformation GetRoomInformation(string search)
+		{
+			foreach (RoomInformation info in FindObjects<RoomInformation>())
+            {
+				if (info.name == search || info.name.Contains(search) || info.tag == search || info.tag.Contains(search))
+					return info;
+            }
+
+			foreach (RoomInformation.RoomType type in Environment.GetValues<RoomInformation.RoomType>())
+            {
+				string str = type.ToString();
+				if (str == search || str.ToLower() == search.ToLower() || str.Contains(search))
+					return GetRoomInformation(type);
+            }
+			return null;
+		}
+
+		public static RoomInformation GetRoomInformation(RoomInformation.RoomType type)
+        {
+			foreach (RoomInformation info in FindObjects<RoomInformation>())
+			{
+				if (info.CurrentRoomType == type)
+					return info;
+			}
+			return null;
+		}
+
+		public static RoomInformation GetRoomInformation(RoomType type)
+        {
+			Room room = GetRoom(type);
+			if (room != null)
+				return room.RoomInformation;
+			return null;
+		}
 
 		public static Room GetRoom(string name)
 		{

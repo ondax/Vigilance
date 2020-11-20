@@ -8,15 +8,16 @@ namespace Vigilance.API
 
     public class Room
     {
-        public Room(string name, Transform transform, Vector3 position)
+        public Room(string name, GameObject obj, Vector3 position)
         {
             Name = name;
-            Transform = transform;
+            Transform = obj.transform;
             Position = position;
             Zone = FindZone();
             Type = FindType(name);
             Doors = FindDoors();
-            LightController = transform.GetComponentInChildren<FlickerableLightController>();
+            LightController = obj.transform.GetComponentInChildren<FlickerableLightController>();
+            RoomInformation = obj.GetComponent<RoomInformation>();
         }
         public string Name { get; }
         public Transform Transform { get; }
@@ -25,6 +26,7 @@ namespace Vigilance.API
         public RoomType Type { get; }
         public List<Door> Doors { get; }
         public FlickerableLightController LightController { get; }
+        public RoomInformation RoomInformation { get; }
         public IEnumerable<Player> Players => Server.Players.Where(player => player.CurrentRoom.Transform == Transform);
 
         public void TurnOffLights(float duration)
@@ -34,6 +36,8 @@ namespace Vigilance.API
 
         private ZoneType FindZone()
         {
+            if (Name == "PocketDimension")
+                return ZoneType.PocketDimension;
             if (Transform.parent == null)
                 return ZoneType.Unspecified;
             switch (Transform.parent.name)
@@ -51,6 +55,8 @@ namespace Vigilance.API
 
         private RoomType FindType(string rawName)
         {
+            if (rawName == "PocketDimension")
+                return RoomType.PocketDimension;
             var bracketStart = rawName.IndexOf('(') - 1;
             if (bracketStart > 0)
                 rawName = rawName.Remove(bracketStart, rawName.Length - bracketStart);

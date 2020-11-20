@@ -82,6 +82,7 @@
 		Entrance,
 		HeavyContainment,
 		LightContainment,
+		PocketDimension,
 		Unspecified
 	}
 
@@ -134,7 +135,8 @@
         EzUpstairsPcs,
         EzGateB,
         EzShelter,
-        Surface
+        Surface,
+		PocketDimension
     }
 
     public enum RespawnEffectType : byte

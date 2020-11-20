@@ -264,7 +264,7 @@ namespace Vigilance.API
                     if (room.Transform == latestParent)
                         return room;
                 }
-                return new Room(latestParent.name, latestParent, latestParent.position);
+                return new Room(latestParent.name, latestParent.gameObject, latestParent.position);
             }
         }
 

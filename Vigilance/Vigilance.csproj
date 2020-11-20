@@ -107,7 +107,6 @@
     <Compile Include="Patches\Anticheat\PlayerMovementSync_AntiFly.cs" />
     <Compile Include="Patches\Anticheat\PlayerMovementSync_ServerUpdateRealModel.cs" />
     <Compile Include="Patches\CommandProccessing\CommandProcessor_ProcessQuery.cs" />
-    <Compile Include="Patches\Events\AlphaWarheadController_CancelDetonation.cs" />
     <Compile Include="Patches\Events\AlphaWarheadController_Detonate.cs" />
     <Compile Include="Patches\Events\AnimationController_CallCmdSyncData.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_ApplyProperties.cs" />
@@ -138,6 +137,7 @@
     <Compile Include="Patches\Events\PlayerInteract_CallCmdOpenDoor.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUse914.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdUsePanel.cs" />
     <Compile Include="Patches\Events\PlayerInteract_OnInteract.cs" />
     <Compile Include="Patches\Events\PlayerStats_Roundrestart.cs" />
     <Compile Include="Patches\Events\PocketDimensionTeleport_OnTriggerEnter.cs" />
