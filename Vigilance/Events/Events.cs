@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using PlayableScps;
 using Respawning;
 using System.Linq;
+using CustomPlayerEffects;
 
 namespace Vigilance.Events
 {
@@ -679,14 +680,14 @@ namespace Vigilance.Events
     public class PlayerSpawnEvent : Event
     {
         public Player Player { get; }
-        public Vector3 Location { get; set; }
+        public Vector3 Position { get; set; }
         public RoleType Role { get; set; }
         public bool Allow { get; set; }
 
         public PlayerSpawnEvent(Player ply, Vector3 pos, RoleType role, bool allow)
         {
             Player = ply;
-            Location = pos;
+            Position = pos;
             Role = role;
             Allow = allow;
         }
@@ -700,14 +701,16 @@ namespace Vigilance.Events
     public class WeaponReloadEvent : Event
     {
         public Player Player { get; }
-        public WeaponType Weapon { get; }
+        public WeaponType WeaponType { get; }
+        public Inventory.SyncItemInfo Weapon { get; }
         public bool AnimationOnly { get; set; }
         public bool Allow { get; set; }
 
         public WeaponReloadEvent(Player ply, WeaponType weapon, bool anim, bool allow)
         {
             Player = ply;
-            Weapon = weapon;
+            WeaponType = weapon;
+            Weapon = ply.CurrentItem;
             AnimationOnly = anim;
             Allow = allow;
         }
@@ -866,10 +869,8 @@ namespace Vigilance.Events
 
         public SCP096EnrageEvent(Player ply, bool allow)
         {
-            Player p = ply;
-            Scp096 scp = (Scp096)p.Hub.scpsController.CurrentScp;
-            Scp096 = scp;
-            Player = p;
+            Scp096 = ply.Hub.scpsController.CurrentScp as Scp096;
+            Player = ply;
             Allow = allow;
         }
 
@@ -887,10 +888,8 @@ namespace Vigilance.Events
 
         public SCP096CalmEvent(Player ply, bool allow)
         {
-            Player p = ply;
-            Scp096 scp = (Scp096)p.Hub.scpsController.CurrentScp;
-            Scp096 = scp;
-            Player = p;
+            Scp096 = ply.Hub.scpsController.CurrentScp as Scp096;
+            Player = ply;
             Allow = allow;
         }
 
@@ -1041,14 +1040,16 @@ namespace Vigilance.Events
     {
         public Player Player { get; }
         public GameObject Target { get; }
-        public WeaponType Weapon { get; }
+        public WeaponType WeaponType { get; }
+        public Inventory.SyncItemInfo Weapon { get; }
         public bool Allow { get; set; }
 
         public WeaponShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow)
         {
             Player = ply;
             Target = target;
-            Weapon = weapon;
+            WeaponType = weapon;
+            Weapon = ply.CurrentItem;
             Allow = allow;
         }
 
@@ -1062,14 +1063,16 @@ namespace Vigilance.Events
     {
         public Player Player { get; }
         public GameObject Target { get; }
-        public WeaponType Weapon { get; }
+        public WeaponType WeaponType { get; }
+        public Inventory.SyncItemInfo Weapon { get; }
         public bool Allow { get; set; }
 
         public WeaponLateShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow)
         {
             Player = ply;
             Target = target;
-            Weapon = weapon;
+            WeaponType = weapon;
+            Weapon = ply.CurrentItem;
             Allow = allow;
         }
 
@@ -1081,11 +1084,14 @@ namespace Vigilance.Events
 
     public class SpawnRagdollEvent : Event
     {
+        public Player Owner { get; }
         public Ragdoll Ragdoll { get; }
+        public Vector3 Velocity { get => Ragdoll.NetworkPlayerVelo; set => Ragdoll.NetworkPlayerVelo = value; }
         public bool Allow { get; set; }
 
         public SpawnRagdollEvent(Ragdoll ragdoll, bool allow)
         {
+            Owner = ragdoll.Networkowner.PlayerId.GetPlayer();
             Ragdoll = ragdoll;
             Allow = allow;
         }
@@ -1250,6 +1256,7 @@ namespace Vigilance.Events
     public class SCP049RecallEvent : Event
     {
         public Player Player { get; }
+        public Player RagdollOwner { get; }
         public Ragdoll Ragdoll { get; }
         public bool Allow { get; set; }
 
@@ -1257,6 +1264,7 @@ namespace Vigilance.Events
         {
             Player = ply;
             Ragdoll = ragdoll;
+            RagdollOwner = ragdoll.Networkowner.PlayerId.GetPlayer();
             Allow = allow;
         }
 
@@ -1309,11 +1317,17 @@ namespace Vigilance.Events
     public class SCP079InteractEvent : Event
     {
         public Player Player { get; }
+        public Enums.Scp079Interaction Interaction { get; set; }
+        public GameObject Target { get; }
+        public float ExpCost { get; set; }
         public bool Allow { get; set; }
 
-        public SCP079InteractEvent(Player ply, bool allow)
+        public SCP079InteractEvent(Player ply, Scp079Interactable.InteractableType inter, GameObject target, float expCost, bool allow)
         {
             Player = ply;
+            Interaction = ((Enums.Scp079Interaction)(int)inter);
+            Target = target;
+            ExpCost = expCost;
             Allow = allow;
         }
 
@@ -1346,9 +1360,9 @@ namespace Vigilance.Events
 
     public class RoundShowSummaryEvent : Event
     {
-        public RoundSummary.SumInfo_ClassList ClassListStart { get; }
-        public RoundSummary.SumInfo_ClassList ClassListEnd { get; }
-        public RoundSummary.LeadingTeam Team { get; }
+        public RoundSummary.SumInfo_ClassList ClassListStart { get; set; }
+        public RoundSummary.SumInfo_ClassList ClassListEnd { get; set; }
+        public RoundSummary.LeadingTeam Team { get; set; }
         public bool Allow { get; set; }
 
         public RoundShowSummaryEvent(RoundSummary.SumInfo_ClassList start, RoundSummary.SumInfo_ClassList end, RoundSummary.LeadingTeam team, bool allow)
@@ -1405,11 +1419,13 @@ namespace Vigilance.Events
 
     public class Scp096AddTargetEvent : Event
     {
+        public Player Scp { get; }
         public Player Target { get; }
         public bool Allow { get; set; }
 
-        public Scp096AddTargetEvent(Player target, bool allow)
+        public Scp096AddTargetEvent(Player scp, Player target, bool allow)
         {
+            Scp = scp;
             Target = target;
             Allow = allow;
         }
@@ -1481,8 +1497,8 @@ namespace Vigilance.Events
     public class Scp914UpgradeHeldItemEvent : Event
     {
         public Player Player { get; }
-        public Inventory.SyncItemInfo Input { get; set; }
-        public Inventory.SyncItemInfo Output { get; set; }
+        public Inventory.SyncItemInfo Input { get; }
+        public ItemType Output { get; set; }
 
         public Scp914UpgradeHeldItemEvent(Player player, Inventory.SyncItemInfo item)
         {
@@ -1493,6 +1509,48 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((Scp914UpgradeHeldItemHandler)handler).OnScp914UpgradeHeldItem(this);
+        }
+    }
+
+    public class PlayerUseLockerEvent : Event
+    {
+        public Player Player { get; }
+        public Locker Locker { get; }
+        public string AccessToken { get; set; }
+        public bool Allow { get; set; }
+
+        public PlayerUseLockerEvent(Player player, Locker locker, string token, bool allow)
+        {
+            Player = player;
+            Locker = locker;
+            AccessToken = token;
+            Allow = allow;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((PlayerUseLockerHandler)handler).OnUseLocker(this);
+        }
+    }
+
+    public class PlayerReceiveEffectEvent : Event
+    {
+        public Player Player { get; }
+        public PlayerEffect Effect { get; }
+        public byte NewState { get; set; }
+        public bool Allow { get; set; }
+
+        public PlayerReceiveEffectEvent(Player player, PlayerEffect eff, byte state, bool allow)
+        {
+            Player = player;
+            Effect = eff;
+            NewState = state;
+            Allow = allow;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((PlayerReceiveEffectHandler)handler).OnReceiveEffect(this);
         }
     }
 }

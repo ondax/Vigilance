@@ -417,7 +417,7 @@ namespace Vigilance.Registered
 				foreach (Player ply in Server.Players)
 				{
 					if (ply.IsAlive)
-						ply.Rocket(speed);
+						Environment.Cache.Rocket(ply, speed);
 				}
 				return $"Succesfully launched all players into space.";
 			}
@@ -426,7 +426,7 @@ namespace Vigilance.Registered
 				return "An error occured: Player is null.";
 			if (!player.IsAlive)
 				return $"{player.Nick} is a spectator!";
-			player.Rocket(speed);
+			Environment.Cache.Rocket(player, speed);
 			return $"Succesfully launched {player.Nick} into space";
 		}
 	}
@@ -535,7 +535,7 @@ namespace Vigilance.Registered
 		}
 	}
 
-	public class UnbanCommand : GameCommandHandler
+	public class CommandUnban : GameCommandHandler
 	{
 		public string Command => "unban";
 
@@ -603,7 +603,7 @@ namespace Vigilance.Registered
 		}
 	}
 
-	public class OfflineBanCommand : GameCommandHandler
+	public class CommandOban : GameCommandHandler
 	{
 		public string Command => "offlineban";
 
@@ -707,7 +707,7 @@ namespace Vigilance.Registered
         }
     }
 
-    public class GhostCommand : CommandHandler
+    public class CommandGhost : CommandHandler
     {
 		public string Command => "ghost";
 
@@ -728,7 +728,7 @@ namespace Vigilance.Registered
         }
     }
 
-    public class TargetGhostCommand : CommandHandler
+    public class CommandTargetGhost : CommandHandler
     {
 		public string Command => "targetghost";
 
@@ -1029,7 +1029,7 @@ namespace Vigilance.Registered
     public class CommandList : CommandHandler
     {
 		public string Command => "list";
-		public string Usage => "Missing arguments!\nUsage: list <item/rid/role/damagetype/durationtype/grenadetype/useridtype/teamtype/team/zonetype/roomtype/weapontype/ammotype/prefab/achievement>";
+		public string Usage => "Missing arguments!\nUsage: list <item/rid/role/damagetype/durationtype/grenadetype/useridtype/teamtype/team/zonetype/roomtype/weapontype/ammotype/prefab/achievement/roominfo/infoarea>";
 		public string Aliases => "";
 
         public string Execute(Player sender, string[] args)
@@ -1231,6 +1231,32 @@ namespace Vigilance.Registered
 				}
 				return s;
 			}
+
+			if (args[0].ToLower() == "roominfo")
+			{
+				foreach (RoomInformation item in Map.RoomList)
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({item.tag}) {item.name}\n";
+				}
+				return s;
+			}
+
+			if (args[0].ToLower() == "infoarea")
+			{
+				foreach (PlayerInfoArea item in Environment.GetValues<PlayerInfoArea>())
+				{
+					if (string.IsNullOrEmpty(s))
+					{
+						s += $"\n";
+					}
+					s += $"({(int)item}) {item}\n";
+				}
+				return s;
+			}
 			return Usage;
 		}
     }
@@ -1247,6 +1273,7 @@ namespace Vigilance.Registered
 				return Usage;
 			Room room = Map.GetRoom(args[1]);
 			Rid rid = Map.GetRoomID(args[1]);
+			RoomInformation info = Map.GetRoomInformation(args[1]);
 			if (args[0].ToLower() == "*")
             {
 				if (room == null)
@@ -1260,7 +1287,16 @@ namespace Vigilance.Registered
 						return $"Succesfully teleported all players to {rid.id}";
                     }
 					else
-						return "That room does not exist. Use list <roomtype/rid>.";
+                    {
+						if (info != null)
+                        {
+							foreach (Player player in Server.Players)
+							{
+								player.Teleport(rid);
+							}
+							return $"Succesfully teleported all players to {info.name}";
+						}
+                    }
                 }
 				else
                 {
@@ -1284,7 +1320,13 @@ namespace Vigilance.Registered
 						return $"Succesfully teleported {player.Nick} to {rid.id}";
 					}
 					else
-						return "That room does not exist. Use list <room/rid>.";
+                    {
+						if (info != null)
+                        {
+							player.Teleport(Environment.FindSafePosition(info.transform.position));
+							return $"Succesfully teleported {player.Nick} to {info.name}";
+						}
+                    }
 				}
 				else
 				{
@@ -1292,6 +1334,42 @@ namespace Vigilance.Registered
 					return $"Succesfully teleported {player.Nick} to {room.Name}";
 				}
 			}
+			return Usage;
+        }
+    }
+
+    public class CommandSetInfo : CommandHandler
+    {
+		public string Command => "setinfo";
+		public string Usage => "Missing arguments!\nUsage: setinfo <player> <infoArea> <content>";
+		public string Aliases => "";
+
+        public string Execute(Player sender, string[] args)
+        {
+			if (args.Length < 3)
+				return Usage;
+			PlayerInfoArea area = PlayerInfoArea.Role;
+			foreach (PlayerInfoArea iA in Environment.GetValues<PlayerInfoArea>())
+            {
+				if (int.TryParse(args[1], out int id))
+				{
+					area = (PlayerInfoArea)id;
+					break;
+				}
+
+				if (iA.ToString() == args[1] || iA.ToString().ToLower() == args[1].ToLower() || iA.ToString().ToLower().Contains(args[1].ToLower()))
+                {
+					area = iA;
+					break;
+                }
+            }
+
+			Player player = args[0].GetPlayer();
+			if (player == null)
+				return Usage;
+			string content = args.Skip(2).ToArray().Combine();
+			player.SetInfo(area, content);
+			return $"Content of {player.Nick}'s {area} has been set to {content}";
         }
     }
 }

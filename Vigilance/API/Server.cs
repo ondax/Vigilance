@@ -13,7 +13,6 @@ namespace Vigilance.API
     public static class Server
     {
         public static string Version => CustomNetworkManager.CompatibleVersions[0];
-        public static GameObject Host => ReferenceHub.LocalHub.gameObject;
         public static GameObject GameManager => GameObject.Find("GameManager");
         public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
         public static IEnumerable<Player> Players => PlayerList.Players.Values;
@@ -36,24 +35,24 @@ namespace Vigilance.API
 
         private static IEnumerator<float> SafeRestart()
         {
-            Host.GetComponent<PlayerStats>().Roundrestart();
+            Environment.Cache.LocalStats.Roundrestart();
             yield return Timing.WaitForSeconds(0.5f);
             Application.Quit();
         }
 
         public static bool Ban(Player player, int duration)
         {
-            return Host.GetComponent<BanPlayer>().BanUser(player.GameObject, duration, "No reason given.", "Server");
+            return Environment.Cache.LocalBan.BanUser(player.GameObject, duration, "No reason given.", "Server");
         }
 
         public static bool Ban(Player player, int duration, string message)
         {
-            return Host.GetComponent<BanPlayer>().BanUser(player.GameObject, duration, message, "Server");
+            return Environment.Cache.LocalBan.BanUser(player.GameObject, duration, message, "Server");
         }
 
         public static bool Ban(Player player, int duration, string reason, string issuer)
         {
-            return Host.GetComponent<BanPlayer>().BanUser(player.GameObject, duration, reason, issuer);
+            return Environment.Cache.LocalBan.BanUser(player.GameObject, duration, reason, issuer);
         }
 
         public static void Kick(Player player)

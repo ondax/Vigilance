@@ -95,6 +95,7 @@
     <Compile Include="API\Room.cs" />
     <Compile Include="API\Round.cs" />
     <Compile Include="API\Server.cs" />
+    <Compile Include="API\Version.cs" />
     <Compile Include="CommandManager.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Environment.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Patches\Events\PlayerInteract_CallCmdOpenDoor.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUse914.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
+    <Compile Include="Patches\Events\PlayerInteract_CallCmdUseLocker.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUsePanel.cs" />
     <Compile Include="Patches\Events\PlayerInteract_OnInteract.cs" />
     <Compile Include="Patches\Events\PlayerStats_Roundrestart.cs" />

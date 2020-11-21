@@ -396,4 +396,14 @@ namespace Vigilance.EventHandlers
     {
         void OnScp914UpgradeHeldItem(Scp914UpgradeHeldItemEvent ev);
     }
+
+    public interface PlayerUseLockerHandler : EventHandler
+    {
+        void OnUseLocker(PlayerUseLockerEvent ev);
+    }
+
+    public interface PlayerReceiveEffectHandler : EventHandler
+    {
+        void OnReceiveEffect(PlayerReceiveEffectEvent ev);
+    }
 }

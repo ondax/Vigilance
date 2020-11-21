@@ -11,11 +11,37 @@ using Respawning;
 using System;
 using MEC;
 using System.Linq;
+using CustomPlayerEffects;
 
 namespace Vigilance
 {
     public static class Environment
     {
+        public static class Cache
+        {
+            public static PlayerStats LocalStats = ReferenceHub.LocalHub.playerStats;
+            public static CharacterClassManager LocalCcm = ReferenceHub.LocalHub.characterClassManager;
+            public static BanPlayer LocalBan = ReferenceHub.LocalHub.GetComponent<BanPlayer>();
+
+            private static IEnumerator<float> DoRocket(Player player, float speed)
+            {
+                int amnt = 0;
+                while (player.Role != RoleType.Spectator)
+                {
+                    player.Position = player.Position + Vector3.up * speed;
+                    amnt++;
+                    if (amnt >= 1000)
+                    {
+                        player.GodMode = false;
+                        player.Kill();
+                    }
+                    yield return Timing.WaitForOneFrame;
+                }
+            }
+
+            public static void Rocket(Player player, float speed) => Timing.RunCoroutine(DoRocket(player, speed));
+        }
+
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
 
@@ -41,8 +67,6 @@ namespace Vigilance
             {
                 CoroutineHandle handle = Timing.RunCoroutine(handler, name);
                 ActiveCoroutines.Add(handle);
-                if (!string.IsNullOrEmpty(handle.Tag))
-                    Log.Add("Environment", $"Started coroutine \"{handle.Tag}\"", LogType.Debug);
                 return handle;
             }
             catch (Exception e)
@@ -54,7 +78,7 @@ namespace Vigilance
 
         public static void KillCoroutine(CoroutineHandle handle)
         {
-            Timing.KillCoroutines(new CoroutineHandle[] { handle });
+            Timing.KillCoroutines(handle);
         }
 
         public static void KillCoroutines(IEnumerable<CoroutineHandle> handles)
@@ -674,7 +698,7 @@ namespace Vigilance
             {
                 PlayerSpawnEvent ev = new PlayerSpawnEvent(ply, pos, role, all);
                 EventManager.Trigger<PlayerSpawnHandler>(ev);
-                location = ev.Location;
+                location = ev.Position;
                 newRole = ev.Role;
                 allow = ev.Allow;
             }
@@ -1215,17 +1239,19 @@ namespace Vigilance
             }
         }
 
-        public static void OnSCP079Interact(Player ply, bool all, out bool allow)
+        public static void OnSCP079Interact(Player ply, Scp079Interactable.InteractableType type, GameObject target, float exp, bool all, out float cost, out bool allow)
         {
             try
             {
-                SCP079InteractEvent ev = new SCP079InteractEvent(ply, all);
+                SCP079InteractEvent ev = new SCP079InteractEvent(ply, type, target, exp, all);
                 EventManager.Trigger<SCP079InteractHandler>(ev);
+                cost = ev.ExpCost;
                 allow = ev.Allow;
             }
             catch (Exception e)
             {
                 Log.Add("Environment", e);
+                cost = exp;
                 allow = all;
             }
         }
@@ -1296,11 +1322,11 @@ namespace Vigilance
             }
         }
 
-        public static void OnScp096AddTarget(Player target, bool all, out bool allow)
+        public static void OnScp096AddTarget(Player scp, Player target, bool all, out bool allow)
         {
             try
             {
-                Scp096AddTargetEvent ev = new Scp096AddTargetEvent(target, all);
+                Scp096AddTargetEvent ev = new Scp096AddTargetEvent(scp, target, all);
                 EventManager.Trigger<Scp096AddTargetHandler>(ev);
                 allow = ev.Allow;
             }
@@ -1356,33 +1382,19 @@ namespace Vigilance
             }
         }
 
-        public static void OnScp914UpgradeHeldItem(Player player, Inventory.SyncItemInfo input, out Inventory.SyncItemInfo output)
+        public static void OnScp914UpgradeHeldItem(Player player, Inventory.SyncItemInfo input, out ItemType output)
         {
             try
             {
                 Scp914UpgradeHeldItemEvent ev = new Scp914UpgradeHeldItemEvent(player, input);
-                Inventory.SyncItemInfo info = new Inventory.SyncItemInfo();
-                info.durability = input.durability;
-                info.id = Map.Scp914.Singleton.UpgradeItemID(input.id);
-                info.modBarrel = input.modBarrel;
-                info.modOther = input.modOther;
-                info.modSight = input.modSight;
-                info.uniq = input.uniq;
-                ev.Output = info;
+                ev.Output = Scp914Machine.singleton.UpgradeItemID(input.id);
                 EventManager.Trigger<Scp914UpgradeHeldItemHandler>(ev);
                 output = ev.Output;
             }
             catch (Exception e)
             {
                 Log.Add(nameof(Environment.OnScp914UpgradeHeldItem), e);
-                Inventory.SyncItemInfo info = new Inventory.SyncItemInfo();
-                info.durability = input.durability;
-                info.id = Map.Scp914.Singleton.UpgradeItemID(input.id);
-                info.modBarrel = input.modBarrel;
-                info.modOther = input.modOther;
-                info.modSight = input.modSight;
-                info.uniq = input.uniq;
-                output = info;
+                output = input.id;
             }
         }
 
@@ -1399,6 +1411,40 @@ namespace Vigilance
             {
                 Log.Add(nameof(Environment.OnScp914UpgradePlayer), e);
                 allow = true;
+            }
+        }
+
+        public static void OnUseLocker(Player player, Locker locker, string token, bool all, out string accessToken, out bool allow)
+        {
+            try
+            {
+                PlayerUseLockerEvent ev = new PlayerUseLockerEvent(player, locker, token, all);
+                EventManager.Trigger<PlayerUseLockerHandler>(ev);
+                accessToken = ev.AccessToken;
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment.OnUseLocker", e);
+                accessToken = token;
+                allow = all;
+            }
+        }
+
+        public static void OnReceiveEffect(Player player, PlayerEffect effect, byte state, bool all, out byte newState, out bool allow)
+        {
+            try
+            {
+                PlayerReceiveEffectEvent ev = new PlayerReceiveEffectEvent(player, effect, state, all);
+                EventManager.Trigger<PlayerReceiveEffectHandler>(ev);
+                newState = ev.NewState;
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment.OnReceiveEffect", e);
+                newState = state;
+                allow = all;
             }
         }
     }

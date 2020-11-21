@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using CommandSystem.Commands;
 using Harmony;
-using Vigilance.API;
+using Version = Vigilance.API.Version;
 using Vigilance.Extensions;
+using Vigilance.API;
 
 namespace Vigilance
 {
@@ -12,7 +13,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static string Version => "5.3.6-B";
+        public static Version Version { get; } = new Version(5, 3, 6, "", true);
         public static List<string> CompatibleVersions = new List<string>() { "10.1.2" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -32,8 +33,10 @@ namespace Vigilance
                     return;
                 }
 
-                if (Version.Contains("-"))
+                if (Version.IsTesting)
                     Log.Add("PluginManager", "This is a development version in testing. Except to see some bugs.", LogType.Warn);
+                if (Version.IsBeta)
+                    Log.Add("PluginManager", "This is a beta version. Except to see some bugs.", LogType.Warn);
 
                 Paths.CheckMainConfig();
                 Config = new YamlConfig(Paths.ConfigPath);
@@ -70,6 +73,7 @@ namespace Vigilance
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
+                Log.Add($"Server version: {API.Server.Version}", ConsoleColor.Magenta);
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
             }
             catch (Exception e)

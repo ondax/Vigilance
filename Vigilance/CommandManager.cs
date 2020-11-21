@@ -40,8 +40,8 @@ namespace Vigilance
             RegisterCommand(new CommandDownloadDependency());
             RegisterCommand(new CommandAddUnit());
             RegisterCommand(new CommandPos());
-            RegisterCommand(new GhostCommand());
-            RegisterCommand(new TargetGhostCommand());
+            RegisterCommand(new CommandGhost());
+            RegisterCommand(new CommandTargetGhost());
             RegisterCommand(new CommandSpawnPrefab());
             RegisterCommand(new CommandExplode());
             RegisterCommand(new CommandDecontaminate());
@@ -55,9 +55,10 @@ namespace Vigilance
             RegisterCommand(new CommandItemSize());
             RegisterCommand(new CommandList());
             RegisterCommand(new CommandTpRoom());
+            RegisterCommand(new CommandSetInfo());
 
-            RegisterGameCommand(new UnbanCommand());
-            RegisterGameCommand(new OfflineBanCommand());
+            RegisterGameCommand(new CommandUnban());
+            RegisterGameCommand(new CommandOban());
         }
 
         public static void UnregisterCommand(string command)

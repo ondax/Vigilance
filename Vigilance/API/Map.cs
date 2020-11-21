@@ -28,6 +28,7 @@ namespace Vigilance.API
 		public static List<Lift> Lifts { get; } = FindObjects<Lift>();
 		public static List<Pickup> Pickups { get; } = FindObjects<Pickup>();
 		public static List<TeslaGate> TeslaGates { get; } = FindObjects<TeslaGate>();
+		public static List<GameObject> PocketDimensionExists => GameObject.FindGameObjectsWithTag("PD_EXIT").ToList();
 		public static List<Generator079> Generators => Generator079.Generators;
 		public static List<Lift.Elevator> Elevators => Lifts.FirstOrDefault().elevators.ToList();
 		public static List<Rid> RoomIDs { get; } = GameObject.FindGameObjectsWithTag("RoomID").Select(h => h.GetComponent<Rid>()).ToList();
@@ -36,7 +37,7 @@ namespace Vigilance.API
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
 		public static RespawnEffectsController RespawnController => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
-		public static RandomSeedSync SeedSync { get; } = Server.Host.GetComponent<RandomSeedSync>();
+		public static RandomSeedSync SeedSync { get; } = PlayerManager.localPlayer.GetComponent<RandomSeedSync>();
 		public static GameObject FemurBreaker { get; } = GameObject.FindGameObjectWithTag("FemurBreaker");
 		public static LureSubjectContainer LureSubjectContainer { get; } = Find<LureSubjectContainer>();
 		public static OneOhSixContainer OneOhSixContainer { get; } = Find<OneOhSixContainer>();
@@ -249,7 +250,7 @@ namespace Vigilance.API
 			return Object.FindObjectsOfType<T>().ToList();
         }
 
-		public static Vector3 GetRandomSpawnpoint(RoleType role) => Server.Host.GetComponent<SpawnpointManager>().GetRandomPosition(role).transform.position;
+		public static Vector3 GetRandomSpawnpoint(RoleType role) => PlayerManager.localPlayer.GetComponent<SpawnpointManager>().GetRandomPosition(role).transform.position;
 		public static void TurnOffLights(float time = 9999f, bool onlyHeavy = false) => Generators[0].ServerOvercharge(time, onlyHeavy);
 		public static Pickup SpawnItem(ItemType itemType, Vector3 position, Quaternion rotation = default, int sight = 0, int barrel = 0, int other = 0) => Server.LocalHub.inventory.SetPickup(itemType, -4.6566467E+11f, position, rotation, sight, barrel, other);
 

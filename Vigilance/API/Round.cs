@@ -36,7 +36,7 @@ namespace Vigilance.API
         }
 
         public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.BuildSumInfo(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
-        public static void Restart() => Server.Host.GetComponent<PlayerStats>().Roundrestart();
+        public static void Restart() => PlayerManager.localPlayer.GetComponent<PlayerStats>().Roundrestart();
 
         public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)
         {
