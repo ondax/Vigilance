@@ -283,9 +283,10 @@ namespace Vigilance.API
         public void Kick(string reason) => Server.Kick(this, reason);
         public void IssuePermanentBan() => Server.IssuePermanentBan(this);
         public void IssuePermanentBan(string reason) => Server.IssuePermanentBan(this, reason);
-        public void Broadcast(string message, int duration) => PlayerManager.localPlayer.GetComponent<Broadcast>().TargetAddElement(Connection, message, (ushort)duration, global::Broadcast.BroadcastFlags.Normal);
-        public void Broadcast(string message, int duration, bool monospaced) => PlayerManager.localPlayer.GetComponent<Broadcast>().TargetAddElement(Connection, message, (ushort)duration, monospaced ? global::Broadcast.BroadcastFlags.Monospaced : global::Broadcast.BroadcastFlags.Normal);
-        public void ClearBroadcasts() => PlayerManager.localPlayer.GetComponent<Broadcast>().TargetClearElements(Connection);
+        public void Broadcast(string message, int duration) => PlayerManager.localPlayer.GetComponent<global::Broadcast>().TargetAddElement(Connection, message, (ushort)duration, global::Broadcast.BroadcastFlags.Normal);
+        public void Broadcast(string message, int duration, bool monospaced) => PlayerManager.localPlayer.GetComponent<global::Broadcast>().TargetAddElement(Connection, message, (ushort)duration, monospaced ? global::Broadcast.BroadcastFlags.Monospaced : global::Broadcast.BroadcastFlags.Normal);
+        public void Broadcast(Broadcast bc) => Broadcast(bc.Message, bc.Duration, bc.Monospaced);
+        public void ClearBroadcasts() => PlayerManager.localPlayer.GetComponent<global::Broadcast>().TargetClearElements(Connection);
         public void ConsoleMessage(string message, string color = "green") => _hub.characterClassManager.TargetConsolePrint(Connection, message, color);
         public void RemoteAdminMessage(string message) => _hub.queryProcessor._sender.SendRemoteAdminMessage(message);
         public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, "WORLD", DamageTypes.Wall, PlayerId), GameObject);
@@ -313,6 +314,7 @@ namespace Vigilance.API
         public T AddComponent<T>() where T : Component => _hub.gameObject.AddComponent<T>();
         public bool HasItem(ItemType item) => _hub.inventory.items.Select(h => h.id).Contains(item);
         public void ResetStamina() => _hub.fpc.ResetStamina();
+        public void ShowHint(Broadcast bc) => ShowHint(bc.Message, bc.Duration);
 
         public void ShowHint(string message, float duration = 10f)
         {

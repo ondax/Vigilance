@@ -73,7 +73,7 @@ namespace Vigilance.API
         }
 	
 
-		public static void Broadcast(string message, int duration)
+		public static void Broadcast(string message, int duration, bool mono = false)
 		{
 			try
 			{
@@ -81,7 +81,7 @@ namespace Vigilance.API
 					return;
 				foreach (Player player in Server.PlayerList.Players.Values)
 				{
-					player.Broadcast(message, duration);
+					player.Broadcast(message, duration, mono);
 				}
 			}
 			catch (Exception e)
@@ -89,6 +89,8 @@ namespace Vigilance.API
 				Log.Add(nameof(Broadcast), e);
             }
 		}
+
+		public static void Broadcast(Broadcast bc) => Broadcast(bc.Message, bc.Duration, bc.Monospaced);
 
 		public static void ClearBroadcasts()
 		{
@@ -119,6 +121,8 @@ namespace Vigilance.API
 				Log.Add(nameof(ShowHint), e);
             }
         }
+
+		public static void ShowHint(Broadcast bc) => ShowHint(bc.Message, bc.Duration);
 
 		public static Room GetRoom(RoomType roomType)
 		{

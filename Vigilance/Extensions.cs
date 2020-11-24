@@ -6,7 +6,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Vigilance.API;
-using System.Diagnostics.Contracts;
 using Harmony;
 
 namespace Vigilance.Extensions
@@ -1087,6 +1086,7 @@ namespace Vigilance.Extensions
 		public static ItemType GetItem(this YamlConfig cfg, string key) => cfg.GetString(key).GetItem();
 		public static RoleType GetRole(this YamlConfig cfg, string key) => cfg.GetString(key).GetRole();
 		public static TeamType GetTeam(this YamlConfig cfg, string key) => cfg.GetString(key).GetTeam();
+		public static API.Broadcast GetBroadcast(this YamlConfig cfg, string key) => ParseBroadcast(cfg.GetString(key));
 
 		public static List<ItemType> GetItems(this YamlConfig cfg, string key)
 		{
@@ -1194,6 +1194,30 @@ namespace Vigilance.Extensions
 				}
 			}
 			return dictionary;
+		}
+
+		public static List<API.Broadcast> GetBroadcasts(this YamlConfig cfg, string key)
+        {
+			List<API.Broadcast> bcs = new List<API.Broadcast>();
+			foreach (string str in cfg.GetStringList(key))
+            {
+				bcs.Add(ParseBroadcast(str));
+            }
+			return bcs;
+        }
+
+		public static API.Broadcast ParseBroadcast(string arg)
+        {
+			if (!arg.Contains("|"))
+				throw new ArgumentException("The input string was not in the correct format.", "arg");
+			string[] args = arg.Split('|');
+			string txt = args[0];
+			bool mono = false;
+			if (!int.TryParse(args[1], out int duration))
+				throw new ArgumentException("The input string was not in the correct format.", "arg");
+			if (args.Length < 3 || !bool.TryParse(args[2], out mono))
+				mono = false;
+			return new API.Broadcast(duration, txt, mono);
 		}
 	}
 

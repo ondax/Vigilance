@@ -88,6 +88,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Broadcast.cs" />
     <Compile Include="API\Commands.cs" />
     <Compile Include="API\Ghostmode.cs" />
     <Compile Include="API\Map.cs" />
