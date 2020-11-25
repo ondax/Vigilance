@@ -1208,13 +1208,15 @@ namespace Vigilance.Extensions
 
 		public static API.Broadcast ParseBroadcast(string arg)
         {
+			if (string.IsNullOrEmpty(arg))
+				return new API.Broadcast(0, "", false);
 			if (!arg.Contains("|"))
-				throw new ArgumentException("The input string was not in the correct format.", "arg");
+				return new API.Broadcast(0, "", false);
 			string[] args = arg.Split('|');
 			string txt = args[0];
 			bool mono = false;
 			if (!int.TryParse(args[1], out int duration))
-				throw new ArgumentException("The input string was not in the correct format.", "arg");
+				return new API.Broadcast(0, "", false);
 			if (args.Length < 3 || !bool.TryParse(args[2], out mono))
 				mono = false;
 			return new API.Broadcast(duration, txt, mono);

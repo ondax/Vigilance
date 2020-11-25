@@ -158,7 +158,6 @@
     <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdMovePlayer.cs" />
     <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdUsePortal.cs" />
     <Compile Include="Patches\Events\Scp914Machine_ProcessItems.cs" />
-    <Compile Include="Patches\Events\Scp914Machine_UpgradeHeldItem.cs" />
     <Compile Include="Patches\Events\Scp914Machine_UpgradeItemID.cs" />
     <Compile Include="Patches\Events\Scp914Machine_UpgradePlayer.cs" />
     <Compile Include="Patches\Events\ServerConsole_AddLog.cs" />

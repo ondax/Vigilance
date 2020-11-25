@@ -415,13 +415,17 @@ namespace Vigilance.Events
     {
         public Player Thrower { get; }
         public Grenade Grenade { get; }
+        public GrenadeManager GrenadeManager { get; }
+        public GameObject GrenadeInstance { get; }
         public GrenadeType GrenadeType { get; }
         public bool Allow { get; set; }
 
-        public ThrowGrenadeEvent(Player ply, Grenade grenade, GrenadeType grenadeType, bool allow)
+        public ThrowGrenadeEvent(Player ply, Grenade grenade, GrenadeType grenadeType,  GrenadeManager gm, GameObject instance, bool allow)
         {
             Thrower = ply;
             Grenade = grenade;
+            GrenadeManager = gm;
+            GrenadeInstance = instance;
             GrenadeType = grenadeType;
             Allow = allow;
         }
@@ -1467,10 +1471,11 @@ namespace Vigilance.Events
 
     public class Scp914UpgradeItemEvent : Event
     {
-        public Pickup Input { get; }
+        public ItemType Input { get; }
         public ItemType Output { get; set; }
+        public bool Allow { get; set; }
 
-        public Scp914UpgradeItemEvent(Pickup input)
+        public Scp914UpgradeItemEvent(ItemType input)
         {
             Input = input;
         }
@@ -1478,6 +1483,23 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((Scp914UpgradeItemHandler)handler).OnScp914UpgradeItem(this);
+        }
+    }
+
+    public class Scp914UpgradePickupEvent : Event
+    {
+        public Pickup Input { get; }
+        public ItemType Output { get; set; }
+        public bool Allow { get; set; }
+
+        public Scp914UpgradePickupEvent(Pickup input)
+        {
+            Input = input;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((Scp914UpgradePickupHandler)handler).OnUpgradePickup(this);
         }
     }
 
@@ -1491,24 +1513,6 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((Scp914UpgradePlayerHandler)handler).OnScp914UpgradePlayer(this);
-        }
-    }
-
-    public class Scp914UpgradeHeldItemEvent : Event
-    {
-        public Player Player { get; }
-        public Inventory.SyncItemInfo Input { get; }
-        public ItemType Output { get; set; }
-
-        public Scp914UpgradeHeldItemEvent(Player player, Inventory.SyncItemInfo item)
-        {
-            Player = player;
-            Input = item;
-        }
-
-        public override void Execute(EventHandler handler)
-        {
-            ((Scp914UpgradeHeldItemHandler)handler).OnScp914UpgradeHeldItem(this);
         }
     }
 
@@ -1551,6 +1555,27 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((PlayerReceiveEffectHandler)handler).OnReceiveEffect(this);
+        }
+    }
+
+    public class PlayerSwitchLeverEvent : Event
+    {
+        public Player Player { get; }
+        public WarheadLeverStatus CurrentState { get; }
+        public WarheadLeverStatus NewState { get; set; }
+        public bool Allow { get; set; }
+
+        public PlayerSwitchLeverEvent(Player p, WarheadLeverStatus s, WarheadLeverStatus c, bool a)
+        {
+            Player = p;
+            CurrentState = c;
+            NewState = s;
+            Allow = a;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((PlayerSwitchLeverHandler)handler).OnSwitchLever(this);
         }
     }
 }

@@ -289,8 +289,8 @@ namespace Vigilance.API
         public void ClearBroadcasts() => PlayerManager.localPlayer.GetComponent<global::Broadcast>().TargetClearElements(Connection);
         public void ConsoleMessage(string message, string color = "green") => _hub.characterClassManager.TargetConsolePrint(Connection, message, color);
         public void RemoteAdminMessage(string message) => _hub.queryProcessor._sender.SendRemoteAdminMessage(message);
-        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, "WORLD", DamageTypes.Wall, PlayerId), GameObject);
-        public void Damage(int amount, DamageTypes.DamageType type) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, "WORLD", type, 0), GameObject, false);
+        public void Damage(int amount) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, Nick, DamageTypes.Wall, PlayerId), GameObject);
+        public void Damage(int amount, DamageTypes.DamageType type) => _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(amount, Nick, type, PlayerId), GameObject, false);
         public void Kill() => Damage(100000);
         public void Teleport(Vector3 pos) => _hub.playerMovementSync.OverridePosition(pos, _hub.PlayerCameraReference.rotation.y);
         public void Teleport(RoomType room) => Teleport(Map.GetRoom(room).Position);
@@ -343,6 +343,7 @@ namespace Vigilance.API
                 Hub.handcuffs.NetworkForceCuff = true;
                 return;
             }
+
             if (!IsCuffed && cuffer.Hub.inventory.items.Any(item => item.id == ItemType.Disarmer) && Vector3.Distance(Position, cuffer.Position) <= 130f)
             {
                 CufferId = cuffer.PlayerId;
@@ -381,8 +382,17 @@ namespace Vigilance.API
             _hub.inventory.items.ModifyAttachments(_hub.inventory.items.IndexOf(item), sight, barrel, other);
         }
 
-        public void SetAmmo(WeaponType weapon, int ammo)
+        public void SetAmmo(WeaponType weapon, int ammo, bool iterate = true)
         {
+            if (!iterate)
+            {
+                Inventory.SyncItemInfo item = GetWeapons(weapon).FirstOrDefault();
+                if (item == default)
+                    return;
+                SetAmmo(item, ammo);
+                return;
+            }
+
             foreach (Inventory.SyncItemInfo item in GetWeapons(weapon))
             {
                 SetAmmo(item, ammo);
@@ -412,17 +422,20 @@ namespace Vigilance.API
                 Prefab.GrenadeFrag.Spawn(Position, RotationQuaternion, Vector3.one);
             }
 
+            float distance = 5f + force;
+            float doorDistance = 10f + force;
+
             foreach (Player player in Server.Players)
             {
-                if (player.Distance(Position) <= 5f && !player.GodMode && player.IsAlive)
+                if (player.Distance(Position) <= distance && !player.GodMode && player.IsAlive)
                 {
-                    player.Kill();
+                    _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(21212f, Nick, DamageTypes.Nuke, PlayerId), player.GameObject);
                 }
             }
 
             foreach (Door door in Map.Doors)
             {
-                if (Distance(door.transform.position) < 10f && !door.Networkdestroyed)
+                if (Distance(door.transform.position) <= doorDistance && !door.Networkdestroyed)
                 {
                     door.Networkdestroyed = true;
                 }
@@ -487,6 +500,216 @@ namespace Vigilance.API
             }
             return items;
         }
+
+        public Sight GetSight(Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return Sight.None;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    switch (wep.mod_sights[weapon.modSight].name)
+                    {
+                        case "Collimator":
+                            return Sight.Collimator;
+                        case "Holo Sight":
+                            return Sight.Holo;
+                        case "Red Dot":
+                            return Sight.RedDot;
+                        case "Blue Dot Sight":
+                            return Sight.BlueDot;
+                        case "Night Vision Sight":
+                            return Sight.NightVision;
+                        case "Sniper Scope":
+                            return Sight.SniperScope;
+                    }
+                }
+            }
+            return Sight.None;
+        }
+
+        public Sight GetSight(WeaponType weapon) => GetSight(GetWeapon(weapon));
+
+        public void SetSight(Sight sight, Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    string name = "None";
+                    switch (sight)
+                    {
+                        case Sight.Collimator:
+                            name = "Collimator";
+                            break;
+                        case Sight.Holo:
+                            name = "Holo Sight";
+                            break;
+                        case Sight.BlueDot:
+                            name = "Blue Dot Sight";
+                            break;
+                        case Sight.RedDot:
+                            name = "Red Dot";
+                            break;
+                        case Sight.NightVision:
+                            name = "Night Vision Sight";
+                            break;
+                        case Sight.SniperScope:
+                            name = "Sniper Scope";
+                            break;
+                    }
+
+                    int weaponMod = wep.mod_sights.Select((s, i) => new { s, i }).Where(e => e.s.name == name).Select(e => e.i).FirstOrDefault();
+                    int weaponId = Hub.inventory.items.FindIndex(s => s == weapon);
+                    weapon.modSight = weaponMod;
+                    Hub.inventory.items[weaponId] = weapon;
+                }
+            }
+        }
+
+        public void SetSight(WeaponType weapon, Sight sight) => SetSight(sight, GetWeapon(weapon));
+
+        public Barrel GetBarrel(Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return Barrel.None;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    switch (wep.mod_barrels[weapon.modBarrel].name)
+                    {
+                        case "Suppressor":
+                            return Barrel.Suppressor;
+                        case "Silencer":
+                            return Barrel.Silencer;
+                        case "Muzzle Brake":
+                            return Barrel.MuzzleBrake;
+                        case "Heavy Barrel":
+                            return Barrel.HeavyBarrel;
+                        case "Muzzle Booster":
+                            return Barrel.MuzzleBooster;
+                    }
+                }
+            }
+            return Barrel.None;
+        }
+
+        public Barrel GetBarrel(WeaponType weapon) => GetBarrel(GetWeapon(weapon));
+
+        public void SetBarrel(Barrel barrel, Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    string name = "None";
+                    switch (barrel)
+                    {
+                        case Barrel.HeavyBarrel:
+                            name = "Heavy Barrel";
+                            break;
+                        case Barrel.MuzzleBooster:
+                            name = "Muzzle Booster";
+                            break;
+                        case Barrel.MuzzleBrake:
+                            name = "Muzzle Brake";
+                            break;
+                        case Barrel.Silencer:
+                            name = "Silencer";
+                            break;
+                        case Barrel.Suppressor:
+                            name = "Suppressor";
+                            break;
+                    }
+
+                    int weaponMod = wep.mod_barrels.Select((s, i) => new { s, i }).Where(e => e.s.name == name).Select(e => e.i).FirstOrDefault();
+                    int weaponId = Hub.inventory.items.FindIndex(s => s == weapon);
+                    weapon.modBarrel = weaponMod;
+                    Hub.inventory.items[weaponId] = weapon;
+                }
+            }
+        }
+
+        public void SetBarrel(Barrel barell, WeaponType weapon) => SetBarrel(barell, GetWeapon(weapon));
+
+        public Other GetOther(Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return Other.None;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    switch (wep.mod_others[weapon.modOther].name)
+                    {
+                        case "Flashlight":
+                            return Other.Flashlight;
+                        case "Ammo Counter":
+                            return Other.AmmoCounter;
+                        case "Gyroscopic Stabilizer":
+                            return Other.GyroscopicStabilizer;
+                        case "Laser":
+                            return Other.Laser;
+                    }
+                }
+            }
+            return Other.None;
+        }
+
+        public Other GetOther(WeaponType weapon) => GetOther(GetWeapon(weapon));
+
+        public void SetOther(Other other, Inventory.SyncItemInfo weapon)
+        {
+            if (weapon == default)
+                return;
+            WeaponManager wmanager = Hub.weaponManager;
+            if (weapon.id.IsWeapon())
+            {
+                WeaponManager.Weapon wep = wmanager.weapons.Where(wp => wp.inventoryID == weapon.id).FirstOrDefault();
+                if (wep != null)
+                {
+                    string name = "None";
+                    switch (other)
+                    {
+                        case Other.AmmoCounter:
+                            name = "Ammo Counter";
+                            break;
+                        case Other.Flashlight:
+                            name = "Flashlight";
+                            break;
+                        case Other.GyroscopicStabilizer:
+                            name = "Gyroscopic Stabilizer";
+                            break;
+                        case Other.Laser:
+                            name = "Laser";
+                            break;
+                    }
+
+                    int weaponMod = wep.mod_others.Select((s, i) => new { s, i }).Where(e => e.s.name == name).Select(e => e.i).FirstOrDefault();
+                    int weaponId = Hub.inventory.items.FindIndex(s => s == weapon);
+                    weapon.modOther = weaponMod;
+                    Hub.inventory.items[weaponId] = weapon;
+                }
+            }
+        }
+
+        public void SetOther(Other other, WeaponType weapon) => SetOther(other, GetWeapon(weapon));
 
         public void CreatePortal(Player target = null)
         {

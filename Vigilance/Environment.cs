@@ -22,6 +22,7 @@ namespace Vigilance
             public static PlayerStats LocalStats = ReferenceHub.LocalHub.playerStats;
             public static CharacterClassManager LocalCcm = ReferenceHub.LocalHub.characterClassManager;
             public static BanPlayer LocalBan = ReferenceHub.LocalHub.GetComponent<BanPlayer>();
+            public static Broadcast LocalBroadcast = API.Broadcast.LocalBroadcast;
 
             private static IEnumerator<float> DoRocket(Player player, float speed)
             {
@@ -457,11 +458,12 @@ namespace Vigilance
             }
         }
 
-        public static void OnThrowGrenade(Player ply, Grenade grenade, GrenadeType nadeType, bool all, out bool allow)
+        public static void OnThrowGrenade(Player ply, Grenade grenade, GrenadeManager gm, GameObject instance, GrenadeType nadeType, bool all, out bool allow)
         {
             try
             {
-                ThrowGrenadeEvent ev = new ThrowGrenadeEvent(ply, grenade, nadeType, all);
+
+                ThrowGrenadeEvent ev = new ThrowGrenadeEvent(ply, grenade, nadeType, gm, instance, all);
                 EventManager.Trigger<ThrowGrenadeHandler>(ev);
                 allow = ev.Allow;
             }
@@ -1366,36 +1368,51 @@ namespace Vigilance
             }
         }
 
-        public static void OnScp914UpgradeItem(Pickup input, out ItemType outputId)
+        public static void OnScp914UpgradePickup(Pickup input, out ItemType output, out bool allow)
+        {
+            try
+            {
+                Scp914UpgradePickupEvent ev = new Scp914UpgradePickupEvent(input);
+                ev.Output = DefaultUpgradeItemId(input.itemId);
+                EventManager.Trigger<Scp914UpgradeItemHandler>(ev);
+                output = ev.Output;
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add(nameof(Environment.OnScp914UpgradePickup), e);
+                output = DefaultUpgradeItemId(input.itemId);
+                allow = true;
+            }
+        }
+
+        public static void OnScp914UpgradeItem(ItemType input, out ItemType output, out bool allow)
         {
             try
             {
                 Scp914UpgradeItemEvent ev = new Scp914UpgradeItemEvent(input);
-                ev.Output = Map.Scp914.Singleton.UpgradeItemID(input.itemId);
+                ev.Output = DefaultUpgradeItemId(input);
                 EventManager.Trigger<Scp914UpgradeItemHandler>(ev);
-                outputId = ev.Output;
+                output = ev.Output;
+                allow = ev.Allow;
             }
             catch (Exception e)
             {
                 Log.Add(nameof(Environment.OnScp914UpgradeItem), e);
-                outputId = Map.Scp914.Singleton.UpgradeItemID(input.itemId);
+                output = DefaultUpgradeItemId(input);
+                allow = true;
             }
         }
 
-        public static void OnScp914UpgradeHeldItem(Player player, Inventory.SyncItemInfo input, out ItemType output)
+        public static ItemType DefaultUpgradeItemId(ItemType input)
         {
-            try
+            Dictionary<Scp914Knob, ItemType[]> dictionary;
+            ItemType[] result;
+            if (!Map.Scp914.Singleton.recipesDict.TryGetValue(input, out dictionary) || !dictionary.TryGetValue(Map.Scp914.Singleton.knobState, out result))
             {
-                Scp914UpgradeHeldItemEvent ev = new Scp914UpgradeHeldItemEvent(player, input);
-                ev.Output = Scp914Machine.singleton.UpgradeItemID(input.id);
-                EventManager.Trigger<Scp914UpgradeHeldItemHandler>(ev);
-                output = ev.Output;
+                return input;
             }
-            catch (Exception e)
-            {
-                Log.Add(nameof(Environment.OnScp914UpgradeHeldItem), e);
-                output = input.id;
-            }
+            return result[UnityEngine.Random.Range(0, result.Length)];
         }
 
         public static void OnScp914UpgradePlayer(Player player, out bool allow)
@@ -1403,7 +1420,6 @@ namespace Vigilance
             try
             {
                 Scp914UpgradePlayerEvent ev = new Scp914UpgradePlayerEvent(player);
-                ev.Allow = true;
                 EventManager.Trigger<Scp914UpgradePlayerHandler>(ev);
                 allow = ev.Allow;
             }
@@ -1444,6 +1460,25 @@ namespace Vigilance
             {
                 Log.Add("Environment.OnReceiveEffect", e);
                 newState = state;
+                allow = all;
+            }
+        }
+
+        public static void OnSwitchLever(Player player, bool c, bool st, bool all, out bool state, out bool allow)
+        {
+            try
+            {
+                WarheadLeverStatus curr = c ? WarheadLeverStatus.Enabled : WarheadLeverStatus.Disabled;
+                WarheadLeverStatus newStatus = c ? WarheadLeverStatus.Disabled : WarheadLeverStatus.Enabled;
+                PlayerSwitchLeverEvent ev = new PlayerSwitchLeverEvent(player, newStatus, curr, all);
+                EventManager.Trigger<PlayerSwitchLeverHandler>(ev);
+                state = ev.NewState == WarheadLeverStatus.Enabled ? true : false;
+                allow = ev.Allow;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Emvironment.OnSwitchLever", e);
+                state = st;
                 allow = all;
             }
         }

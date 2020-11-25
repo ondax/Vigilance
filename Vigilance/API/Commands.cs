@@ -21,14 +21,14 @@ namespace Vigilance.Registered
 				return Usage;
 			if (args[0].ToLower() == "*" || args[0].ToLower() == "all")
 			{
-				foreach (Pickup pickup in Map.Pickups)
+				foreach (Pickup pickup in Map.FindObjects<Pickup>())
 					pickup.Delete();
 				return "Succesfully cleared all items.";
 			}
 			else
 			{
 				ItemType item = ItemType.None;
-				foreach (Pickup pickup in Map.Pickups)
+				foreach (Pickup pickup in Map.FindObjects<Pickup>())
 				{
 					if (pickup.ItemId == args[0].GetItem())
 					{
@@ -93,7 +93,7 @@ namespace Vigilance.Registered
         public string Execute(Player sender, string[] args)
 		{
 			if (Server.Players.Count() == 0)
-				return "No players.";
+				return "No players online.";
 			string str = $"Players ({Server.Players.Count()}):\n";
 			List<Player> plys = Server.Players.ToList();
 			IOrderedEnumerable<Player> players = plys.OrderBy(s => s.PlayerId);
@@ -190,7 +190,7 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			foreach (Ragdoll ragdoll in Map.Ragdolls)
+			foreach (Ragdoll ragdoll in Map.FindObjects<Ragdoll>())
 				ragdoll.Delete();
 			return $"Succesfully deleted all ragdolls.";
 		}

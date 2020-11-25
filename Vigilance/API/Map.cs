@@ -19,14 +19,14 @@ namespace Vigilance.API
 	{
 		public static List<Room> _rooms = null;
 
-		public static List<Ragdoll> Ragdolls { get; } = FindObjects<Ragdoll>();
+		public static List<Ragdoll> Ragdolls => FindObjects<Ragdoll>();
 		public static List<FlickerableLight> FlickerableLights { get; } = FindObjects<FlickerableLight>();
 		public static List<FlickerableLightController> LightControllers { get; } = FindObjects<FlickerableLightController>();
 		public static List<BlastDoor> BlastDoors { get; } = FindObjects<BlastDoor>();
 		public static List<Camera079> Cameras { get; } = Scp079PlayerScript.allCameras.ToList();
 		public static List<Door> Doors { get; } = FindObjects<Door>();
 		public static List<Lift> Lifts { get; } = FindObjects<Lift>();
-		public static List<Pickup> Pickups { get; } = FindObjects<Pickup>();
+		public static List<Pickup> Pickups => FindObjects<Pickup>();
 		public static List<TeslaGate> TeslaGates { get; } = FindObjects<TeslaGate>();
 		public static List<GameObject> PocketDimensionExists => GameObject.FindGameObjectsWithTag("PD_EXIT").ToList();
 		public static List<Generator079> Generators => Generator079.Generators;
@@ -265,7 +265,7 @@ namespace Vigilance.API
 				if (grenadeType == GrenadeType.FragGrenade)
 				{
 					GrenadeManager grenadeManager = player.GameObject.GetComponent<GrenadeManager>();
-					Grenade component = Object.Instantiate<GameObject>(grenadeManager.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFrag).grenadeInstance).GetComponent<Grenade>();
+					Grenade component = Object.Instantiate(grenadeManager.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFrag).grenadeInstance).GetComponent<Grenade>();
 					component.InitData(grenadeManager, Vector3.zero, Vector3.zero, 0f);
 					NetworkServer.Spawn(component.gameObject);
 					return component;
@@ -274,14 +274,14 @@ namespace Vigilance.API
 				if (grenadeType == GrenadeType.FlashGrenade)
 				{
 					GrenadeManager grenadeManager2 = player.GameObject.GetComponent<GrenadeManager>();
-					Grenade component2 = Object.Instantiate<GameObject>(grenadeManager2.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFlash).grenadeInstance).GetComponent<Grenade>();
+					Grenade component2 = Object.Instantiate(grenadeManager2.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.GrenadeFlash).grenadeInstance).GetComponent<Grenade>();
 					component2.InitData(grenadeManager2, Vector3.zero, Vector3.zero, 0f);
 					NetworkServer.Spawn(component2.gameObject);
 					return component2;
 				}
 
 				GrenadeManager grenadeManager3 = player.GameObject.GetComponent<GrenadeManager>();
-				Grenade component3 = Object.Instantiate<GameObject>(grenadeManager3.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.SCP018).grenadeInstance).GetComponent<Grenade>();
+				Grenade component3 = Object.Instantiate(grenadeManager3.availableGrenades.FirstOrDefault((GrenadeSettings g) => g.inventoryID == ItemType.SCP018).grenadeInstance).GetComponent<Grenade>();
 				component3.InitData(grenadeManager3, Vector3.zero, Vector3.zero, 0f);
 				NetworkServer.Spawn(component3.gameObject);
 				return component3;
@@ -317,13 +317,13 @@ namespace Vigilance.API
             }
 		}
 
-		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player, role, count));
+		public static void SpawnRagdolls(Player player, int role, int count) => Timing.RunCoroutine(SpawnBodies(player.GetComponent<RagdollManager>(), role, count));
 
-		private static IEnumerator<float> SpawnBodies(Player player, int role, int count)
+		private static IEnumerator<float> SpawnBodies(RagdollManager rm, int role, int count)
 		{
 			for (int i = 0; i < count; i++)
 			{
-				player.GameObject.GetComponent<RagdollManager>().SpawnRagdoll(player.Position + Vector3.up * 5, Quaternion.identity, Vector3.zero, role, new PlayerStats.HitInfo(1000f, player.UserId, DamageTypes.Falldown, player.PlayerId), false, "SCP-343", "SCP-343", 0);
+				rm.SpawnRagdoll(rm.transform.position + Vector3.up * 5, Quaternion.identity, Vector3.zero, role, new PlayerStats.HitInfo(1000f, "WORLD", DamageTypes.Falldown, 0), false, "SCP-343", "SCP-343", 0);
 				yield return Timing.WaitForSeconds(0.15f);
 			}
 		}
@@ -371,7 +371,7 @@ namespace Vigilance.API
 			public static int SpeechTime { get => (int)global::Intercom.host._speechTime; set => global::Intercom.host._speechTime = value; }
 			public static Player Speaker { get => global::Intercom.host.speaker.GetPlayer(); set => SetSpeaker(value); }
 			public static string Text { get => global::Intercom.host.Network_intercomText; set => global::Intercom.host.CustomContent = value; }
-			public static Transform SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone")?.transform;
+			public static GameObject SpeakingZone { get; } = GameObject.Find("IntercomSpeakingZone");
 
 			public static void Timeout() => global::Intercom.host.speechRemainingTime = -1f;
 			public static void ResetCooldown() => global::Intercom.host.remainingCooldown = -1f;

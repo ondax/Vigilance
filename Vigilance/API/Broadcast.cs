@@ -2,6 +2,7 @@
 {
     public class Broadcast
     {
+        private static global::Broadcast _bc = null;
         public int Duration { get; set; }
         public string Message { get; set; }
         public bool Monospaced { get; set; }
@@ -11,6 +12,16 @@
             Duration = duration;
             Message = message;
             Monospaced = monoSpaced;
+        }
+
+        public static global::Broadcast LocalBroadcast
+        {
+            get
+            {
+                if (_bc == null)
+                    _bc = PlayerManager.localPlayer.GetComponent<global::Broadcast>();
+                return _bc;
+            }
         }
     }
 }

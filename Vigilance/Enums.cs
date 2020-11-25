@@ -49,10 +49,10 @@
 
 	public enum GrenadeType
 	{
-		FragGrenade,
-		FlashGrenade,
-		Scp018,
-		None
+		FragGrenade = 25,
+		FlashGrenade = 26,
+		Scp018 = 31,
+		None = 0
 	}
 
 	public enum UserIdType
@@ -232,5 +232,41 @@
 		LightController = 8,
 		Lockdown = 6,
 		Speaker = 4,
+    }
+
+	public enum Sight
+    {
+		None,
+		RedDot,
+		BlueDot,
+		Holo,
+		NightVision,
+		SniperScope,
+		Collimator
+    }
+
+	public enum Barrel
+    {
+		None,
+		Suppressor,
+		Silencer,
+		HeavyBarrel,
+		MuzzleBrake,
+		MuzzleBooster
+    }
+
+	public enum Other
+    {
+		None,
+		Flashlight,
+		Laser,
+		AmmoCounter,
+		GyroscopicStabilizer
+	}
+
+	public enum WarheadLeverStatus
+    {
+		Enabled,
+		Disabled
     }
 }
