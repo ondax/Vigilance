@@ -1386,11 +1386,11 @@ namespace Vigilance
             }
         }
 
-        public static void OnScp914UpgradeItem(ItemType input, out ItemType output, out bool allow)
+        public static void OnScp914UpgradeItem(ItemType input, bool all, out ItemType output, out bool allow)
         {
             try
             {
-                Scp914UpgradeItemEvent ev = new Scp914UpgradeItemEvent(input);
+                Scp914UpgradeItemEvent ev = new Scp914UpgradeItemEvent(input, all);
                 ev.Output = DefaultUpgradeItemId(input);
                 EventManager.Trigger<Scp914UpgradeItemHandler>(ev);
                 output = ev.Output;
@@ -1406,13 +1406,23 @@ namespace Vigilance
 
         public static ItemType DefaultUpgradeItemId(ItemType input)
         {
+            ItemType[] array = DefaultUpgradeItemIds(input);
+            if (array == null)
+            {
+                return input;
+            }
+            return array[UnityEngine.Random.Range(0, array.Length)];
+        }
+
+        public static ItemType[] DefaultUpgradeItemIds(ItemType input)
+        {
             Dictionary<Scp914Knob, ItemType[]> dictionary;
             ItemType[] result;
             if (!Map.Scp914.Singleton.recipesDict.TryGetValue(input, out dictionary) || !dictionary.TryGetValue(Map.Scp914.Singleton.knobState, out result))
             {
-                return input;
+                return null;
             }
-            return result[UnityEngine.Random.Range(0, result.Length)];
+            return result;
         }
 
         public static void OnScp914UpgradePlayer(Player player, out bool allow)

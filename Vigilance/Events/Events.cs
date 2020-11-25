@@ -1475,9 +1475,10 @@ namespace Vigilance.Events
         public ItemType Output { get; set; }
         public bool Allow { get; set; }
 
-        public Scp914UpgradeItemEvent(ItemType input)
+        public Scp914UpgradeItemEvent(ItemType input, bool allow)
         {
             Input = input;
+            Allow = allow;
         }
 
         public override void Execute(EventHandler handler)
