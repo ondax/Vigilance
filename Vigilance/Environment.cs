@@ -19,10 +19,61 @@ namespace Vigilance
     {
         public static class Cache
         {
-            public static PlayerStats LocalStats = ReferenceHub.LocalHub.playerStats;
-            public static CharacterClassManager LocalCcm = ReferenceHub.LocalHub.characterClassManager;
-            public static BanPlayer LocalBan = ReferenceHub.LocalHub.GetComponent<BanPlayer>();
-            public static Broadcast LocalBroadcast = API.Broadcast.LocalBroadcast;
+            private static Player _localPlayer;
+            private static ReferenceHub _localHub;
+            private static PlayerStats _pStats;
+            private static CharacterClassManager _ccm;
+            private static BanPlayer _banHandler;
+
+            public static Player LocalPlayer
+            {
+                get
+                {
+                    if (_localPlayer == null)
+                        _localPlayer = new Player(LocalHub);
+                    return _localPlayer;
+                }
+            }
+
+            public static ReferenceHub LocalHub
+            {
+                get
+                {
+                    if (_localHub == null)
+                        _localHub = PlayerManager.localPlayer.GetComponent<ReferenceHub>();
+                    return _localHub;
+                }
+            }
+
+            public static PlayerStats LocalStats
+            {
+                get
+                {
+                    if (_pStats == null)
+                        _pStats = PlayerManager.localPlayer.GetComponent<PlayerStats>();
+                    return _pStats;
+                }
+            }
+
+            public static CharacterClassManager LocalCcm
+            {
+                get
+                {
+                    if (_ccm == null)
+                        _ccm = PlayerManager.localPlayer.GetComponent<CharacterClassManager>();
+                    return _ccm;
+                }
+            }
+
+            public static BanPlayer LocalBan
+            {
+                get
+                {
+                    if (_banHandler == null)
+                        _banHandler = PlayerManager.localPlayer.GetComponent<BanPlayer>();
+                    return _banHandler;
+                }
+            }
 
             private static IEnumerator<float> DoRocket(Player player, float speed)
             {
@@ -45,6 +96,35 @@ namespace Vigilance
 
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
+
+        public static void Rotate(Pickup pickup)
+        {
+            if (pickup == null)
+                return;
+            Player owner = pickup.ownerPlayer.GetPlayer();
+            if (owner == null)
+                return;
+            if (!ConfigManager.FloatingItems && !ConfigManager.FloatingItemsUsers.Contains(owner.UserId))
+                return;
+            Vector3 rotation = Vector3.zero;
+            Vector3 direction = Vector3.zero;
+            Vector3 pos = pickup.Networkposition;
+            float min = -0.5f;
+            float max = 0.5f;
+            rotation = new Vector3(UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max));
+            float min2 = -0.001f;
+            float max2 = 0.001f;
+            direction = new Vector3(UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2));
+            bool flag = Physics.Linecast(pos, new Vector3(pos.x + direction.x, pos.y, pos.z));
+            bool flag2 = Physics.Linecast(pos, new Vector3(pos.x, pos.y + direction.y, pos.z));
+            bool flag3 = Physics.Linecast(pos, new Vector3(pos.x, pos.y, pos.z + direction.z));
+            direction = new Vector3(flag ? (-direction.x) : direction.x, flag2 ? (-direction.y) : direction.y, flag3 ? (-direction.z) : direction.z);
+            pos += direction;
+            pickup.transform.position = pos;
+            pickup.transform.Rotate(rotation);
+            pickup.Networkposition = pos;
+            pickup.Networkrotation = pickup.transform.rotation;
+        }
 
         public static IEnumerable<T> GetValues<T>()
         {
@@ -1425,11 +1505,11 @@ namespace Vigilance
             return result;
         }
 
-        public static void OnScp914UpgradePlayer(Player player, out bool allow)
+        public static void OnScp914UpgradePlayer(Player player, bool all, out bool allow)
         {
             try
             {
-                Scp914UpgradePlayerEvent ev = new Scp914UpgradePlayerEvent(player);
+                Scp914UpgradePlayerEvent ev = new Scp914UpgradePlayerEvent(player, all);
                 EventManager.Trigger<Scp914UpgradePlayerHandler>(ev);
                 allow = ev.Allow;
             }

@@ -159,7 +159,6 @@
     <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdUsePortal.cs" />
     <Compile Include="Patches\Events\Scp914Machine_ProcessItems.cs" />
     <Compile Include="Patches\Events\Scp914Machine_UpgradeItemID.cs" />
-    <Compile Include="Patches\Events\Scp914Machine_UpgradePlayer.cs" />
     <Compile Include="Patches\Events\ServerConsole_AddLog.cs" />
     <Compile Include="Patches\Events\TeslaGate_PlayerInRange.cs" />
     <Compile Include="Patches\Events\WeaponManager_CallCmdReload.cs" />
@@ -169,6 +168,7 @@
     <Compile Include="Patches\Events\CharacterClassManager_AllowContain.cs" />
     <Compile Include="Patches\Events\ServerRoles_SetGroup.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdSwitchAWButton.cs" />
+    <Compile Include="Patches\Features\Pickup_Update.cs" />
     <Compile Include="Patches\Features\Scp049_OnEnable.cs" />
     <Compile Include="Patches\Features\DissonanceUserSetup_CallCmdAltIsActive.cs" />
     <Compile Include="Patches\Features\Intercom_Start.cs" />

@@ -14,6 +14,9 @@
             Monospaced = monoSpaced;
         }
 
+        public void Show() => Map.Broadcast(this);
+        public void Show(Player player) => player?.Broadcast(this);
+
         public static global::Broadcast LocalBroadcast
         {
             get

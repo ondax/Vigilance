@@ -88,6 +88,27 @@ namespace Vigilance.API
             }
         }
 
+        public string GroupNode
+        {
+            get
+            {
+                if (UserGroup == null)
+                    return null;
+                PermissionsHandler ph = ServerStatic.GetPermissionsHandler();
+                if (ph == null)
+                    return null;
+                Dictionary<string, UserGroup> dict = ServerStatic.GetPermissionsHandler().GetAllGroups();
+                foreach (KeyValuePair<string, UserGroup> pair in dict)
+                {
+                    if (pair.Value == UserGroup || (pair.Value.BadgeColor == UserGroup.BadgeColor && pair.Value.BadgeText == UserGroup.BadgeText && pair.Value.Cover == UserGroup.Cover && pair.Value.HiddenByDefault == UserGroup.HiddenByDefault && pair.Value.KickPower == UserGroup.KickPower && pair.Value.Permissions == UserGroup.Permissions && pair.Value.RequiredKickPower == UserGroup.RequiredKickPower && pair.Value.Shared == UserGroup.Shared))
+                    {
+                        return pair.Key;
+                    }
+                }
+                return null;
+            }
+        }
+
         public PlayerCommandSender PlayerCommandSender => _hub.queryProcessor._sender;
         public CommandSender CommandSender => PlayerCommandSender;
         public bool IsHost => _hub.characterClassManager.IsHost;

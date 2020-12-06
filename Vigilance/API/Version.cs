@@ -29,5 +29,20 @@
                 return $"{Major}.{Minor}.{Patch}-{Letter}";
             return $"{Major}.{Minor}.{Patch}";
         }
+
+        public override int GetHashCode()
+        {
+            return Major + Minor + Patch;
+        }
+
+        public override bool Equals(object obj)
+        {
+            Version v = (Version)obj;
+            if (v == null)
+                return false;
+            if (v.Major == Major && v.Minor == Minor && v.Patch == Patch && v.Letter == Letter && v.IsTesting == IsTesting && v.IsBeta == IsBeta && v.FullName == FullName)
+                return true;
+            return false;
+        }
     }
 }

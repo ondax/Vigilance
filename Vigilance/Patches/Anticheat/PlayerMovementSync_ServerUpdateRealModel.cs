@@ -166,16 +166,16 @@ namespace Vigilance.Patches.Anticheat
 						if (__instance._hub.characterClassManager.CurClass != RoleType.Scp106 && !__instance._hub.scp106PlayerScript.goingViaThePortal)
 						{
 							bool mode = (magnitude < 10f && Math.Abs(num2) < 3f) || (num2 < 0f && num2 > -24f && magnitude < 24f);
-							Vector3 vector3 = Vector3.up * ((__instance._hub.characterClassManager.CurClass == RoleType.Scp93953 || __instance._hub.characterClassManager.CurClass == RoleType.Scp93989) ? 0.32f : 0.52f);
-							if (!__instance.AnticheatRaycast(vector3, mode))
+							Vector3 pos = Vector3.up * ((__instance._hub.characterClassManager.CurClass == RoleType.Scp93953 || __instance._hub.characterClassManager.CurClass == RoleType.Scp93989) ? 0.32f : 0.52f);
+							if (!__instance.AnticheatRaycast(pos, mode))
 							{
 								__instance.ForcePosition(__instance._lastSafePosition, "R.1", false, false);
 								wasChanged = true;
 								return false;
 							}
 							Vector3 a = __instance.transform.right * 0.468f;
-							Vector3 offset = a - vector3;
-							Vector3 offset2 = -a - vector3;
+							Vector3 offset = a - pos;
+							Vector3 offset2 = -a - pos;
 							if (!__instance.AnticheatRaycast(offset, mode) && !__instance.AnticheatRaycast(offset2, mode))
 							{
 								__instance.ForcePosition(__instance._lastSafePosition, "R.2", false, false);

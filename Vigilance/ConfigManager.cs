@@ -33,6 +33,7 @@ namespace Vigilance
 		public static bool EnableCustomCommands { get; set; }
 		public static bool AllowCuffWhileHolding { get; set; }
 		public static bool DisableLocksOnRestart { get; set; }
+		public static bool FloatingItems { get; set; }
 
 		public static float Scp173DoorCooldown { get; set; }
 		public static float Scp106PocketEnterDamage { get; set; }
@@ -71,6 +72,7 @@ namespace Vigilance
 		public static List<string> CustomCommandsBlacklist { get; set; }
 		public static List<string> IpWhitelist { get; set; }
 		public static List<string> UserIdWhitelist { get; set; }
+		public static List<string> FloatingItemsUsers { get; set; }
 
 		public static string[] CurrentLines { get; set; }
 
@@ -115,6 +117,7 @@ namespace Vigilance
 			UnlimitedMicroEnergy = PluginManager.Config.GetBool("unlimited_micro_energy", false);
 			AllowCuffWhileHolding = PluginManager.Config.GetBool("allow_cuff_while_holding", false);
 			DisableLocksOnRestart = PluginManager.Config.GetBool("disable_locks_on_restart", false);
+			FloatingItems = PluginManager.Config.GetBool("floating_items");
 
 			Scp173DoorCooldown = PluginManager.Config.GetFloat("scp173_door_cooldown", 25f);
 			Scp106PocketEnterDamage = PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f);
@@ -155,6 +158,7 @@ namespace Vigilance
 
 			IpWhitelist = PluginManager.Config.GetStringList("ip_whitelist");
 			UserIdWhitelist = PluginManager.Config.GetStringList("userid_whitelist");
+			FloatingItemsUsers = PluginManager.Config.GetStringList("floating_items_users");
 		}
 
 		public static bool IsBlacklisted(CommandSender sender, string[] query)
@@ -211,6 +215,8 @@ namespace Vigilance
 			AddConfig("Maximum allowed timeout while connecting. If the player does not connect in this specified time, then the player will be kicked.", "max_allowed_timeout", "45");
 			AddConfig("Should players be able to handcuff players that are holding an item in hand?", "allow_cuff_while_holding", "false");
 			AddConfig("Should RoundLock and LobbyLock be disabled when the round restarts?", "disable_locks_on_restart", "false");
+			AddConfig("Makes everyone's items float when they're dropped", "floating_items", "false");
+			AddConfig("A list of UserIDs for the players that should have their items float when dropped", "floating_items_users", "[]");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 			AddConfig("The distance SCP-049 can attack from", "scp049_attack_distance", "2.4");

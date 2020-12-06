@@ -46,6 +46,7 @@ namespace Vigilance.API
 		public static AlphaWarheadNukesitePanel NukesitePanel { get; } = AlphaWarheadOutsitePanel.nukeside;
 		public static int MapSeed { get; } = SeedSync.seed;
 		public static bool TeslaGatesDisabled { get; set; }
+		public static WarheadLeverStatus WarheadLeverStatus { get => NukesitePanel.Networkenabled ? WarheadLeverStatus.Enabled : WarheadLeverStatus.Disabled; set => NukesitePanel.Networkenabled = value == WarheadLeverStatus.Enabled ? true : false; }
 
 		public static List<Room> Rooms
         {

@@ -54,12 +54,12 @@ namespace Vigilance.Patches.Ghostmode
                                 continue;
                             Player currentTarget = API.Ghostmode.GetPlayerOrServer(targetHub.gameObject);
                             Scp096 scp096 = player.Hub.scpsController.CurrentScp as Scp096;
-                            Vector3 vector3 = ppd.position - player.Hub.playerMovementSync.RealModelPosition;
-                            if (Math.Abs(vector3.y) > 35f)
+                            Vector3 pos = ppd.position - player.Hub.playerMovementSync.RealModelPosition;
+                            if (Math.Abs(pos.y) > 35f)
                                 API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
                             else
                             {
-                                float sqrMagnitude = vector3.sqrMagnitude;
+                                float sqrMagnitude = pos.sqrMagnitude;
                                 if (player.Hub.playerMovementSync.RealModelPosition.y < 800f)
                                 {
                                     if (sqrMagnitude >= 1764f)

@@ -1509,7 +1509,11 @@ namespace Vigilance.Events
         public Player Player { get; set; }
         public bool Allow { get; set; }
 
-        public Scp914UpgradePlayerEvent(Player player) => Player = player;
+        public Scp914UpgradePlayerEvent(Player player, bool allow)
+        {
+            Player = player;
+            Allow = allow;
+        }
 
         public override void Execute(EventHandler handler)
         {
