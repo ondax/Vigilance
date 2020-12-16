@@ -14,7 +14,7 @@ namespace Vigilance
         private static bool _enabled = false;
 
         public static Version Version { get; } = new Version(5, 4, 1, "", false);
-        public static List<string> CompatibleVersions = new List<string>() { "10.1.2" };
+        public static List<string> CompatibleVersions = new List<string>() { "10.1.3-open-beta-1d4b82f5" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
         public static Dictionary<string, Assembly> Dependencies { get; set; }
@@ -29,7 +29,7 @@ namespace Vigilance
                     return;
                 if (!CompatibleVersions.Contains(Server.Version))
                 {
-                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({CustomNetworkManager.CompatibleVersions[0]})!\nCompatible versions: {CompatibleVersions.AsString()}", LogType.Error);
+                    Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({GameCore.Version.VersionString})!\nCompatible versions: {CompatibleVersions.AsString()}", LogType.Error);
                     return;
                 }
 
