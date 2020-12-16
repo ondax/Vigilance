@@ -428,6 +428,8 @@ namespace Vigilance.Extensions
 	{
 		public static string Remove(this string str, string toRemove) => str.Replace(toRemove, "");
 
+		public static string AsString(this Vector3 vec) => $"[X: {vec.x} | Y: {vec.y} | Z: {vec.z}]";
+
 		public static bool IsValidChance(this int rnd, int chance)
 		{
 			if (chance >= rnd)

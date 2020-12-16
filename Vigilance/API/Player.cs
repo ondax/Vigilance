@@ -88,6 +88,16 @@ namespace Vigilance.API
             }
         }
 
+        public List<Pickup> Pickups
+        {
+            get
+            {
+                if (!Inventory_CallCmdDropItem.Pickups.ContainsKey(this))
+                    Inventory_CallCmdDropItem.Pickups.Add(this, new List<Pickup>());
+                return Inventory_CallCmdDropItem.Pickups[this];
+            }
+        }
+
         public string GroupNode
         {
             get

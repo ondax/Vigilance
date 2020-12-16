@@ -97,33 +97,53 @@ namespace Vigilance
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
 
-        public static void Rotate(Pickup pickup)
+        public static PickupInfo Rotate(PickupInfo pickup)
         {
-            if (pickup == null)
-                return;
-            Player owner = pickup.ownerPlayer.GetPlayer();
-            if (owner == null)
-                return;
-            if (!ConfigManager.FloatingItems && !ConfigManager.FloatingItemsUsers.Contains(owner.UserId))
-                return;
-            Vector3 rotation = Vector3.zero;
-            Vector3 direction = Vector3.zero;
-            Vector3 pos = pickup.Networkposition;
-            float min = -0.5f;
-            float max = 0.5f;
-            rotation = new Vector3(UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max));
-            float min2 = -0.001f;
-            float max2 = 0.001f;
-            direction = new Vector3(UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2));
-            bool flag = Physics.Linecast(pos, new Vector3(pos.x + direction.x, pos.y, pos.z));
-            bool flag2 = Physics.Linecast(pos, new Vector3(pos.x, pos.y + direction.y, pos.z));
-            bool flag3 = Physics.Linecast(pos, new Vector3(pos.x, pos.y, pos.z + direction.z));
-            direction = new Vector3(flag ? (-direction.x) : direction.x, flag2 ? (-direction.y) : direction.y, flag3 ? (-direction.z) : direction.z);
-            pos += direction;
-            pickup.transform.position = pos;
-            pickup.transform.Rotate(rotation);
-            pickup.Networkposition = pos;
-            pickup.Networkrotation = pickup.transform.rotation;
+            try
+            {
+                Vector3 vector = Vector3.zero;
+                if (vector == Vector3.zero)
+                {
+                    float min = -0.3f;
+                    float max = 0.7f;
+                    vector = new Vector3(UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max));
+                }
+                Vector3 vector2 = Vector3.zero;
+                if (vector2 == Vector3.zero)
+                {
+                    float min2 = -0.009f;
+                    float max2 = 0.1f;
+                    vector2 = new Vector3(UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2));
+                }
+                Vector3 vector3 = new Vector3(pickup.pickup.transform.position.x, pickup.pickup.transform.position.y + (pickup.position.y - pickup.pickup.transform.position.y), pickup.pickup.transform.position.z);
+                bool flag = Physics.Linecast(vector3, new Vector3(vector3.x + vector2.x, vector3.y, vector3.z));
+                bool flag2 = Physics.Linecast(vector3, new Vector3(vector3.x, vector3.y + vector2.y, vector3.z));
+                bool flag3 = Physics.Linecast(vector3, new Vector3(vector3.x, vector3.y, vector3.z + vector2.z));
+                vector2 = new Vector3(flag ? (-vector2.x) : vector2.x, flag2 ? (-vector2.y) : vector2.y, flag3 ? (-vector2.z) : vector2.z);
+                vector3 += vector2;
+                pickup.pickup.transform.position = vector3;
+                pickup.pickup.transform.Rotate(vector);
+                pickup.position = pickup.pickup.transform.position;
+                pickup.rotation = pickup.pickup.transform.rotation;
+                return pickup;
+            }
+            catch (Exception e)
+            {
+                Log.Add(e);
+                return default;
+            }
+        }
+
+        [Serializable]
+        public struct PickupInfo
+        {
+            public Pickup pickup;
+            public Vector3 position;
+            public Quaternion rotation;
+            public int itemId;
+            public float durability;
+            public int ownerPlayerID;
+            public int[] weaponMods;
         }
 
         public static IEnumerable<T> GetValues<T>()

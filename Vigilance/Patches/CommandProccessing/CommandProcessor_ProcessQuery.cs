@@ -26,13 +26,13 @@ namespace Vigilance.Patches.CommandProccessing
 
 				if (!ConfigManager.EnableGameCommands || ConfigManager.GameCommandsBlacklist.Contains(query[0].ToLower()) || ConfigManager.GameCommandsBlacklist.Contains(admin.UserId))
 				{
-					sender.RaReply($"SERVER#You are not allowed to use this command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Command disabled in config")})!", false, true, "");
+					sender.RaReply($"SERVER#You are not allowed to use pickup.pickup command ({(ConfigManager.EnableGameCommands ? "Blacklisted command or UserID" : "Command disabled in config")})!", false, true, "");
 					return false;
 				}
 
 				if (ConfigManager.IsBlacklisted(sender, query))
 				{
-					sender.RaReply($"SERVER#You are not allowed to use this command!", false, true, "");
+					sender.RaReply($"SERVER#You are not allowed to use pickup.pickup command!", false, true, "");
 					return false;
 				}
 
@@ -47,7 +47,7 @@ namespace Vigilance.Patches.CommandProccessing
 			catch (Exception e)
             {
 				Log.Add(nameof(CommandProcessor.ProcessQuery), e.Message, LogType.Error);
-				sender.RaReply($"SERVER#An error occured while processing this command!\nError: {e.Message}", false, true, "");
+				sender.RaReply($"SERVER#An error occured while processing pickup.pickup command!\nError: {e.Message}", false, true, "");
 				return false;
             }
 		}
