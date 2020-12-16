@@ -798,6 +798,6 @@ namespace Vigilance.API
         public void EnableEffect<T>(float duration = 0f, bool addIfActive = false) where T : PlayerEffect => _hub.playerEffectsController.EnableEffect<T>(duration, addIfActive);
         public void DisableEffect<T>() where T : PlayerEffect => _hub.playerEffectsController.DisableEffect<T>();
         public T GetEffect<T>() where T : PlayerEffect => _hub.playerEffectsController.GetEffect<T>();
-        public override string ToString() => $"[{PlayerId}]: {Nick} [{UserId}] [{IpAddress}] [{Role.AsString()}]";
+        public override string ToString() => $"[{PlayerId}]: {(RemoteAdmin ? "[RA]" : "")} {Nick} [{UserId}] [{IpAddress}] [{Role.AsString()}]";
     }
 }
