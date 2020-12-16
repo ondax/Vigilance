@@ -141,7 +141,7 @@ namespace Vigilance
 
             if (HandlerExists(query[0].ToUpper()))
             {
-                reply = "SERVER#An error occured while executing pickup.pickup command.";
+                reply = "SERVER#An error occured while executing this command.";
                 return true;
             }
 

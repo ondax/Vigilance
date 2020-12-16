@@ -97,7 +97,7 @@ namespace Vigilance
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
 
-        public static PickupInfo Rotate(PickupInfo pickup)
+        public static void Rotate(Pickup pickup)
         {
             try
             {
@@ -115,22 +115,20 @@ namespace Vigilance
                     float max2 = 0.1f;
                     vector2 = new Vector3(UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2), UnityEngine.Random.Range(min2, max2));
                 }
-                Vector3 vector3 = new Vector3(pickup.pickup.transform.position.x, pickup.pickup.transform.position.y + (pickup.position.y - pickup.pickup.transform.position.y), pickup.pickup.transform.position.z);
+                Vector3 vector3 = new Vector3(pickup.transform.position.x, pickup.transform.position.y + (pickup.position.y - pickup.transform.position.y), pickup.transform.position.z);
                 bool flag = Physics.Linecast(vector3, new Vector3(vector3.x + vector2.x, vector3.y, vector3.z));
                 bool flag2 = Physics.Linecast(vector3, new Vector3(vector3.x, vector3.y + vector2.y, vector3.z));
                 bool flag3 = Physics.Linecast(vector3, new Vector3(vector3.x, vector3.y, vector3.z + vector2.z));
                 vector2 = new Vector3(flag ? (-vector2.x) : vector2.x, flag2 ? (-vector2.y) : vector2.y, flag3 ? (-vector2.z) : vector2.z);
                 vector3 += vector2;
-                pickup.pickup.transform.position = vector3;
-                pickup.pickup.transform.Rotate(vector);
-                pickup.position = pickup.pickup.transform.position;
-                pickup.rotation = pickup.pickup.transform.rotation;
-                return pickup;
+                pickup.transform.position = vector3;
+                pickup.transform.Rotate(vector);
+                pickup.position = pickup.transform.position;
+                pickup.rotation = pickup.transform.rotation;
             }
             catch (Exception e)
             {
                 Log.Add(e);
-                return default;
             }
         }
 
