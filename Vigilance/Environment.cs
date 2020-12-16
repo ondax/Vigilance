@@ -101,6 +101,11 @@ namespace Vigilance
         {
             try
             {
+                Player owner = pickup.ownerPlayer.GetPlayer();
+                if (owner == null)
+                    return;
+                if (!ConfigManager.FloatingItems && !ConfigManager.FloatingItemsUsers.Contains(owner.UserId))
+                    return;
                 Vector3 vector = Vector3.zero;
                 if (vector == Vector3.zero)
                 {
