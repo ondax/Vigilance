@@ -31,7 +31,8 @@ namespace Vigilance.Patches.Anticheat
 					__instance._lastSafePosition = __instance._receivedPosition;
 					return false;
 				}
-				return false;
+				
+				return true;
 			}
 			catch (Exception e)
 			{
