@@ -12,7 +12,7 @@ namespace Vigilance.API
 {
     public static class Server
     {
-        public static string Version => CustomNetworkManager.CompatibleVersions[0];
+        public static string Version => GameCore.Version.VersionString;
         public static GameObject GameManager => GameObject.Find("GameManager");
         public static ReferenceHub LocalHub => ReferenceHub.LocalHub;
         public static IEnumerable<Player> Players => PlayerList.Players.Values;

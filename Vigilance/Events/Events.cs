@@ -1046,15 +1046,23 @@ namespace Vigilance.Events
         public GameObject Target { get; }
         public WeaponType WeaponType { get; }
         public Inventory.SyncItemInfo Weapon { get; }
+        public Vector3 Direction { get; }
+        public Vector3 SourcePos { get; }
+        public Vector3 TargetPos { get; }
+        public HitBoxType HitBoxType { get; }
         public bool Allow { get; set; }
 
-        public WeaponShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow)
+        public WeaponShootEvent(Player ply, GameObject target, WeaponType weapon, bool allow, Vector3 dir, Vector3 sourcePos, Vector3 targetPos, HitBoxType hitBoxType)
         {
             Player = ply;
             Target = target;
             WeaponType = weapon;
             Weapon = ply.CurrentItem;
             Allow = allow;
+            Direction = dir;
+            SourcePos = sourcePos;
+            TargetPos = targetPos;
+            HitBoxType = hitBoxType;
         }
 
         public override void Execute(EventHandler handler)

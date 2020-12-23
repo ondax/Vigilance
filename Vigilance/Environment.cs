@@ -137,18 +137,6 @@ namespace Vigilance
             }
         }
 
-        [Serializable]
-        public struct PickupInfo
-        {
-            public Pickup pickup;
-            public Vector3 position;
-            public Quaternion rotation;
-            public int itemId;
-            public float durability;
-            public int ownerPlayerID;
-            public int[] weaponMods;
-        }
-
         public static IEnumerable<T> GetValues<T>()
         {
             if (typeof(T).BaseType != typeof(Enum))
@@ -1110,11 +1098,11 @@ namespace Vigilance
             }
         }
 
-        public static void OnShoot(Player ply, GameObject target, WeaponType weapon, bool all, out bool allow)
+        public static void OnShoot(Player ply, GameObject target, WeaponType weapon, bool all, Vector3 dir, Vector3 source, Vector3 tar, HitBoxType type, out bool allow)
         {
             try
             {
-                WeaponShootEvent ev = new WeaponShootEvent(ply, target, weapon, all);
+                WeaponShootEvent ev = new WeaponShootEvent(ply, target, weapon, all, dir, source, tar, type);
                 EventManager.Trigger<WeaponShootHandler>(ev);
                 allow = ev.Allow;
             }
