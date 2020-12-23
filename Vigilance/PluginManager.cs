@@ -6,6 +6,7 @@ using Harmony;
 using Version = Vigilance.API.Version;
 using Vigilance.Extensions;
 using Vigilance.API;
+using MEC;
 
 namespace Vigilance
 {
@@ -13,7 +14,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 4, 1, "", false);
+        public static Version Version { get; } = new Version(5, 4, 2, "", false);
         public static List<string> CompatibleVersions = new List<string>() { "10.1.3" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -75,6 +76,7 @@ namespace Vigilance
                 _enabled = true;
                 Log.Add($"Server version: {Server.Version}", ConsoleColor.Magenta);
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
+                Timing.CallDelayed(5f, () => Log.Add("Merry christmas!", ConsoleColor.Green));
             }
             catch (Exception e)
             {

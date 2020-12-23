@@ -44,6 +44,7 @@ namespace Vigilance.API
 		public static GameObject OutsitePanelScript { get; } = GameObject.Find("OutsitePanelScript");
 		public static AlphaWarheadOutsitePanel OutsitePanel { get; } = OutsitePanelScript.GetComponent<AlphaWarheadOutsitePanel>();
 		public static AlphaWarheadNukesitePanel NukesitePanel { get; } = AlphaWarheadOutsitePanel.nukeside;
+		public static SCP_2536_Controller SCP2536Controller { get; } = SCP_2536_Controller.singleton;
 		public static int MapSeed { get; } = SeedSync.seed;
 		public static bool TeslaGatesDisabled { get; set; }
 		public static WarheadLeverStatus WarheadLeverStatus { get => NukesitePanel.Networkenabled ? WarheadLeverStatus.Enabled : WarheadLeverStatus.Disabled; set => NukesitePanel.Networkenabled = value == WarheadLeverStatus.Enabled ? true : false; }
@@ -77,7 +78,7 @@ namespace Vigilance.API
 		public static void Broadcast(string message, int duration, bool mono = false)
 		{
 			try
-			{
+			{ 
 				if (string.IsNullOrEmpty(message) || duration < 1)
 					return;
 				foreach (Player player in Server.PlayerList.Players.Values)
@@ -90,6 +91,8 @@ namespace Vigilance.API
 				Log.Add(nameof(Broadcast), e);
             }
 		}
+
+		public static void SpawnPresent() => SCP2536Controller?.SelectAndSpawnTree();
 
 		public static void Broadcast(Broadcast bc) => Broadcast(bc.Message, bc.Duration, bc.Monospaced);
 
