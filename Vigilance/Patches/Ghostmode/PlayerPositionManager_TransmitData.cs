@@ -114,7 +114,7 @@ namespace Vigilance.Patches.Ghostmode
                             continue;
                         if (target.IsInvisible || API.Ghostmode.PlayerCannotSee(player, target.PlayerId))
                             API.Ghostmode.MakeGhost(z, __instance._transmitBuffer);
-                        else if (player.Role == RoleType.Scp173 && ((!ConfigManager.CanTutorialBlockScp173 && target.Role == RoleType.Tutorial) || API.Ghostmode.CannotBlockScp173.Contains(target.UserId)))
+                        else if (player.Role == RoleType.Scp173 && ((!ConfigManager.CanTutorialBlockScp173 && target.Role == RoleType.Tutorial) || API.Ghostmode.CannotBlockScp173.Contains(target)))
                             API.Ghostmode.RotatePlayer(z, __instance._transmitBuffer, API.Ghostmode.FindLookRotation(player.Position, target.Position));
                     }
 

@@ -14,16 +14,21 @@ namespace Vigilance.API
     public class Player
     {
         private ReferenceHub _hub;
+
         public Player(ReferenceHub hub)
         {
             _hub = hub;
             IsInvisible = false;
             PlayerLock = false;
+            CanTriggerScp096 = true;
+            CanBlockScp173 = true;
         }
 
         public GameObject GameObject => _hub.gameObject;
         public ReferenceHub Hub => _hub;
         public bool PlayerLock { get; set; }
+        public bool CanTriggerScp096 { get; set; }
+        public bool CanBlockScp173 { get; set; }
         public bool BypassMode => _hub.serverRoles.BypassMode;
         public bool DoNotTrack => _hub.serverRoles.DoNotTrack;
         public bool RemoteAdmin => _hub.serverRoles.RemoteAdmin;

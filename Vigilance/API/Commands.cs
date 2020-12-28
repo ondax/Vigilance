@@ -746,7 +746,7 @@ namespace Vigilance.Registered
 			Player two = args[1].GetPlayer();
 			if (two == null)
 				return "An error occured: Player is null.";
-			if (Ghostmode.GetTargets(player).Contains(two.UserId))
+			if (Ghostmode.GetTargets(player).Contains(two))
             {
 				Ghostmode.RemoveTarget(player, two);
 				return $"Succesfully removed {two.Nick} from {player.Nick}'s target ghosts.";

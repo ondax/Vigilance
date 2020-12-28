@@ -184,7 +184,7 @@
     <Compile Include="Patches\Features\Scp096_PryGate.cs" />
     <Compile Include="Patches\Features\Scp096_SetupShield.cs" />
     <Compile Include="Patches\Features\Scp096Target_set_IsTarget.cs" />
-    <Compile Include="Patches\Features\Scp137PlayerScript_FixedUpdate.cs" />
+    <Compile Include="Patches\Features\Scp173PlayerScript_FixedUpdate.cs" />
     <Compile Include="Patches\Features\Scp939PlayerScript_CallCmdShoot.cs" />
     <Compile Include="Patches\Features\ServerConsole_ReloadServerName.cs" />
     <Compile Include="Patches\Features\Stamina_ProcessStamina.cs" />

@@ -6,49 +6,49 @@ namespace Vigilance.API
     public static class Ghostmode
     {
         public static readonly Vector3 GhostPosition = Vector3.up * 6000f;
-        public static Dictionary<string, List<string>> Targets = new Dictionary<string, List<string>>();
-        public static List<string> Ghosts = new List<string>();
-        public static List<string> CannotTriggerScp096 = new List<string>();
-        public static List<string> CannotBlockScp173 = new List<string>();
+        public static Dictionary<Player, List<Player>> Targets = new Dictionary<Player, List<Player>>();
+        public static List<Player> Ghosts = new List<Player>();
+        public static List<Player> CannotTriggerScp096 = new List<Player>();
+        public static List<Player> CannotBlockScp173 = new List<Player>();
 
         public static void MakeGhost(Player player)
         {
-            if (!Ghosts.Contains(player.UserId))
-                Ghosts.Add(player.UserId);
+            if (!Ghosts.Contains(player))
+                Ghosts.Add(player);
         }
 
         public static void RemoveGhost(Player player)
         {
-            if (Ghosts.Contains(player.UserId))
-                Ghosts.Remove(player.UserId);
+            if (Ghosts.Contains(player))
+                Ghosts.Remove(player);
         }
 
-        public static List<string> GetTargets(Player player)
+        public static List<Player> GetTargets(Player player)
         {
-            if (!Targets.ContainsKey(player.UserId))
-                Targets.Add(player.UserId, new List<string>());
-            return Targets[player.UserId];
+            if (!Targets.ContainsKey(player))
+                Targets.Add(player, new List<Player>());
+            return Targets[player];
         }
 
         public static void AddTarget(Player player, Player target)
         {
-            if (!Targets.ContainsKey(player.UserId))
-                Targets.Add(player.UserId, new List<string>());
-            Targets[player.UserId].Add(target.UserId);
+            if (!Targets.ContainsKey(player))
+                Targets.Add(player, new List<Player>());
+            Targets[player].Add(target);
         }
 
         public static void RemoveTarget(Player player, Player target)
         {
-            if (!Targets.ContainsKey(player.UserId))
-                Targets.Add(player.UserId, new List<string>());
-            Targets[player.UserId].Remove(target.UserId);
+            if (!Targets.ContainsKey(player))
+                Targets.Add(player, new List<Player>());
+            Targets[player].Remove(target);
         }
 
         public static void RemoveAllTargets(Player player)
         {
-            if (!Targets.ContainsKey(player.UserId))
-                Targets.Add(player.UserId, new List<string>());
-            Targets.Remove(player.UserId);
+            if (!Targets.ContainsKey(player))
+                Targets.Add(player, new List<Player>());
+            Targets.Remove(player);
         }
 
         public static void ClearAll()
@@ -65,7 +65,7 @@ namespace Vigilance.API
             Player myPlayer = Server.PlayerList.GetPlayer(playerId);
             if (myPlayer == null)
                 return false;
-            return GetTargets(source).Contains(myPlayer.UserId);
+            return GetTargets(source).Contains(myPlayer);
         }
 
         public static Player GetPlayerOrServer(GameObject gameObject)

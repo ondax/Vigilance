@@ -92,6 +92,11 @@ namespace Vigilance
             }
 
             public static void Rocket(Player player, float speed) => Timing.RunCoroutine(DoRocket(player, speed));
+
+            public static void CollectGarbage()
+            {
+                GC.Collect();          
+            }
         }
 
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();

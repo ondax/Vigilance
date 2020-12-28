@@ -14,7 +14,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 4, 2, "", false);
+        public static Version Version { get; } = new Version(5, 4, 3, "", false);
         public static List<string> CompatibleVersions = new List<string>() { "10.1.3" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -28,6 +28,7 @@ namespace Vigilance
             {
                 if (_enabled)
                     return;
+                
                 if (!CompatibleVersions.Contains(Server.Version))
                 {
                     Log.Add("PluginManager", $"This version ({Version}) is not compatible with your server version ({GameCore.Version.VersionString})!\nCompatible versions: {CompatibleVersions.AsString()}", LogType.Error);
@@ -74,9 +75,9 @@ namespace Vigilance
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
-                Log.Add($"Server version: {Server.Version}", ConsoleColor.Magenta);
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
-                Timing.CallDelayed(5f, () => Log.Add("Merry christmas!", ConsoleColor.Green));
+                if (ClutterSpawner.IsHolidayActive(Holidays.Christmas))
+                    Timing.CallDelayed(5f, () => Log.Add("Merry christmas!", ConsoleColor.Green));
             }
             catch (Exception e)
             {
