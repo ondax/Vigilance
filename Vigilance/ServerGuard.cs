@@ -89,6 +89,8 @@ namespace Vigilance
 
             public static bool CheckIP(Player player)
             {
+                if (!ServerGuard.IsEnabled)
+                    return false;
                 if (!IsEnabled)
                     return false;
                 if (player == null)
@@ -119,9 +121,13 @@ namespace Vigilance
                         return true;
                     }
                 }
+                catch (WebException)
+                {
+
+                }
                 catch (Exception e)
                 {
-                    Log.Add(nameof(ServerGuard.VPNShield.CheckIP), e);
+                    Log.Add("ServerGuard", e);
                 }
                 return false;
             }
@@ -136,6 +142,8 @@ namespace Vigilance
 
             public static bool CheckAccount(Player player)
             {
+                if (!ServerGuard.IsEnabled)
+                    return false;
                 if (!IsEnabled)
                     return false;
                 if (player == null)
@@ -181,9 +189,13 @@ namespace Vigilance
                         }
                     }
                 }
+                catch (WebException)
+                {
+
+                }
                 catch (Exception e)
                 {
-                    Log.Add(nameof(SteamShield.CheckAccount), e);
+                    Log.Add("ServerGuard", e);
                 }
                 return false;
             }

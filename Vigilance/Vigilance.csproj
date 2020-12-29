@@ -168,6 +168,7 @@
     <Compile Include="Patches\Events\CharacterClassManager_AllowContain.cs" />
     <Compile Include="Patches\Events\ServerRoles_SetGroup.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdSwitchAWButton.cs" />
+    <Compile Include="Patches\Features\FirstPersonController_GetSpeed.cs" />
     <Compile Include="Patches\Features\Pickup_UpdatePosition.cs" />
     <Compile Include="Patches\Features\Scp049_OnEnable.cs" />
     <Compile Include="Patches\Features\DissonanceUserSetup_CallCmdAltIsActive.cs" />
@@ -184,6 +185,7 @@
     <Compile Include="Patches\Features\Scp096_PryGate.cs" />
     <Compile Include="Patches\Features\Scp096_SetupShield.cs" />
     <Compile Include="Patches\Features\Scp096Target_set_IsTarget.cs" />
+    <Compile Include="Patches\Features\Scp173PlayerScript_Blink.cs" />
     <Compile Include="Patches\Features\Scp173PlayerScript_FixedUpdate.cs" />
     <Compile Include="Patches\Features\Scp939PlayerScript_CallCmdShoot.cs" />
     <Compile Include="Patches\Features\ServerConsole_ReloadServerName.cs" />

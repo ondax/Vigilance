@@ -10,6 +10,8 @@ namespace Vigilance.API
         public static List<Player> Ghosts = new List<Player>();
         public static List<Player> CannotTriggerScp096 = new List<Player>();
         public static List<Player> CannotBlockScp173 = new List<Player>();
+        public static bool AllowBlinking = true;
+        public static List<Player> PlayersThatCantBlink = new List<Player>();
 
         public static void MakeGhost(Player player)
         {
@@ -60,20 +62,18 @@ namespace Vigilance.API
         }
 
         public static Vector3 FindLookRotation(Vector3 player, Vector3 target) => (target - player).normalized;
-        public static bool PlayerCannotSee(Player source, int playerId)
+        public static bool PlayerCannotSee(Player source, Player myPlayer)
         {
-            Player myPlayer = Server.PlayerList.GetPlayer(playerId);
             if (myPlayer == null)
                 return false;
             return GetTargets(source).Contains(myPlayer);
         }
 
-        public static Player GetPlayerOrServer(GameObject gameObject)
+        public static Player GetPlayerOrServer(ReferenceHub refHub)
         {
-            if (gameObject == null)
+            if (refHub == null)
                 return null;
-            var refHub = ReferenceHub.GetHub(gameObject);
-            return refHub.isLocalPlayer ? Server.PlayerList.Local : Server.PlayerList.GetPlayer(gameObject);
+            return refHub.isLocalPlayer ? Environment.Cache.LocalPlayer : Server.PlayerList.GetPlayer(refHub);
         }
 
         public static void RotatePlayer(int index, PlayerPositionData[] buff, Vector3 rotation) => buff[index] = new PlayerPositionData(buff[index].position, Quaternion.LookRotation(rotation).eulerAngles.y, buff[index].playerID);

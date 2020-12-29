@@ -751,6 +751,10 @@ namespace Vigilance
             {
                 PlayerJoinEvent ev = new PlayerJoinEvent(ply);
                 EventManager.Trigger<PlayerJoinHandler>(ev);
+                if (!ply.Session.ContainsKey("joinDate"))
+                    ply.Session.Add("joinDate", DateTime.UtcNow);
+                else
+                    ply.Session["joinDate"] = DateTime.UtcNow;
             }
             catch (Exception e)
             {

@@ -22,16 +22,23 @@ namespace Vigilance.API
             PlayerLock = false;
             CanTriggerScp096 = true;
             CanBlockScp173 = true;
+            CanBlink = true;
+            CustomSpeed = -1f;
+            Session = new Dictionary<string, object>();
         }
 
         public GameObject GameObject => _hub.gameObject;
         public ReferenceHub Hub => _hub;
+        public Dictionary<string, object> Session { get; set; }
+        public float CustomSpeed { get; set; }
+        public bool CanBlink { get; set; }
         public bool PlayerLock { get; set; }
         public bool CanTriggerScp096 { get; set; }
         public bool CanBlockScp173 { get; set; }
-        public bool BypassMode => _hub.serverRoles.BypassMode;
-        public bool DoNotTrack => _hub.serverRoles.DoNotTrack;
-        public bool RemoteAdmin => _hub.serverRoles.RemoteAdmin;
+        public bool BypassMode { get => _hub.serverRoles.BypassMode; set => _hub.serverRoles.BypassMode = value; }
+        public bool DoNotTrack { get => _hub.serverRoles.DoNotTrack; set => _hub.serverRoles.DoNotTrack = value; }
+        public bool RemoteAdmin { get => _hub.serverRoles.RemoteAdmin; set => _hub.serverRoles.RemoteAdmin = value; }
+        public ServerRoles.AccessMode RemoteAdminAccessMode { get => _hub.serverRoles.RemoteAdminMode; set => _hub.serverRoles.RemoteAdminMode = value; }
         public bool GodMode { get => _hub.characterClassManager.GodMode; set => _hub.characterClassManager.GodMode = value; }
         public int Health { get => (int)_hub.playerStats.Health; set => _hub.playerStats.SetHPAmount(value); }
         public int PlayerId { get => _hub.queryProcessor.PlayerId; set => _hub.queryProcessor.NetworkPlayerId = value; }
@@ -62,7 +69,7 @@ namespace Vigilance.API
                 _hub.serverRoles.SetText(value);
             }
         }
-        public string RankColor { get => _hub.serverRoles.Group.BadgeColor; set => _hub.serverRoles.SetColor(value.ToLower()); }
+        public ServerRoles.NamedColor RankColor { get => _hub.serverRoles.CurrentColor; set => _hub.serverRoles.SetColor(value.Name); }
         public UserGroup UserGroup { get => _hub.serverRoles.Group; set => _hub.serverRoles.SetGroup(value, false); }
         public string IpAddress { get => _hub.queryProcessor._ipAddress; set => _hub.queryProcessor._ipAddress = value; }
         public bool IsInPocketDimension
@@ -112,7 +119,7 @@ namespace Vigilance.API
                 PermissionsHandler ph = ServerStatic.GetPermissionsHandler();
                 if (ph == null)
                     return null;
-                Dictionary<string, UserGroup> dict = ServerStatic.GetPermissionsHandler().GetAllGroups();
+                Dictionary<string, UserGroup> dict = ph.GetAllGroups();
                 foreach (KeyValuePair<string, UserGroup> pair in dict)
                 {
                     if (pair.Value == UserGroup || (pair.Value.BadgeColor == UserGroup.BadgeColor && pair.Value.BadgeText == UserGroup.BadgeText && pair.Value.Cover == UserGroup.Cover && pair.Value.HiddenByDefault == UserGroup.HiddenByDefault && pair.Value.KickPower == UserGroup.KickPower && pair.Value.Permissions == UserGroup.Permissions && pair.Value.RequiredKickPower == UserGroup.RequiredKickPower && pair.Value.Shared == UserGroup.Shared))
@@ -351,6 +358,9 @@ namespace Vigilance.API
         public bool HasItem(ItemType item) => _hub.inventory.items.Select(h => h.id).Contains(item);
         public void ResetStamina() => _hub.fpc.ResetStamina();
         public void ShowHint(Broadcast bc) => ShowHint(bc.Message, bc.Duration);
+        public void OpenRemoteAdmin() => _hub.serverRoles.CallTargetOpenRemoteAdmin(Connection, string.IsNullOrEmpty(ServerStatic.GetPermissionsHandler()?._overridePassword) ? false : true);
+        public void OpenRemoteAdmin(bool password) => _hub.serverRoles.CallTargetOpenRemoteAdmin(Connection, password);
+        public void CloseRemoteAdmin() => _hub.serverRoles.CallTargetCloseRemoteAdmin(Connection);
 
         public void ShowHint(string message, float duration = 10f)
         {
@@ -484,7 +494,7 @@ namespace Vigilance.API
                 return;
             if (achievement == Achievement.JustResources)
             {
-                _hub.playerStats.TargetStats(Connection, "dboys_killed", "justresources", 50);
+                Environment.Cache.LocalStats?.TargetStats(Connection, "dboys_killed", "justresources", 50);
                 return;
             }
             Environment.Cache.LocalStats?.TargetAchieve(Connection, achievement.ToString().ToLower());

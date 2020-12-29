@@ -8,7 +8,7 @@ using UnityEngine;
 using Scp096 = PlayableScps.Scp096;
 using Vigilance.Enums;
 
-namespace Vigilance.Patches.Ghostmode
+namespace Vigilance.Patches.Features
 {
     [HarmonyPatch(typeof(PlayerPositionManager), nameof(PlayerPositionManager.TransmitData))]
     public static class PlayerPositionManager_TransmitData
@@ -28,10 +28,9 @@ namespace Vigilance.Patches.Ghostmode
                     __instance._receivedData[index] = new PlayerPositionData(ReferenceHub.GetHub(players[index]));
                 if (__instance._transmitBuffer == null || __instance._transmitBuffer.Length < __instance._usedData)
                     __instance._transmitBuffer = new PlayerPositionData[__instance._usedData * 2];
-
-                foreach (GameObject gameObject in players)
+                foreach (ReferenceHub r in ReferenceHub.GetAllHubs().Values)
                 {
-                    Player player = API.Ghostmode.GetPlayerOrServer(gameObject);
+                    Player player = Ghostmode.GetPlayerOrServer(r);
                     Array.Copy(__instance._receivedData, __instance._transmitBuffer, __instance._usedData);
                     if (player.Role.Is939())
                     {
@@ -41,7 +40,9 @@ namespace Vigilance.Patches.Ghostmode
                             {
                                 ReferenceHub hub2 = ReferenceHub.GetHub(__instance._transmitBuffer[index].playerID);
                                 if (hub2.characterClassManager.CurRole.team != Team.SCP && hub2.characterClassManager.CurRole.team != Team.RIP && !hub2.GetComponent<Scp939_VisionController>().CanSee(player.Hub.characterClassManager.Scp939))
-                                    API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                {
+                                    Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                }
                             }
                         }
                     }
@@ -52,49 +53,51 @@ namespace Vigilance.Patches.Ghostmode
                             PlayerPositionData ppd = __instance._transmitBuffer[index];
                             if (!ReferenceHub.TryGetHub(ppd.playerID, out var targetHub))
                                 continue;
-                            Player currentTarget = API.Ghostmode.GetPlayerOrServer(targetHub.gameObject);
+                            Player currentTarget = Ghostmode.GetPlayerOrServer(targetHub);
                             Scp096 scp096 = player.Hub.scpsController.CurrentScp as Scp096;
-                            Vector3 pos = ppd.position - player.Hub.playerMovementSync.RealModelPosition;
-                            if (Math.Abs(pos.y) > 35f)
-                                API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                            Vector3 vector3 = ppd.position - player.Hub.playerMovementSync.RealModelPosition;
+                            if (Math.Abs(vector3.y) > 35f)
+                            {
+                                Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                            }
                             else
                             {
-                                float sqrMagnitude = pos.sqrMagnitude;
+                                float sqrMagnitude = vector3.sqrMagnitude;
                                 if (player.Hub.playerMovementSync.RealModelPosition.y < 800f)
                                 {
                                     if (sqrMagnitude >= 1764f)
                                     {
                                         if (!(sqrMagnitude < 4225f))
                                         {
-                                            API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                            Ghostmode.MakeGhost(index, __instance._transmitBuffer);
                                             continue;
                                         }
-
                                         if (!(currentTarget.Hub.scpsController.CurrentScp is Scp096 scp) || !scp.EnragedOrEnraging)
                                         {
-                                            API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                            Ghostmode.MakeGhost(index, __instance._transmitBuffer);
                                             continue;
                                         }
                                     }
                                 }
                                 else if (sqrMagnitude >= 7225f)
                                 {
-                                    API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
-                                    continue;
+                                    Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                    continue; 
                                 }
 
                                 if (scp096 != null && scp096.EnragedOrEnraging && !scp096.HasTarget(currentTarget.Hub) && currentTarget.Team != TeamType.SCP)
                                 {
-                                    API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                    Ghostmode.MakeGhost(index, __instance._transmitBuffer);
                                 }
-
                                 else if (currentTarget.Hub.playerEffectsController.GetEffect<Scp268>().Enabled)
                                 {
                                     bool flag2 = false;
                                     if (scp096 != null)
                                         flag2 = scp096.HasTarget(currentTarget.Hub);
                                     if (player.Role != RoleType.Scp079 && player.Role != RoleType.Spectator && !flag2)
-                                        API.Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                    {
+                                        Ghostmode.MakeGhost(index, __instance._transmitBuffer);
+                                    }
                                 }
                             }
                         }
@@ -105,22 +108,28 @@ namespace Vigilance.Patches.Ghostmode
                         var ppd = __instance._transmitBuffer[z];
                         if (player.PlayerId == ppd.playerID)
                             continue;
-                        if (ppd.position == API.Ghostmode.GhostPosition)
+                        if (ppd.position == Ghostmode.GhostPosition)
                             continue;
                         if (!ReferenceHub.TryGetHub(ppd.playerID, out var targetHub))
                             continue;
-                        var target = API.Ghostmode.GetPlayerOrServer(targetHub.gameObject);
+                        var target = Ghostmode.GetPlayerOrServer(targetHub);
                         if (target?.Hub == null)
                             continue;
-                        if (target.IsInvisible || API.Ghostmode.PlayerCannotSee(player, target.PlayerId))
-                            API.Ghostmode.MakeGhost(z, __instance._transmitBuffer);
-                        else if (player.Role == RoleType.Scp173 && ((!ConfigManager.CanTutorialBlockScp173 && target.Role == RoleType.Tutorial) || API.Ghostmode.CannotBlockScp173.Contains(target)))
-                            API.Ghostmode.RotatePlayer(z, __instance._transmitBuffer, API.Ghostmode.FindLookRotation(player.Position, target.Position));
+                        if (target.IsInvisible || Ghostmode.PlayerCannotSee(player, target) || Ghostmode.Ghosts.Contains(target))
+                        {
+                            Ghostmode.MakeGhost(z, __instance._transmitBuffer);
+                        }
+                        else if (player.Role == RoleType.Scp173 && ((!ConfigManager.CanTutorialBlockScp173 && target.Role == RoleType.Tutorial) || Ghostmode.CannotBlockScp173.Contains(target) || !player.CanBlockScp173))
+                        {
+                            Ghostmode.RotatePlayer(z, __instance._transmitBuffer, Ghostmode.FindLookRotation(player.Position, target.Position));
+                        }
                     }
 
                     NetworkConnection networkConnection = player.Hub.characterClassManager.netIdentity.isLocalPlayer ? NetworkServer.localConnection : player.Hub.characterClassManager.netIdentity.connectionToClient;
                     if (__instance._usedData <= 20)
+                    {
                         networkConnection.Send(new PlayerPositionManager.PositionMessage(__instance._transmitBuffer, (byte)__instance._usedData, 0), 1);
+                    }
                     else
                     {
                         byte part;
@@ -131,6 +140,7 @@ namespace Vigilance.Patches.Ghostmode
                             networkConnection.Send(new PlayerPositionManager.PositionMessage(__instance._transmitBuffer, count, part), 1);
                     }
                 }
+
                 return false;
             }
             catch (Exception)

@@ -17,15 +17,7 @@ namespace Vigilance.API
         public static bool LobbyLock { get => Server.LobbyLock; set => Server.LobbyLock = value; }
         public static bool FriendlyFire { get => ServerConsole.FriendlyFire; set => ServerConsole.FriendlyFire = value; }
         public static RoundState CurrentState { get; set; } = RoundState.Undefined;
-        public static RoundInfo Info
-        {
-            get
-            {
-                if (_info == null)
-                    _info = new RoundInfo();
-                return _info;
-            }
-        }
+        public static RoundInfo Info { get => _info == null ? _info = new RoundInfo() : _info; }
 
         public static void Start() => CharacterClassManager.ForceRoundStart();
         public static void End()
@@ -36,7 +28,7 @@ namespace Vigilance.API
         }
 
         public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.BuildSumInfo(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
-        public static void Restart() => PlayerManager.localPlayer.GetComponent<PlayerStats>().Roundrestart();
+        public static void Restart() => Environment.Cache.LocalStats.Roundrestart();
 
         public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)
         {
