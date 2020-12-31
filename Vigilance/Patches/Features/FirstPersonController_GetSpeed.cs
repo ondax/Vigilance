@@ -16,14 +16,14 @@ namespace Vigilance.Patches.Features
             }
             else
             {
-                if (myPlayer.CustomSpeed == -1f)
+                if (myPlayer.Speed == -1f)
                 {
                     speed = 0f;
                     return true;
                 }
                 else
                 {
-                    speed = myPlayer.CustomSpeed;
+                    speed = myPlayer.Speed;
                     return false;
                 }
             }

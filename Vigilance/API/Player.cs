@@ -23,14 +23,14 @@ namespace Vigilance.API
             CanTriggerScp096 = true;
             CanBlockScp173 = true;
             CanBlink = true;
-            CustomSpeed = -1f;
             Session = new Dictionary<string, object>();
+            Speed = -1f;
         }
 
         public GameObject GameObject => _hub.gameObject;
         public ReferenceHub Hub => _hub;
         public Dictionary<string, object> Session { get; set; }
-        public float CustomSpeed { get; set; }
+        public float Speed { get; set; }
         public bool CanBlink { get; set; }
         public bool PlayerLock { get; set; }
         public bool CanTriggerScp096 { get; set; }
