@@ -26,8 +26,6 @@ namespace Vigilance.API
             LobbyLock = false;
             RoundSummary.singleton.ForceEnd();
         }
-
-        public static void ShowSummary(RoundSummary.LeadingTeam team = RoundSummary.LeadingTeam.Draw) => RoundSummary.singleton.CallRpcShowRoundSummary(Info.ClassListOnStart, ClassHelper.BuildSumInfo(), team, Info.EscapedClassDs, Info.EscapedScientists, Info.KillsBySCP, Info.Class_Ds);
         public static void Restart() => Environment.Cache.LocalStats.Roundrestart();
 
         public static void AddUnit(string unit, SpawnableTeamType teamType = SpawnableTeamType.NineTailedFox)

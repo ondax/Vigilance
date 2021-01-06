@@ -90,6 +90,7 @@
   <ItemGroup>
     <Compile Include="API\Broadcast.cs" />
     <Compile Include="API\Commands.cs" />
+    <Compile Include="API\Door.cs" />
     <Compile Include="API\Ghostmode.cs" />
     <Compile Include="API\Map.cs" />
     <Compile Include="API\Player.cs" />
@@ -113,7 +114,6 @@
     <Compile Include="Patches\Events\AnimationController_CallCmdSyncData.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_ApplyProperties.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_CallCmdRegisterEscape.cs" />
-    <Compile Include="Patches\Events\CharacterClassManager_CmdStartRound.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_SetPlayersClass.cs" />
     <Compile Include="Patches\Events\CheaterReport_CallCmdReport.cs" />
     <Compile Include="Patches\Events\ConsumableAndWearableItems_CallCmdCancelMedicalItem.cs" />
@@ -136,7 +136,7 @@
     <Compile Include="Patches\Events\PlayerInteract_CallCmdChange914Knob.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdContain106.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdDetonateWarhead.cs" />
-    <Compile Include="Patches\Events\PlayerInteract_CallCmdOpenDoor.cs" />
+    <Compile Include="Patches\Events\DoorVariant_ServerInteract.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUse914.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseLocker.cs" />
@@ -159,6 +159,7 @@
     <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdUsePortal.cs" />
     <Compile Include="Patches\Events\Scp914Machine_ProcessItems.cs" />
     <Compile Include="Patches\Events\Scp914Machine_UpgradeItemID.cs" />
+    <Compile Include="Patches\Events\SeedSynchronizer_Start.cs" />
     <Compile Include="Patches\Events\ServerConsole_AddLog.cs" />
     <Compile Include="Patches\Events\TeslaGate_PlayerInRange.cs" />
     <Compile Include="Patches\Events\WeaponManager_CallCmdReload.cs" />
@@ -199,9 +200,6 @@
     <Compile Include="PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerGuard.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="API\ClassHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigManager.cs" />

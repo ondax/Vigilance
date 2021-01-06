@@ -7,31 +7,10 @@ using System.Linq;
 using System.Reflection;
 using Vigilance.API;
 using Harmony;
+using Interactables.Interobjects.DoorUtils;
 
 namespace Vigilance.Extensions
 {
-	public static class GameObjectExtensions
-	{
-		public static bool IsNull(this GameObject gameObject) => gameObject == null;
-		public static void Destroy(this GameObject gameObject)
-		{
-			if (!gameObject.IsNull())
-			{
-				NetworkServer.Destroy(gameObject);
-			}
-		}
-
-		public static bool IsPlayer(this GameObject gameObject)
-        {
-			if (gameObject == null)
-				return false;
-			if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
-				return true;
-			else
-				return false;
-        }
-	}
-
 	public static class MethodExtensions
 	{
 		public static void InvokeStaticMethod(this Type type, string methodName, object[] param)
@@ -39,6 +18,152 @@ namespace Vigilance.Extensions
 			BindingFlags flags = BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public;
 			MethodInfo info = type.GetMethod(methodName, flags);
 			info?.Invoke(null, param);
+		}
+	}
+
+	public static class CameraExtensions
+    {
+		public static readonly Dictionary<int, Enums.CameraType> Types = new Dictionary<int, Enums.CameraType>();
+		public static readonly Dictionary<int, Room> Rooms = new Dictionary<int, Room>();
+
+		public static Room GetRoom(this Camera079 camera) => Rooms.TryGetValue(camera.GetInstanceID(), out Room room) ? room : null;
+		public static Enums.CameraType GetCameraType(this Camera079 camera) => Types.TryGetValue(camera.GetInstanceID(), out Enums.CameraType cameraType) ? cameraType : Enums.CameraType.Unknown;
+		public static ZoneType GetZone(this Camera079 camera) => GetRoom(camera)?.Zone ?? ZoneType.Unspecified;
+
+		public static void SetInfo()
+		{
+			Types.Clear();
+			Rooms.Clear();
+			var cameras = Map.Cameras;
+			if (cameras == null)
+				return;
+			var cameraCount = cameras.Count;
+			for (int i = 0; i < cameraCount; i++)
+			{
+				var camera = cameras[i];
+				var cameraID = camera.GetInstanceID();
+				var cameraType = (Enums.CameraType)cameraID;
+				var room = Map.FindParentRoom(camera.gameObject);
+				Types.Add(cameraID, cameraType);
+				Rooms.Add(cameraID, room);
+			}
+		}
+	}
+
+	public static class DoorExtensions
+    {
+		public static readonly Dictionary<int, DoorType> Types = new Dictionary<int, DoorType>();
+		public static readonly Dictionary<int, API.Door> Doors = new Dictionary<int, API.Door>();
+
+		public static DoorType GetDoorType(this DoorVariant door) => Types.TryGetValue(door.GetInstanceID(), out var doorType) ? doorType : DoorType.UnknownDoor;
+		public static API.Door GetDoor(this DoorVariant d) => Doors.TryGetValue(d.GetInstanceID(), out var door) ? door : null;
+
+		public static void SetInfo()
+		{
+			Types.Clear();
+			Doors.Clear();
+			var doors = Map.FindObjects<DoorVariant>();
+			if (doors == null)
+				return;
+			var doorCount = doors.Count;
+			for (int i = 0; i < doorCount; i++)
+			{
+				var door = doors[i];
+				var doorID = door.GetInstanceID();
+				var doorNameTag = door.GetComponent<DoorNametagExtension>();
+				var doorName = doorNameTag == null ? door.name.RemoveBracketsOnEndOfName() : doorNameTag.GetName;
+				var doorType = GetDoorType(doorName);
+				var doorRoom = Map.FindParentRoom(door.gameObject);
+				Types.Add(doorID, doorType);
+				Doors.Add(doorID, new API.Door(door, doorRoom, doorType, doorID, doorName));
+			}
+		}
+
+		public static DoorType GetDoorType(string doorName)
+		{
+			switch (doorName)
+			{
+				case "012":
+					return DoorType.Scp012;
+				case "012_BOTTOM":
+					return DoorType.Scp012Bottom;
+				case "012_LOCKER":
+					return DoorType.Scp012Locker;
+				case "049_ARMORY":
+					return DoorType.Scp049Armory;
+				case "079_FIRST":
+					return DoorType.Scp079First;
+				case "079_SECOND":
+					return DoorType.Scp079Second;
+				case "096":
+					return DoorType.Scp096;
+				case "106_BOTTOM":
+					return DoorType.Scp106Bottom;
+				case "106_PRIMARY":
+					return DoorType.Scp106Primary;
+				case "106_SECONDARY":
+					return DoorType.Scp106Secondary;
+				case "173":
+					return DoorType.Scp173;
+				case "173_ARMORY":
+					return DoorType.Scp173Armory;
+				case "173_BOTTOM":
+					return DoorType.Scp173Bottom;
+				case "372":
+					return DoorType.Scp372;
+				case "914":
+					return DoorType.Scp914;
+				case "Airlocks":
+					return DoorType.Airlocks;
+				case "CHECKPOINT_ENT":
+					return DoorType.CheckpointEntrance;
+				case "CHECKPOINT_LCZ_A":
+					return DoorType.CheckpointLczA;
+				case "CHECKPOINT_LCZ_B":
+					return DoorType.CheckpointLczB;
+				case "ContDoor":
+					return DoorType.ContDoor;
+				case "EntrDoor":
+					return DoorType.EntranceDoor;
+				case "ESCAPE":
+					return DoorType.Escape;
+				case "ESCAPE_INNER":
+					return DoorType.EscapeInner;
+				case "GATE_A":
+					return DoorType.GateA;
+				case "GATE_B":
+					return DoorType.GateB;
+				case "HCZ_ARMORY":
+					return DoorType.HczArmory;
+				case "HeavyContainmentDoor":
+					return DoorType.HeavyContainmentDoor;
+				case "HID":
+					return DoorType.HID;
+				case "HID_LEFT":
+					return DoorType.HIDLeft;
+				case "HID_RIGHT":
+					return DoorType.HIDRight;
+				case "INTERCOM":
+					return DoorType.Intercom;
+				case "LCZ_ARMORY":
+					return DoorType.LczArmory;
+				case "LCZ_CAFE":
+					return DoorType.LczCafe;
+				case "LCZ_WC":
+					return DoorType.LczWc;
+				case "LightContainmentDoor":
+					return DoorType.LightContainmentDoor;
+				case "NUKE_ARMORY":
+					return DoorType.NukeArmory;
+				case "NUKE_SURFACE":
+					return DoorType.NukeSurface;
+				case "PrisonDoor":
+					return DoorType.PrisonDoor;
+				case "SURFACE_GATE":
+					return DoorType.SurfaceGate;
+				default:
+					return DoorType.UnknownDoor;
+			}
 		}
 	}
 
@@ -153,10 +278,17 @@ namespace Vigilance.Extensions
 				if (player.Ragdolls.Contains(ragdoll))
 					return player;
             }
+
+			foreach (Player player in Server.Players)
+            {
+				if (player.PlayerId == ragdoll.owner.PlayerId)
+					return player;
+            }
+
 			return null;
         }
 
-		public static void Delete(this Ragdoll ragdoll) => ragdoll?.gameObject.Destroy();
+		public static void Delete(this Ragdoll ragdoll) => NetworkServer.Destroy(ragdoll?.gameObject);
 	}
 
 	public static class CommandSenderExtensions
@@ -175,17 +307,17 @@ namespace Vigilance.Extensions
 		{
 			string id = sender.SenderId;
 			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			if (id == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			if (sender.Nickname == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			foreach (Player player in Server.PlayerList.Players.Values)
 			{
 				if (player.UserId == sender.SenderId)
 					return player;
 			}
-			return new Player(ReferenceHub.LocalHub);
+			return null;
 		}
 	}
 
@@ -237,21 +369,6 @@ namespace Vigilance.Extensions
 			return manager._hub.GetPlayer();
 		}
 
-		public static List<Player> ToList(IEnumerable<Player> players)
-		{
-			return new List<Player>(players);
-		}
-
-		public static List<Player> GetPlayers(this List<GameObject> gameObjects)
-		{
-			List<Player> list = new List<Player>(gameObjects.Count);
-			foreach (GameObject obj in gameObjects)
-			{
-				list.Add(obj.GetPlayer());
-			}
-			return list;
-		}
-
 		public static List<Player> GetPlayers(this List<ReferenceHub> hubs)
 		{
 			List<Player> list = new List<Player>();
@@ -262,27 +379,7 @@ namespace Vigilance.Extensions
 			return list;
 		}
 
-		public static List<GameObject> GetGameObjects(this List<CharacterClassManager> ccms)
-        {
-			List<GameObject> objects = new List<GameObject>();
-			foreach (CharacterClassManager ccm in ccms)
-            {
-				objects.Add(ccm.gameObject);
-            }
-			return objects;
-        }
-
-		public static List<GameObject> GetGameObjects(this List<ReferenceHub> hubs)
-        {
-			List<GameObject> objects = new List<GameObject>();
-			foreach (ReferenceHub hub in hubs)
-            {
-				objects.Add(hub.gameObject);
-            }
-			return objects;
-        }
-
-		public static List<Player> GetPlayers(this List<CharacterClassManager> ccms) => ccms.GetGameObjects().GetPlayers();
+		public static List<Player> GetPlayers(this List<CharacterClassManager> ccms) => ccms.Select(h => h.GetPlayer()).ToList();
 
 		public static Player GetPlayer(this int playerId)
 		{
@@ -361,6 +458,16 @@ namespace Vigilance.Extensions
 			}
 		}
 
+		public static List<Player> GetPlayers(this RoleType role)
+		{
+			return Server.PlayerList.GetPlayers(role);
+		}
+
+		public static List<Player> GetPlayers(this TeamType team)
+		{
+			return Server.PlayerList.GetPlayers(team);
+		}
+
 		public static Vector3 FindLookRotation(this Vector3 player, Vector3 target) => (target - player).normalized;
 		public static bool IsSteam(this UserIdType idType) => idType != UserIdType.Discord && idType != UserIdType.Unspecified;
 	}
@@ -436,6 +543,14 @@ namespace Vigilance.Extensions
 				return true;
 			else
 				return false;
+		}
+
+		public static string RemoveBracketsOnEndOfName(this string name)
+		{
+			var bracketStart = name.IndexOf('(') - 1;
+			if (bracketStart > 0)
+				name = name.Remove(bracketStart, name.Length - bracketStart);
+			return name;
 		}
 
 		public static string SkipWords(this string[] array, int amount)
@@ -564,6 +679,19 @@ namespace Vigilance.Extensions
 			return DurationType.Hours;
 		}
 
+		public static KeycardPermissions[] GetPermissions(this string[] array)
+        {
+			List<KeycardPermissions> perms = new List<KeycardPermissions>();
+			foreach (string perm in array)
+            {
+				if (DoorPermissionUtils.BackwardsCompatibilityPermissions.TryGetValue(perm, out KeycardPermissions value))
+				{
+					perms.Add(value);
+				}
+            }
+			return perms.ToArray();
+        }
+
 		public static UserIdType GetIdType(this ulong id)
 		{
 			if (id.ToString().Length == 17)
@@ -664,8 +792,6 @@ namespace Vigilance.Extensions
 					rotation = rotation.eulerAngles,
 					scale = scale
 				};
-				clone.AddComponent<WorkStation>();
-				clone.GetComponent<WorkStation>().Networkposition = offset;
 			}
 			return clone;
         }
@@ -903,16 +1029,6 @@ namespace Vigilance.Extensions
 				return AmmoType.Nato_9mm;
 			return AmmoType.None;
         }
-
-		public static List<Player> GetPlayers(this RoleType role)
-		{
-			return Server.PlayerList.GetPlayers(role);
-		}
-
-		public static List<Player> GetPlayers(this TeamType team)
-		{
-			return Server.PlayerList.GetPlayers(team);
-		}
 	}
 
 	public static class EnumExtensions
@@ -930,34 +1046,10 @@ namespace Vigilance.Extensions
 
 		public static T GetEnum<T>(this string str)
         {
-			IEnumerable<Assembly> assemblies = PluginManager.Assemblies.Values;
-			assemblies.Add(Assembly.LoadFrom($"{Paths.Managed}/Assembly-CSharp.dll"));
-			assemblies.Add(Assembly.LoadFrom($"{Paths.VigilanceFile}"));
-			List<Type> valid = new List<Type>();
-			foreach (Assembly assembly in assemblies)
+			foreach (T t in Environment.GetValues<T>())
             {
-				foreach (Type type in assembly.GetTypes())
-                {
-					if (type.BaseType == typeof(Enum))
-                    {
-						valid.Add(type);
-                    }
-                }
-            }
-
-			List<T> res = valid.Cast<T>().ToList();
-			foreach (T t in res)
-            {
-				if (t.ToString().ToLower() == str.ToLower() || t.ToString().ToLower().Contains(str.ToLower()))
-                {
+				if (t.ToString().ToLower() == str.ToLower())
 					return t;
-                }
-            }
-
-			IEnumerable<int> res2 = valid.Cast<int>();
-			if (int.TryParse(str, out int id))
-            {
-				return res[res2.Where(h => h == id).FirstOrDefault()];
             }
 			return default;
         }
@@ -1207,6 +1299,30 @@ namespace Vigilance.Extensions
             }
 			return bcs;
         }
+
+		public static Dictionary<RoleType, ItemType> GetRoleItems(this YamlConfig cfg, string key)
+        {
+			Dictionary<RoleType, ItemType> pairs = new Dictionary<RoleType, ItemType>();
+			Dictionary<string, string> strs = cfg.GetStringDictionary(key);
+			foreach (KeyValuePair<string, string> pair in strs)
+            {
+				pairs.Add(pair.Key.GetRole(), pair.Value.GetItem());
+            }
+			return pairs;
+        }
+
+		public static Dictionary<RoleType, float> GetRoleFloats(this YamlConfig cfg, string key)
+        {
+			Dictionary<RoleType, float> pairs = new Dictionary<RoleType, float>();
+			Dictionary<string, string> strs = cfg.GetStringDictionary(key);
+			foreach (KeyValuePair<string, string> pair in strs)
+			{
+				if (!float.TryParse(pair.Value, out float f))
+					continue;
+				pairs.Add(pair.Key.GetRole(), f);
+			}
+			return pairs;
+		}
 
 		public static API.Broadcast ParseBroadcast(string arg)
         {

@@ -14,8 +14,8 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 4, 5, "", false);
-        public static List<string> CompatibleVersions = new List<string>() { "10.1.3" };
+        public static Version Version { get; } = new Version(5, 4, 6, "", true);
+        public static List<string> CompatibleVersions = new List<string>() { "10.2.0" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
         public static Dictionary<string, Assembly> Dependencies { get; set; }
@@ -76,8 +76,6 @@ namespace Vigilance
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);
-                if (ClutterSpawner.IsHolidayActive(Holidays.Christmas))
-                    Timing.CallDelayed(5f, () => Log.Add("Merry christmas!", ConsoleColor.Green));
             }
             catch (Exception e)
             {

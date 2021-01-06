@@ -12,6 +12,8 @@ using System;
 using MEC;
 using System.Linq;
 using CustomPlayerEffects;
+using Interactables.Interobjects.DoorUtils;
+using GameCore;
 
 namespace Vigilance
 {
@@ -24,6 +26,7 @@ namespace Vigilance
             private static PlayerStats _pStats;
             private static CharacterClassManager _ccm;
             private static BanPlayer _banHandler;
+            public static readonly RaycastHit[] CachedFindParentRoomRaycast = new RaycastHit[1];
 
             public static Player LocalPlayer
             {
@@ -101,15 +104,65 @@ namespace Vigilance
 
         public static List<CoroutineHandle> ActiveCoroutines = new List<CoroutineHandle>();
         public static System.Random Random = new System.Random();
+        
+        public static int GenerateMapSeed()
+        {
+            int seed = 0;
+            int num = ConfigFile.ServerConfig.GetInt("map_seed", -1);
+            if (num < 1)
+                num = UnityEngine.Random.Range(1, int.MaxValue);
+            seed = Mathf.Clamp(num, 1, int.MaxValue);
+            DoUntilFalse(() => ConfigManager.BlacklistedSeeds.Contains(seed.ToString()), () =>
+            {
+                if (num < 1)
+                    num = UnityEngine.Random.Range(1, int.MaxValue);
+                seed = Mathf.Clamp(num, 1, int.MaxValue);
+                Log.Add($"Regenerating seed .. {seed}", LogType.Debug);
+            });
+            Log.Add("ENVIRONMENT", $"Map seed generated! {seed}", LogType.Debug);
+            return seed;
+        }
+   
+        public static void DoUntilTrue(Func<bool> func, Action act)
+        {
+            for (int i = 0; i > 0;)
+            {
+                if (!func())
+                    act();
+                else
+                    return;
+            }
+        }
+
+        public static void DoUntilFalse(Func<bool> func, Action act)
+        {
+            for (int i = 0; i > 0;)
+            {
+                if (func())
+                    act();
+                else
+                    return;
+            }
+        }
+
+        public static void Repeat(int times, Action act)
+        {
+            for (int i = 0; i < times; i++)
+            {
+                act();
+            }
+        }
 
         public static void Rotate(Pickup pickup)
         {
             try
             {
+                if (!ConfigManager.FloatingItems && ConfigManager.FloatingItemsUsers.Count < 1)
+                    return;
                 Player owner = pickup.ownerPlayer.GetPlayer();
                 if (owner == null)
                     return;
-                if (!ConfigManager.FloatingItems && !ConfigManager.FloatingItemsUsers.Contains(owner.UserId))
+                if (!ConfigManager.FloatingItemsUsers.Contains(owner.UserId))
                     return;
                 Vector3 vector = Vector3.zero;
                 if (vector == Vector3.zero)
@@ -389,7 +442,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnDoorInteract(bool all, Door door, Player user, out bool allow)
+        public static void OnDoorInteract(bool all, API.Door door, Player user, out bool allow)
         {
             try
             {
@@ -902,6 +955,7 @@ namespace Vigilance
                 toRestart = ev.TimeToRestart;
                 classListOnEnd = ev.ClassList;
                 allow = ev.Allow;
+                Cache.CollectGarbage();
             }
             catch (Exception e)
             {
@@ -921,6 +975,9 @@ namespace Vigilance
                 if (ConfigManager.WindowHealth != 30f)
                     foreach (BreakableWindow window in UnityEngine.Object.FindObjectsOfType<BreakableWindow>())
                         window.health = ConfigManager.WindowHealth == -1f ? float.MaxValue : ConfigManager.WindowHealth;
+                CameraExtensions.SetInfo();
+                Map.RefreshDoors();
+                Cache.CollectGarbage();
             }
             catch (Exception e)
             {
@@ -936,6 +993,8 @@ namespace Vigilance
                 Round.CurrentState = RoundState.Restarting;
                 if (ConfigManager.ShouldReloadConfigsOnRoundRestart)
                     Server.ReloadConfigs();
+                Map.Doors.Clear();
+                Cache.CollectGarbage();
             }
             catch (Exception e)
             {
@@ -947,7 +1006,7 @@ namespace Vigilance
         {
             try
             {
-                SCP914UpgradeEvent ev = new SCP914UpgradeEvent(Scp914Machine.singleton, ccms.GetGameObjects(), items, setting, all);
+                SCP914UpgradeEvent ev = new SCP914UpgradeEvent(Scp914Machine.singleton, ccms.Select(h => h.gameObject).ToList(), items, setting, all);
                 EventManager.Trigger<SCP914UpgradeHandler>(ev);
                 knobSetting = ev.KnobSetting;
                 allow = ev.Allow;
@@ -1557,23 +1616,6 @@ namespace Vigilance
             }
         }
 
-        public static void OnReceiveEffect(Player player, PlayerEffect effect, byte state, bool all, out byte newState, out bool allow)
-        {
-            try
-            {
-                PlayerReceiveEffectEvent ev = new PlayerReceiveEffectEvent(player, effect, state, all);
-                EventManager.Trigger<PlayerReceiveEffectHandler>(ev);
-                newState = ev.NewState;
-                allow = ev.Allow;
-            }
-            catch (Exception e)
-            {
-                Log.Add("Environment.OnReceiveEffect", e);
-                newState = state;
-                allow = all;
-            }
-        }
-
         public static void OnSwitchLever(Player player, bool c, bool st, bool all, out bool state, out bool allow)
         {
             try
@@ -1587,9 +1629,24 @@ namespace Vigilance
             }
             catch (Exception e)
             {
-                Log.Add("Emvironment.OnSwitchLever", e);
+                Log.Add("Environment.OnSwitchLever", e);
                 state = st;
                 allow = all;
+            }
+        }
+
+        public static void OnGenerateSeed(int seed, out int newSeed)
+        {
+            try
+            {
+                GenerateSeedEvent ev = new GenerateSeedEvent(seed);
+                EventManager.Trigger<GenerateSeedHandler>(ev);
+                newSeed = ev.Seed;
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment.OnGenerateSeed", e);
+                newSeed = seed;
             }
         }
     }

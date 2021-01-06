@@ -55,7 +55,6 @@ namespace Vigilance
             RegisterCommand(new CommandItemSize());
             RegisterCommand(new CommandList());
             RegisterCommand(new CommandTpRoom());
-            RegisterCommand(new CommandSetInfo());
 
             RegisterGameCommand(new CommandUnban());
             RegisterGameCommand(new CommandOban());
