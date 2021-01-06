@@ -46,7 +46,7 @@ namespace Vigilance.Patches.CommandProccessing
 			}
 			catch (Exception e)
             {
-				Log.Add(nameof(CommandProcessor.ProcessQuery), e.Message, LogType.Error);
+				Log.Add(nameof(CommandProcessor.ProcessQuery), e, LogType.Error);
 				sender.RaReply($"SERVER#An error occured while processing this command!\nError: {e.Message}", false, true, "");
 				return false;
             }

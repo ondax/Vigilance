@@ -192,6 +192,33 @@ namespace Vigilance.API
 			return null;
 		}
 
+		public static Room FindParentRoom(GameObject objectInRoom)
+		{
+			var rooms = Rooms;
+			Room room = null;
+			const string playerTag = "Player";
+			if (!objectInRoom.CompareTag(playerTag))
+			{
+				room = objectInRoom.GetComponentInParent<Room>();
+			}
+			else
+			{
+				var ply = Server.PlayerList.GetPlayer(objectInRoom);
+				if (ply.Role == RoleType.Scp079)
+					room = FindParentRoom(ply.Hub.scp079PlayerScript.currentCamera.gameObject);
+			}
+
+			if (room == null)
+			{
+				Ray ray = new Ray(objectInRoom.transform.position, Vector3.down);
+				if (Physics.RaycastNonAlloc(ray, Environment.Cache.CachedFindParentRoomRaycast, 10, 1 << 0, QueryTriggerInteraction.Ignore) == 1)
+					room = Environment.Cache.CachedFindParentRoomRaycast[0].collider.gameObject.GetComponentInParent<Room>();
+			}
+			if (room == null && rooms.Count != 0)
+				room = rooms[rooms.Count - 1];
+			return room;
+		}
+
 		public static Room GetRoom(string name)
 		{
 			try
@@ -334,12 +361,10 @@ namespace Vigilance.API
         {
 			try
 			{
-				Doors = new List<Door>();
-				foreach (DoorVariant door in FindObjects<DoorVariant>())
-				{
-					Door d = new Door(door);
-					Doors.Add(d);
-				}
+				if (Doors != null)
+					Doors.Clear();
+				DoorExtensions.SetInfo();
+				Doors = DoorExtensions.Doors.Values.ToList();
 			}
 			catch (Exception e)
             {

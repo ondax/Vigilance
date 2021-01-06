@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using Interactables.Interobjects.DoorUtils;
+using Interactables.Interobjects;
 using Vigilance.Enums;
 using UnityEngine;
+using Vigilance.Extensions;
+using System.Linq;
 
 namespace Vigilance.API
 {
@@ -9,35 +12,84 @@ namespace Vigilance.API
     {
         private DoorVariant _door;
 
-        public Door(DoorVariant d)
+        public Door(DoorVariant d, Room room, DoorType type, int id, string tag)
         {
             _door = d;
-            SetInfo();
+            SetInfo(room, type, id, tag);
         }
 
-        public string Tag { get; internal set; }
-        public RoomType Room { get; internal set; }
+        public int Id { get; internal set; }
+        public string Name { get; internal set; }
+        public Room Room { get; internal set; }
+        public RoomType RoomType { get; internal set; }
         public DoorType Type { get; internal set; }
-        public DoorZone Zone { get; internal set; }
+        public ZoneType Zone { get; internal set; }
         public DoorProperties[] Properties { get; internal set; }
         public KeycardPermissions Permissions { get; internal set; }
         public Vector3 Position { get; internal set; }
         public GameObject GameObject => _door.gameObject;
         public DoorVariant Variant => _door;
+        public List<Player> DisallowedPlayers { get; internal set; }
         public bool IsLocked { get; set; }
-        public bool RequiredAll => _door.RequiredPermissions.RequireAll;
+        public bool IsDestroyed { get; set; }
+        public bool IsOpen { get => _door.NetworkTargetState; }
+        public bool RequiredAllPermissions => _door.RequiredPermissions.RequireAll;
         public bool ScpOverride => _door.RequiredPermissions.RequiredPermissions == KeycardPermissions.ScpOverride;
         public bool IsBreakable => Properties.Contains(DoorProperties.IsBreakable);
         public bool IsPryable => Properties.Contains(DoorProperties.IsPryable);
-        public int InstanceId => _door.GetInstanceID();
-        public uint NetId => _door.netId;
+
+        public bool IsAllowed(Player player, bool allItems, byte collider)
+        {
+            if (IsLocked) return false;
+            if (DisallowedPlayers.Contains(player)) return false;
+            if (player.PlayerLock) return false;
+            if (!_door.AllowInteracting(player.Hub, collider)) return false;
+            if (_door.RequiredPermissions.RequiredPermissions == KeycardPermissions.None) return true;
+            if (player.IsAnySCP && _door.RequiredPermissions.RequiredPermissions == KeycardPermissions.ScpOverride) return true;
+            if (player.ItemInHand == ItemType.None && !ConfigManager.RemoteCard && !player.IsAnySCP) return false;
+            if (player.Hub.inventory.items.Where(h => h.id.IsKeycard()).Count() < 1 && !player.IsAnySCP) return false;
+            return allItems ? CheckAllPermissions(player) : CheckPermission(player.ItemInHand, player);
+        }
+
+        public bool CheckAllPermissions(Player player)
+        {
+            foreach (Inventory.SyncItemInfo item in player.Hub.inventory.items)
+            {
+                if (item.id == ItemType.None)
+                    continue;
+                if (!item.id.IsKeycard())
+                    continue;
+                if (CheckPermission(item.id, player))
+                    return true;
+            }
+            return false;
+        }
+
+        public bool CheckPermission(ItemType item, Player player) => CheckPermission(player.Hub.inventory.GetItemByID(item), player);
+
+        public bool CheckPermission(Item item, Player player)
+        {
+            if (player.PlayerLock || IsLocked)
+                return false;
+            if (item == null)
+                return (player.IsAnySCP && _door.RequiredPermissions.RequiredPermissions.HasFlagFast(KeycardPermissions.ScpOverride)) || player.BypassMode;
+            if (player.BypassMode)
+                return true;
+            if (_door.RequiredPermissions.RequiredPermissions == KeycardPermissions.None)
+                return true;
+            KeycardPermissions keycardPermissions = DoorPermissionUtils.TranslateObsoletePermissions(item.permissions);
+            if (!_door.RequiredPermissions.RequireAll)           
+                return (keycardPermissions & _door.RequiredPermissions.RequiredPermissions) > KeycardPermissions.None;
+            foreach (KeycardPermissions perm in item.permissions.GetPermissions())
+                if (_door.RequiredPermissions.RequiredPermissions.HasFlagFast(perm) || _door.RequiredPermissions.RequiredPermissions == perm)
+                    return true;
+            return (keycardPermissions & _door.RequiredPermissions.RequiredPermissions) == _door.RequiredPermissions.RequiredPermissions;
+        }
 
         public void Destroy()
         {
-            IDamageableDoor door = _door as IDamageableDoor;
-            if (door == null)
-                return;
-            door.ServerDamage(65535f, DoorDamageType.ServerCommand);
+            (_door as IDamageableDoor)?.ServerDamage(65535f, DoorDamageType.ServerCommand);
+            IsDestroyed = true;
         }
 
         public void Lock()
@@ -52,128 +104,58 @@ namespace Vigilance.API
             _door.ServerChangeLock(DoorLockReason.AdminCommand, false);
         }
 
-        private void SetInfo()
+        public void Open()
         {
+            if (_door.IsConsideredOpen()) return;
+            _door.NetworkTargetState = true;
+        }
+
+        public void Close()
+        {
+            if (!_door.IsConsideredOpen()) return;
+            _door.NetworkTargetState = false;
+        }
+
+        public void ChangeState()
+        {
+            _door.NetworkTargetState = !_door.TargetState;
+        }
+
+        public void Deny()
+        {
+            _door.PermissionsDenied(null, 0);
+        }
+
+        private void SetInfo(Room room, DoorType type, int id, string tag)
+        {
+            Name = tag;
+            Id = id;
+            Room = room;
+            RoomType = room == null ? RoomType.Unknown : room.Type;
+            Type = type;
+            Zone = room == null ? ZoneType.Unspecified : room.Zone;
+            Permissions = _door.RequiredPermissions.RequiredPermissions;
+            Position = _door.transform.position;
             IsLocked = false;
-            DoorVariant d = _door;
-            DoorNametagExtension name = d.GetComponent<DoorNametagExtension>();
+            DisallowedPlayers = new List<Player>();
+            SetProperties();
+        }
+
+        private void SetProperties()
+        {
             List<DoorProperties> props = new List<DoorProperties>();
-
-            if (d.name.ToLower().Contains("breakable"))
-                props.Add(DoorProperties.IsBreakable);
-            if (d.name.ToLower().Contains("pryable"))
-                props.Add(DoorProperties.IsPryable);
-            if (d.name.ToLower().Contains("portalless"))
-                props.Add(DoorProperties.Portalless);
-            if (d.name.ToLower().Contains("keycard"))
-                props.Add(DoorProperties.RequiresKeycard);
-            if (d.name.ToLower().Contains("unsecured"))
-                props.Add(DoorProperties.Unsecured);
-            if (d.name.StartsWith("EZ"))
-                Zone = DoorZone.EntranceZone;
-            if (d.name.StartsWith("HCZ"))
-                Zone = DoorZone.HeavyContainmentZone;
-            if (d.name.StartsWith("LCZ"))
-                Zone = DoorZone.LightContainmentZone;
-
-            if (d.name.StartsWith("Prison"))
-            {
-                Zone = DoorZone.LightContainmentZone;
-                Type = DoorType.ClassD;
-            }
-
-            if (d.name.StartsWith("Intercom"))
-            {
-                Zone = DoorZone.EntranceZone;
-                Type = DoorType.Intercom;
-            }
-
-            if (name != null)
-            {
-                Tag = name.GetName;
-
-                if (Tag == "LCZ_CAFE" || Tag == "173_BOTTOM" || Tag == "012" || Tag == "HID_RIGHT" || Tag == "SERVERS_BOTTOM" || Tag == "HCZ_LEFT" || Tag == "106_BOTTOM" || Tag == "106_SECONDARY" || Tag == "LCZ_WC")
-                {
-                    Type = DoorType.Basic;
-                }
-
-                if (Tag == "INTERCOM")
-                {
-                    Type = DoorType.Intercom;
-                    Zone = DoorZone.EntranceZone;
-                    Properties = new DoorProperties[] { DoorProperties.IsBreakable, DoorProperties.RequiresKeycard };
-                }
-
-                if (Tag == "914")
-                {
-                    Type = DoorType.Gate914;
-                    Zone = DoorZone.LightContainmentZone;
-                    Properties = new DoorProperties[] { DoorProperties.IsPryable, DoorProperties.RequiresKeycard };
-                }
-
-                if (Tag == "GATE_B")
-                {
-                    Type = DoorType.GateB;
-                    Zone = DoorZone.SurfaceZone;
-                    Properties = new DoorProperties[] { DoorProperties.IsPryable, DoorProperties.RequiresKeycard };
-                }
-
-                if (Tag == "GATE_A")
-                {
-                    Type = DoorType.GateA;
-                    Zone = DoorZone.SurfaceZone;
-                    Properties = new DoorProperties[] { DoorProperties.IsPryable, DoorProperties.RequiresKeycard };
-                }
-
-                if (Tag == "GATE_173")
-                {
-                    Type = DoorType.Scp173Gate;
-                    Zone = DoorZone.LightContainmentZone;
-                    Properties = new DoorProperties[] { DoorProperties.IsPryable, DoorProperties.RequiresKeycard };
-                    Scp173Gate = this;
-                }
-
-                if (Tag == "CHECKPOINT_LCZ_B")
-                {
-                    CheckpointB = this;
-                }
-
-                if (Tag == "CHECKPOINT_LCZ_A")
-                {
-                    CheckpointA = this;
-                }
-
-                if (Tag == "CHECKPOINT_EZ_HCZ")
-                {
-                    CheckpointEZ = this;
-                }
-
-                Position = d.transform.position;
-                Properties = props.ToArray();
-                Permissions = _door.RequiredPermissions.RequiredPermissions;
-
-                if (!DoorVariants.ContainsKey(d))
-                    DoorVariants.Add(d, this);
-            }
-        }
-
-        public static Door GetDoor(DoorVariant variant)
-        {
-            if (variant == null)
-                return null;
-            foreach (KeyValuePair<DoorVariant, Door> pair in DoorVariants)
-            {
-                if (pair.Key == variant || pair.Key.netId == variant.netId)
-                    return pair.Value;
-            }
-
-            return null;
-        }
-
-        public static bool TryGetDoor(DoorVariant d, out Door door)
-        {
-            door = GetDoor(d);
-            return door != null;
+            DoorType t = Type;
+            bool pryable = t == DoorType.GateA || t == DoorType.GateB || t == DoorType.Scp914 || _door.GetType() == typeof(PryableDoor);
+            bool breakable = t != DoorType.GateA && t != DoorType.GateB && t != DoorType.SurfaceGate && t != DoorType.UnknownDoor && t != DoorType.Scp372 && t != DoorType.Scp914 && t != DoorType.Scp173 || _door.GetType() == typeof(BreakableDoor);
+            bool portalless = _door.name.ToLower().StartsWith("portalless");
+            bool keycard = Permissions != KeycardPermissions.None;
+            bool unsecured = _door.name.ToLower().StartsWith("unsecured");
+            if (pryable) props.Add(DoorProperties.IsPryable);
+            if (breakable) props.Add(DoorProperties.IsBreakable);
+            if (portalless) props.Add(DoorProperties.Portalless);
+            if (keycard) props.Add(DoorProperties.RequiresKeycard);
+            if (unsecured) props.Add(DoorProperties.Unsecured);
+            Properties = props.ToArray();
         }
 
         public static Door CheckpointA { get; internal set; }
@@ -181,7 +163,5 @@ namespace Vigilance.API
         public static Door CheckpointEZ { get; internal set; }
 
         public static Door Scp173Gate { get; internal set; }
-
-        public static Dictionary<DoorVariant, Door> DoorVariants { get; } = new Dictionary<DoorVariant, Door>();
     }
 }

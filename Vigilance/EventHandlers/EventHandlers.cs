@@ -397,11 +397,6 @@ namespace Vigilance.EventHandlers
         void OnUseLocker(PlayerUseLockerEvent ev);
     }
 
-    public interface PlayerReceiveEffectHandler : EventHandler
-    {
-        void OnReceiveEffect(PlayerReceiveEffectEvent ev);
-    }
-
     public interface Scp914UpgradePickupHandler : EventHandler
     {
         void OnUpgradePickup(Scp914UpgradePickupEvent ev);
@@ -410,5 +405,10 @@ namespace Vigilance.EventHandlers
     public interface PlayerSwitchLeverHandler : EventHandler
     {
         void OnSwitchLever(PlayerSwitchLeverEvent ev);
+    }
+
+    public interface GenerateSeedHandler : EventHandler
+    {
+        void OnGenerateSeed(GenerateSeedEvent ev);
     }
 }

@@ -136,7 +136,7 @@
     <Compile Include="Patches\Events\PlayerInteract_CallCmdChange914Knob.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdContain106.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdDetonateWarhead.cs" />
-    <Compile Include="Patches\Events\BreakableDoor_AllowInteracting.cs" />
+    <Compile Include="Patches\Events\DoorVariant_ServerInteract.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUse914.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseElevator.cs" />
     <Compile Include="Patches\Events\PlayerInteract_CallCmdUseLocker.cs" />
@@ -159,6 +159,7 @@
     <Compile Include="Patches\Events\Scp106PlayerScript_CallCmdUsePortal.cs" />
     <Compile Include="Patches\Events\Scp914Machine_ProcessItems.cs" />
     <Compile Include="Patches\Events\Scp914Machine_UpgradeItemID.cs" />
+    <Compile Include="Patches\Events\SeedSynchronizer_Start.cs" />
     <Compile Include="Patches\Events\ServerConsole_AddLog.cs" />
     <Compile Include="Patches\Events\TeslaGate_PlayerInRange.cs" />
     <Compile Include="Patches\Events\WeaponManager_CallCmdReload.cs" />

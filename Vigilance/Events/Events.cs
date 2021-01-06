@@ -1551,27 +1551,6 @@ namespace Vigilance.Events
         }
     }
 
-    public class PlayerReceiveEffectEvent : Event
-    {
-        public Player Player { get; }
-        public PlayerEffect Effect { get; }
-        public byte NewState { get; set; }
-        public bool Allow { get; set; }
-
-        public PlayerReceiveEffectEvent(Player player, PlayerEffect eff, byte state, bool allow)
-        {
-            Player = player;
-            Effect = eff;
-            NewState = state;
-            Allow = allow;
-        }
-
-        public override void Execute(EventHandler handler)
-        {
-            ((PlayerReceiveEffectHandler)handler).OnReceiveEffect(this);
-        }
-    }
-
     public class PlayerSwitchLeverEvent : Event
     {
         public Player Player { get; }
@@ -1590,6 +1569,18 @@ namespace Vigilance.Events
         public override void Execute(EventHandler handler)
         {
             ((PlayerSwitchLeverHandler)handler).OnSwitchLever(this);
+        }
+    }
+
+    public class GenerateSeedEvent : Event
+    {
+        public int Seed { get; set; }
+
+        public GenerateSeedEvent(int seed) => Seed = seed;
+
+        public override void Execute(EventHandler handler)
+        {
+            ((GenerateSeedHandler)handler).OnGenerateSeed(this);
         }
     }
 }

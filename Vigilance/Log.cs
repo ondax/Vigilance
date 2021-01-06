@@ -8,9 +8,9 @@ namespace Vigilance
     {
         public static bool Debug => ConfigManager.ShouldDebug;
 
-        public static void Add(string message, LogType type)
+        public static void Add(object message, LogType type)
         {
-            string tag = Assembly.GetCallingAssembly().GetName().Name;
+            object tag = Assembly.GetCallingAssembly().GetName().Name;
             if (type == LogType.Debug)
             {
                 if (Debug)
@@ -20,7 +20,7 @@ namespace Vigilance
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
-        public static void Add(string tag, string message, LogType type)
+        public static void Add(object tag, object message, LogType type)
         {
             if (type == LogType.Debug)
             {
@@ -31,20 +31,20 @@ namespace Vigilance
             Add($"[{type.ToString().ToUpper()}] [{tag}]: {message}", type.GetColor());
         }
 
-        public static void Add(string tag, string message, ConsoleColor color) => Add($"[{tag}]: {message}", color);
+        public static void Add(object tag, object message, ConsoleColor color) => Add($"[{tag}]: {message}", color);
 
-        public static void Add(string tag, Exception e)
+        public static void Add(object tag, Exception e)
         {
             Add(tag, e.ToString(), LogType.Error);
         }
 
         public static void Add(Exception e)
         {
-            string tag = Assembly.GetCallingAssembly().GetName().Name;
+            object tag = Assembly.GetCallingAssembly().GetName().Name;
             Add($"[ERROR] [{tag}]: {e}", ConsoleColor.DarkRed);
         }
 
-        public static void Add(Assembly assembly, string message, LogType type)
+        public static void Add(Assembly assembly, object message, LogType type)
         {
             if (type == LogType.Debug)
             {
@@ -55,9 +55,9 @@ namespace Vigilance
             Add(assembly.GetName().Name, message, type);
         }
 
-        public static void Add(string log, ConsoleColor color = ConsoleColor.White)
+        public static void Add(object log, ConsoleColor color = ConsoleColor.White)
         {
-            ServerConsole.AddLog(log, color);
+            ServerConsole.AddLog(log.ToString(), color);
         }
     }
 
