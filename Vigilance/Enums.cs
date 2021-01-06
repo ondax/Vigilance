@@ -269,4 +269,40 @@
 		Enabled,
 		Disabled
     }
+
+	public enum DoorType
+    {
+		ClassD,
+		Intercom,
+		GateA,
+		GateB,
+		Gate914,
+		GateSurface,
+		AirlockDoorOne_A,
+		AirlockDoorOne_B,
+		AirlockDoorTwo_A,
+		AirlockDoorTwo_B,
+		CheckpointEZ,
+		CheckpointLCZ_A,
+		CheckpointLCZ_B,
+		Scp173Gate,
+		Basic
+    }
+
+	public enum DoorZone
+    {
+		HeavyContainmentZone,
+		LightContainmentZone,
+		EntranceZone,
+		SurfaceZone
+    }
+
+	public enum DoorProperties
+    {
+		IsPryable,
+		IsBreakable,
+		Portalless,
+		RequiresKeycard,
+		Unsecured
+    }
 }

@@ -12,6 +12,7 @@ using System;
 using MEC;
 using System.Linq;
 using CustomPlayerEffects;
+using Interactables.Interobjects.DoorUtils;
 
 namespace Vigilance
 {
@@ -389,7 +390,7 @@ namespace Vigilance
             }
         }
 
-        public static void OnDoorInteract(bool all, Door door, Player user, out bool allow)
+        public static void OnDoorInteract(bool all, API.Door door, Player user, out bool allow)
         {
             try
             {
@@ -921,6 +922,7 @@ namespace Vigilance
                 if (ConfigManager.WindowHealth != 30f)
                     foreach (BreakableWindow window in UnityEngine.Object.FindObjectsOfType<BreakableWindow>())
                         window.health = ConfigManager.WindowHealth == -1f ? float.MaxValue : ConfigManager.WindowHealth;
+                Map.RefreshDoors();
             }
             catch (Exception e)
             {
@@ -936,6 +938,8 @@ namespace Vigilance
                 Round.CurrentState = RoundState.Restarting;
                 if (ConfigManager.ShouldReloadConfigsOnRoundRestart)
                     Server.ReloadConfigs();
+                API.Door.DoorVariants.Clear();
+                Map.Doors.Clear();
             }
             catch (Exception e)
             {
@@ -947,7 +951,7 @@ namespace Vigilance
         {
             try
             {
-                SCP914UpgradeEvent ev = new SCP914UpgradeEvent(Scp914Machine.singleton, ccms.GetGameObjects(), items, setting, all);
+                SCP914UpgradeEvent ev = new SCP914UpgradeEvent(Scp914Machine.singleton, ccms.Select(h => h.gameObject).ToList(), items, setting, all);
                 EventManager.Trigger<SCP914UpgradeHandler>(ev);
                 knobSetting = ev.KnobSetting;
                 allow = ev.Allow;

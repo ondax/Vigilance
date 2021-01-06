@@ -159,17 +159,6 @@ namespace Vigilance.API
             }
         }
 
-        public Class CurrentClass
-        {
-            get
-            {
-                if (!ClassHelper.ClassesSet || ClassHelper.Classes == null)
-                    ClassHelper.SetClasses(_hub.characterClassManager);
-                Class c = ClassHelper.Get(Role);
-                return c;
-            }
-        }
-
         public bool IsInOverwatch { get => _hub.serverRoles.OverwatchEnabled; set => _hub.serverRoles.SetOverwatchStatus(value); }
         public bool IsIntercomMuted { get => _hub.characterClassManager.NetworkIntercomMuted; set => _hub.characterClassManager.NetworkIntercomMuted = value; }
         public bool IsMuted { get => _hub.characterClassManager.NetworkMuted; set => _hub.characterClassManager.NetworkMuted = value; }
@@ -181,34 +170,13 @@ namespace Vigilance.API
         public int MaxHealth { get => _hub.playerStats.maxHP; set => _hub.playerStats.maxHP = value; }
         public string CustomInfo { get => _hub.nicknameSync.Network_customPlayerInfoString; set => _hub.nicknameSync.Network_customPlayerInfoString = value; }
 
-        public string Nick
-        {
-            get
-            {
-                if (_hub == null)
-                    return "Dedicated Server";
-                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(UserId))
-                    return "Dedicated Server";
-                if (_hub.nicknameSync == null)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "Dedicated Server";
-                return _hub.nicknameSync.Network_myNickSync;
-            }
-            set => _hub.nicknameSync.Network_myNickSync = value;
-        }
+        public string Nick { get => string.IsNullOrEmpty(_hub?.nicknameSync?.MyNick) ? "Dedicated Server" : _hub.nicknameSync.MyNick; set => _hub.nicknameSync.SetNick(value); }
 
         public string DisplayNick { get => _hub.nicknameSync.Network_displayName; set => _hub.nicknameSync.Network_displayName = value; }
         public Vector3 Position { get => _hub.playerMovementSync.RealModelPosition; set => _hub.playerMovementSync.OverridePosition(value, _hub.PlayerCameraReference.rotation.y); }
         public RoleType Role { get => _hub.characterClassManager.NetworkCurClass; set => _hub.characterClassManager.SetPlayersClass(value, GameObject, false, false); }
         public string Token { get => _hub.characterClassManager.AuthTokenSerial; set => _hub.characterClassManager.AuthTokenSerial = value; }
-        public string UserId
-        {
-            get => string.IsNullOrEmpty(_hub.characterClassManager.UserId) ? "Dedicated Server" : _hub.characterClassManager.UserId;
-            set => _hub.characterClassManager.UserId = value;
-        }
+        public string UserId { get => string.IsNullOrEmpty(_hub.characterClassManager.UserId) ? "Dedicated Server" : _hub.characterClassManager.UserId; set => _hub.characterClassManager.UserId = value; }
         public string CustomUserId { get => _hub.characterClassManager.UserId2; set => _hub.characterClassManager.UserId2 = value; }
         public string NtfUnit { get => _hub.characterClassManager.NetworkCurUnitName; set => _hub.characterClassManager.NetworkCurUnitName = value; }
         public NetworkConnection Connection => _hub.scp079PlayerScript.connectionToClient;
@@ -230,24 +198,16 @@ namespace Vigilance.API
         public bool IsNTF => Team == TeamType.NineTailedFox;
         public bool CheckPermission(PlayerPermissions perm) => PermissionsHandler.IsPermitted(UserGroup.Permissions, perm);
         public TeamType Team => Role.GetTeam();
-
-        public string ParsedUserId
+        public ulong ParsedUserId
         {
             get
             {
-                if (_hub == null)
-                    return "Dedicated Server";
-                if (_hub.characterClassManager != null && _hub.characterClassManager.IsHost)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(UserId))
-                    return "Dedicated Server";
-                if (_hub.nicknameSync == null)
-                    return "Dedicated Server";
-                if (string.IsNullOrEmpty(_hub.nicknameSync.MyNick))
-                    return "Dedicated Server";
-                if (IsHost || UserId.IsEmpty() || IpAddress.StartsWith("local"))
-                    return "Dedicated Server";
-                return UserId.Substring(0, UserId.LastIndexOf('@'));
+                string id = string.IsNullOrEmpty(UserId) ? "Dedicated Server" : UserId.Split('@')[0];
+                if (id == "Dedicated Server")
+                    return 0;
+                if (!ulong.TryParse(id, out ulong user))
+                    return 0;
+                return user;
             }
         }
 
@@ -476,14 +436,6 @@ namespace Vigilance.API
                 if (player.Distance(Position) <= distance && !player.GodMode && player.IsAlive)
                 {
                     _hub.playerStats.HurtPlayer(new PlayerStats.HitInfo(21212f, Nick, DamageTypes.Nuke, PlayerId), player.GameObject);
-                }
-            }
-
-            foreach (Door door in Map.Doors)
-            {
-                if (Distance(door.transform.position) <= doorDistance && !door.Networkdestroyed)
-                {
-                    door.Networkdestroyed = true;
                 }
             }
         }

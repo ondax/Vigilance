@@ -10,28 +10,6 @@ using Harmony;
 
 namespace Vigilance.Extensions
 {
-	public static class GameObjectExtensions
-	{
-		public static bool IsNull(this GameObject gameObject) => gameObject == null;
-		public static void Destroy(this GameObject gameObject)
-		{
-			if (!gameObject.IsNull())
-			{
-				NetworkServer.Destroy(gameObject);
-			}
-		}
-
-		public static bool IsPlayer(this GameObject gameObject)
-        {
-			if (gameObject == null)
-				return false;
-			if (ReferenceHub.TryGetHub(gameObject, out ReferenceHub hub))
-				return true;
-			else
-				return false;
-        }
-	}
-
 	public static class MethodExtensions
 	{
 		public static void InvokeStaticMethod(this Type type, string methodName, object[] param)
@@ -153,10 +131,17 @@ namespace Vigilance.Extensions
 				if (player.Ragdolls.Contains(ragdoll))
 					return player;
             }
+
+			foreach (Player player in Server.Players)
+            {
+				if (player.PlayerId == ragdoll.owner.PlayerId)
+					return player;
+            }
+
 			return null;
         }
 
-		public static void Delete(this Ragdoll ragdoll) => ragdoll?.gameObject.Destroy();
+		public static void Delete(this Ragdoll ragdoll) => NetworkServer.Destroy(ragdoll?.gameObject);
 	}
 
 	public static class CommandSenderExtensions
@@ -175,17 +160,17 @@ namespace Vigilance.Extensions
 		{
 			string id = sender.SenderId;
 			if (id == "SERVER CONSOLE" && sender.Nickname == "SERVER CONSOLE")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			if (id == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			if (sender.Nickname == "Sitrep")
-				return new Player(ReferenceHub.LocalHub);
+				return Environment.Cache.LocalPlayer;
 			foreach (Player player in Server.PlayerList.Players.Values)
 			{
 				if (player.UserId == sender.SenderId)
 					return player;
 			}
-			return new Player(ReferenceHub.LocalHub);
+			return null;
 		}
 	}
 
@@ -237,21 +222,6 @@ namespace Vigilance.Extensions
 			return manager._hub.GetPlayer();
 		}
 
-		public static List<Player> ToList(IEnumerable<Player> players)
-		{
-			return new List<Player>(players);
-		}
-
-		public static List<Player> GetPlayers(this List<GameObject> gameObjects)
-		{
-			List<Player> list = new List<Player>(gameObjects.Count);
-			foreach (GameObject obj in gameObjects)
-			{
-				list.Add(obj.GetPlayer());
-			}
-			return list;
-		}
-
 		public static List<Player> GetPlayers(this List<ReferenceHub> hubs)
 		{
 			List<Player> list = new List<Player>();
@@ -262,27 +232,7 @@ namespace Vigilance.Extensions
 			return list;
 		}
 
-		public static List<GameObject> GetGameObjects(this List<CharacterClassManager> ccms)
-        {
-			List<GameObject> objects = new List<GameObject>();
-			foreach (CharacterClassManager ccm in ccms)
-            {
-				objects.Add(ccm.gameObject);
-            }
-			return objects;
-        }
-
-		public static List<GameObject> GetGameObjects(this List<ReferenceHub> hubs)
-        {
-			List<GameObject> objects = new List<GameObject>();
-			foreach (ReferenceHub hub in hubs)
-            {
-				objects.Add(hub.gameObject);
-            }
-			return objects;
-        }
-
-		public static List<Player> GetPlayers(this List<CharacterClassManager> ccms) => ccms.GetGameObjects().GetPlayers();
+		public static List<Player> GetPlayers(this List<CharacterClassManager> ccms) => ccms.Select(h => h.GetPlayer()).ToList();
 
 		public static Player GetPlayer(this int playerId)
 		{
@@ -359,6 +309,16 @@ namespace Vigilance.Extensions
 			{
 				ccm.GetComponent<WeaponManager>().hitboxes = ccm.MyModel.GetComponentsInChildren<HitboxIdentity>(true);
 			}
+		}
+
+		public static List<Player> GetPlayers(this RoleType role)
+		{
+			return Server.PlayerList.GetPlayers(role);
+		}
+
+		public static List<Player> GetPlayers(this TeamType team)
+		{
+			return Server.PlayerList.GetPlayers(team);
 		}
 
 		public static Vector3 FindLookRotation(this Vector3 player, Vector3 target) => (target - player).normalized;
@@ -664,8 +624,6 @@ namespace Vigilance.Extensions
 					rotation = rotation.eulerAngles,
 					scale = scale
 				};
-				clone.AddComponent<WorkStation>();
-				clone.GetComponent<WorkStation>().Networkposition = offset;
 			}
 			return clone;
         }
@@ -903,16 +861,6 @@ namespace Vigilance.Extensions
 				return AmmoType.Nato_9mm;
 			return AmmoType.None;
         }
-
-		public static List<Player> GetPlayers(this RoleType role)
-		{
-			return Server.PlayerList.GetPlayers(role);
-		}
-
-		public static List<Player> GetPlayers(this TeamType team)
-		{
-			return Server.PlayerList.GetPlayers(team);
-		}
 	}
 
 	public static class EnumExtensions

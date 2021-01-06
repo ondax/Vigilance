@@ -11,6 +11,7 @@ using PlayableScps;
 using Respawning;
 using System.Linq;
 using CustomPlayerEffects;
+using Interactables.Interobjects.DoorUtils;
 
 namespace Vigilance.Events
 {
@@ -212,13 +213,13 @@ namespace Vigilance.Events
     {
         public bool Allow { get; set; }
         public Player Player { get; }
-        public Door Door { get; }
+        public API.Door Door { get; }
 
-        public DoorInteractEvent(bool allow, Player ply, Door door)
+        public DoorInteractEvent(bool allow, Player ply, API.Door d)
         {
             Allow = allow;
             Player = ply;
-            Door = door;
+            Door = d;
         }
 
         public override void Execute(EventHandler handler)
@@ -853,7 +854,7 @@ namespace Vigilance.Events
         public SCP914UpgradeEvent(Scp914Machine machine, List<GameObject> objects, List<Pickup> items, Scp914Knob knob, bool allow)
         {
             Scp914 = machine;
-            Players = objects?.GetPlayers();
+            Players = objects.Select(h => h.GetPlayer()).ToList();
             Items = items;
             KnobSetting = knob;
             Allow = allow;

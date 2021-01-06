@@ -12,19 +12,20 @@ using MEC;
 using Scp914;
 using LightContainmentZoneDecontamination;
 using System;
+using MapGeneration;
+using Interactables.Interobjects.DoorUtils;
 
 namespace Vigilance.API
 {
 	public static class Map
 	{
 		public static List<Room> _rooms = null;
-
+		public static List<Door> Doors { get; internal set; }
 		public static List<Ragdoll> Ragdolls => FindObjects<Ragdoll>();
 		public static List<FlickerableLight> FlickerableLights { get; } = FindObjects<FlickerableLight>();
 		public static List<FlickerableLightController> LightControllers { get; } = FindObjects<FlickerableLightController>();
 		public static List<BlastDoor> BlastDoors { get; } = FindObjects<BlastDoor>();
 		public static List<Camera079> Cameras { get; } = Scp079PlayerScript.allCameras.ToList();
-		public static List<Door> Doors { get; } = FindObjects<Door>();
 		public static List<Lift> Lifts { get; } = FindObjects<Lift>();
 		public static List<Pickup> Pickups => FindObjects<Pickup>();
 		public static List<TeslaGate> TeslaGates { get; } = FindObjects<TeslaGate>();
@@ -37,14 +38,14 @@ namespace Vigilance.API
 		public static int ActivatedGenerators => Generator079.mainGenerator.totalVoltage;
 		public static Generator079 MainGenerator => Generator079.mainGenerator;
 		public static RespawnEffectsController RespawnController => RespawnEffectsController.AllControllers.Where(controller => controller != null).FirstOrDefault();
-		public static RandomSeedSync SeedSync { get; } = PlayerManager.localPlayer.GetComponent<RandomSeedSync>();
+		public static SeedSynchronizer SeedSynchronizer { get; } = Server.GameManager?.GetComponent<SeedSynchronizer>();
 		public static GameObject FemurBreaker { get; } = GameObject.FindGameObjectWithTag("FemurBreaker");
 		public static LureSubjectContainer LureSubjectContainer { get; } = Find<LureSubjectContainer>();
 		public static OneOhSixContainer OneOhSixContainer { get; } = Find<OneOhSixContainer>();
 		public static GameObject OutsitePanelScript { get; } = GameObject.Find("OutsitePanelScript");
 		public static AlphaWarheadOutsitePanel OutsitePanel { get; } = OutsitePanelScript.GetComponent<AlphaWarheadOutsitePanel>();
 		public static AlphaWarheadNukesitePanel NukesitePanel { get; } = AlphaWarheadOutsitePanel.nukeside;
-		public static int MapSeed { get; } = SeedSync.seed;
+		public static int MapSeed { get; } = SeedSynchronizer.Seed;
 		public static bool TeslaGatesDisabled { get; set; }
 		public static WarheadLeverStatus WarheadLeverStatus { get => NukesitePanel.Networkenabled ? WarheadLeverStatus.Enabled : WarheadLeverStatus.Disabled; set => NukesitePanel.Networkenabled = value == WarheadLeverStatus.Enabled ? true : false; }
 
@@ -328,6 +329,23 @@ namespace Vigilance.API
 				yield return Timing.WaitForSeconds(0.15f);
 			}
 		}
+
+		public static void RefreshDoors()
+        {
+			try
+			{
+				Doors = new List<Door>();
+				foreach (DoorVariant door in FindObjects<DoorVariant>())
+				{
+					Door d = new Door(door);
+					Doors.Add(d);
+				}
+			}
+			catch (Exception e)
+            {
+				Log.Add("MAP", e);
+            }
+        }
 
 		public static class Warhead
 		{

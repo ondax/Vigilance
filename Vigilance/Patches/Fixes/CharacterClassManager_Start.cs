@@ -26,7 +26,5 @@ namespace Vigilance.Patches.Fixes
                 }
             }
         }
-
-        public static void Postfix(CharacterClassManager __instance) => ClassHelper.SetClasses();
     }
 }

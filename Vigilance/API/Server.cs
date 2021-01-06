@@ -438,7 +438,7 @@ namespace Vigilance.API
                 {
                     foreach (Player player in Players.Values)
                     {
-                        if (player.UserId == id || player.ParsedUserId == id)
+                        if (player.UserId == id || player.ParsedUserId.ToString() == id)
                         {
                             ply = player;
                             break;

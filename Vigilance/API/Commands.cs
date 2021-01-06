@@ -5,6 +5,7 @@ using Vigilance.Enums;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using Interactables.Interobjects.DoorUtils;
 
 namespace Vigilance.Registered
 {
@@ -1335,41 +1336,6 @@ namespace Vigilance.Registered
 				}
 			}
 			return Usage;
-        }
-    }
-
-    public class CommandSetInfo : CommandHandler
-    {
-		public string Command => "setinfo";
-		public string Usage => "Missing arguments!\nUsage: setinfo <player> <infoArea> <content>";
-		public string Aliases => "";
-
-        public string Execute(Player sender, string[] args)
-        {
-			if (args.Length < 3)
-				return Usage;
-			PlayerInfoArea area = PlayerInfoArea.Role;
-			foreach (PlayerInfoArea iA in Environment.GetValues<PlayerInfoArea>())
-            {
-				if (int.TryParse(args[1], out int id))
-				{
-					area = (PlayerInfoArea)id;
-					break;
-				}
-
-				if (iA.ToString() == args[1] || iA.ToString().ToLower() == args[1].ToLower() || iA.ToString().ToLower().Contains(args[1].ToLower()))
-                {
-					area = iA;
-					break;
-                }
-            }
-
-			Player player = args[0].GetPlayer();
-			if (player == null)
-				return Usage;
-			string content = args.Skip(2).ToArray().Combine();
-			player.SetInfo(area, content);
-			return $"Content of {player.Nick}'s {area} has been set to {content}";
         }
     }
 }
