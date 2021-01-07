@@ -223,7 +223,7 @@ namespace Vigilance.Registered
 
         public string Execute(Player sender, string[] args)
 		{
-			Server.Restart(false);
+			Patches.Events.Restart.ServerRestart();
 			return $"The server is about to restart! Please wait ..";
 		}
 	}

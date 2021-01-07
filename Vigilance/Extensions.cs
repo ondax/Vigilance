@@ -60,6 +60,10 @@ namespace Vigilance.Extensions
     {
 		public static readonly Dictionary<int, DoorType> Types = new Dictionary<int, DoorType>();
 		public static readonly Dictionary<int, API.Door> Doors = new Dictionary<int, API.Door>();
+		public static List<DoorType> LightContainmentDoors = new List<DoorType>() { DoorType.Airlocks, DoorType.CheckpointLczA, DoorType.CheckpointLczB, DoorType.LczArmory, DoorType.LczCafe, DoorType.LczWc, DoorType.LightContainmentDoor, DoorType.PrisonDoor, DoorType.Scp012, DoorType.Scp012Bottom, DoorType.Scp012Locker, DoorType.Scp173, DoorType.Scp173Armory, DoorType.Scp173Bottom, DoorType.Scp372, DoorType.Scp914 };
+		public static List<DoorType> HeavyContainmentDoors = new List<DoorType>() { DoorType.HczArmory, DoorType.HeavyContainmentDoor, DoorType.HID, DoorType.HIDLeft, DoorType.HIDRight, DoorType.NukeArmory, DoorType.Scp049Armory, DoorType.Scp079First, DoorType.Scp079Second, DoorType.Scp096, DoorType.Scp106Bottom, DoorType.Scp106Primary, DoorType.Scp106Secondary };
+		public static List<DoorType> EntranceZoneDoors = new List<DoorType>() { DoorType.CheckpointEntrance, DoorType.EntranceDoor, DoorType.GateA, DoorType.GateB, DoorType.Intercom };
+		public static List<DoorType> SurfaceZoneDoors = new List<DoorType>() { DoorType.ContDoor, DoorType.Escape, DoorType.EscapeInner, DoorType.NukeSurface, DoorType.SurfaceGate };
 
 		public static DoorType GetDoorType(this DoorVariant door) => Types.TryGetValue(door.GetInstanceID(), out var doorType) ? doorType : DoorType.UnknownDoor;
 		public static API.Door GetDoor(this DoorVariant d) => Doors.TryGetValue(d.GetInstanceID(), out var door) ? door : null;
