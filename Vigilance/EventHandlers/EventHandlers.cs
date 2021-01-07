@@ -411,4 +411,9 @@ namespace Vigilance.EventHandlers
     {
         void OnGenerateSeed(GenerateSeedEvent ev);
     }
+
+    public interface BlinkEventHandler : EventHandler
+    {
+        void OnBlink(BlinkEvent ev);
+    }
 }

@@ -46,9 +46,12 @@ namespace Vigilance.Extensions
 				if (camera != null && camera.gameObject != null)
 				{
 					var room = Map.FindParentRoom(camera.gameObject);
-					Rooms.Add(cameraID, room);
+					if (!Rooms.ContainsKey(cameraID))
+						Rooms.Add(cameraID, room);
 				}
-				Types.Add(cameraID, cameraType);
+
+				if (!Types.ContainsKey(cameraID))
+					Types.Add(cameraID, cameraType);
 			}
 		}
 	}
@@ -77,8 +80,19 @@ namespace Vigilance.Extensions
 				var doorName = doorNameTag == null ? door.name.RemoveBracketsOnEndOfName() : doorNameTag.GetName;
 				var doorType = GetDoorType(doorName);
 				var doorRoom = Map.FindParentRoom(door.gameObject);
-				Types.Add(doorID, doorType);
-				Doors.Add(doorID, new API.Door(door, doorRoom, doorType, doorID, doorName));
+				var doorObject = new API.Door(door, doorRoom, doorType, doorID, doorName);
+				if (!Types.ContainsKey(doorID))
+					Types.Add(doorID, doorType);
+				if (!Doors.ContainsKey(doorID))
+					Doors.Add(doorID, doorObject);
+				if (doorType == DoorType.CheckpointEntrance)
+					API.Door.CheckpointEZ = doorObject;
+				if (doorType == DoorType.CheckpointLczA)
+					API.Door.CheckpointA = doorObject;
+				if (doorType == DoorType.CheckpointLczB)
+					API.Door.CheckpointB = doorObject;
+				if (doorType == DoorType.Scp173)
+					API.Door.Scp173Gate = doorObject;
 			}
 		}
 

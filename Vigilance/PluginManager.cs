@@ -13,7 +13,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 4, 7, "", false);
+        public static Version Version { get; } = new Version(5, 4, 8, "", false);
         public static List<string> CompatibleVersions = new List<string>() { "10.2.0" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }

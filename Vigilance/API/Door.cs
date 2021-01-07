@@ -96,6 +96,22 @@ namespace Vigilance.API
             IsDestroyed = true;
         }
 
+        public void Delete()
+        {
+            Mirror.NetworkServer.Destroy(GameObject);
+            _door = null;
+            Id = -1;
+            Name = null;
+            Room = null;
+            RoomType = RoomType.Unknown;
+            Type = DoorType.UnknownDoor;
+            Zone = ZoneType.Unspecified;
+            Properties = null;
+            Permissions = KeycardPermissions.None;
+            Position = Vector3.zero;
+            DisallowedPlayers = null;
+        }
+
         public void Lock()
         {
             IsLocked = true;

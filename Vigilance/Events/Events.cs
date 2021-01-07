@@ -1583,4 +1583,21 @@ namespace Vigilance.Events
             ((GenerateSeedHandler)handler).OnGenerateSeed(this);
         }
     }
+
+    public class BlinkEvent : Event
+    {
+        public Player Scp { get; }
+        public List<Player> Targets { get; }
+
+        public BlinkEvent(Player scp, List<Player> plys)
+        {
+            Scp = scp;
+            Targets = plys;
+        }
+
+        public override void Execute(EventHandler handler)
+        {
+            ((BlinkEventHandler)handler).OnBlink(this);
+        }
+    }
 }

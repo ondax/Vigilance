@@ -98,7 +98,7 @@ namespace Vigilance
 
             public static void CollectGarbage()
             {
-                Log.Add("CACHE", "Collecting garbage ..", LogType.Debug);
+                Log.Add("Collecting garbage ..", ConsoleColor.Magenta);
                 GC.Collect();          
             }
         }
@@ -118,9 +118,8 @@ namespace Vigilance
                 if (num < 1)
                     num = UnityEngine.Random.Range(1, int.MaxValue);
                 seed = Mathf.Clamp(num, 1, int.MaxValue);
-                Log.Add($"Regenerating seed .. {seed}", LogType.Debug);
+                Log.Add($"Generated a blacklisted seed [{seed}]! Regenerating ..", ConsoleColor.Magenta);
             });
-            Log.Add("ENVIRONMENT", $"Map seed generated! {seed}", LogType.Debug);
             return seed;
         }
    
@@ -151,6 +150,14 @@ namespace Vigilance
             for (int i = 0; i < times; i++)
             {
                 act();
+            }
+        }
+
+        public static void RepeatDelay(int times, float delay, Action act)
+        {
+            for (int i = 0; i < times; i++)
+            {
+                Timing.CallDelayed(delay, act);
             }
         }
 
@@ -1643,11 +1650,25 @@ namespace Vigilance
                 GenerateSeedEvent ev = new GenerateSeedEvent(seed);
                 EventManager.Trigger<GenerateSeedHandler>(ev);
                 newSeed = ev.Seed;
+                Log.Add($"Map seed generated! {newSeed}", ConsoleColor.Magenta);
             }
             catch (Exception e)
             {
                 Log.Add("Environment.OnGenerateSeed", e);
                 newSeed = seed;
+            }
+        }
+
+        public static void OnBlink(Player scp, List<Player> players)
+        {
+            try
+            {
+                BlinkEvent ev = new BlinkEvent(scp, players);
+                EventManager.Trigger<BlinkEventHandler>(ev);
+            }
+            catch (Exception e)
+            {
+                Log.Add("Environment.OnBlink", e);
             }
         }
     }
