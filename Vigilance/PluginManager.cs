@@ -6,7 +6,6 @@ using Harmony;
 using Version = Vigilance.API.Version;
 using Vigilance.Extensions;
 using Vigilance.API;
-using MEC;
 
 namespace Vigilance
 {
@@ -14,7 +13,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 4, 6, "", true);
+        public static Version Version { get; } = new Version(5, 4, 7, "", false);
         public static List<string> CompatibleVersions = new List<string>() { "10.2.0" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -73,6 +72,7 @@ namespace Vigilance
                 }
 
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
+                CustomNetworkManager.EnableFastRestart = ConfigManager.FastRestart;
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);

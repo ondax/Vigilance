@@ -114,6 +114,7 @@
     <Compile Include="Patches\Events\AnimationController_CallCmdSyncData.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_ApplyProperties.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_CallCmdRegisterEscape.cs" />
+    <Compile Include="Patches\Events\CharacterClassManager_ForceRoundStart.cs" />
     <Compile Include="Patches\Events\CharacterClassManager_SetPlayersClass.cs" />
     <Compile Include="Patches\Events\CheaterReport_CallCmdReport.cs" />
     <Compile Include="Patches\Events\ConsumableAndWearableItems_CallCmdCancelMedicalItem.cs" />

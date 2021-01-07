@@ -43,9 +43,12 @@ namespace Vigilance.Extensions
 				var camera = cameras[i];
 				var cameraID = camera.GetInstanceID();
 				var cameraType = (Enums.CameraType)cameraID;
-				var room = Map.FindParentRoom(camera.gameObject);
+				if (camera != null && camera.gameObject != null)
+				{
+					var room = Map.FindParentRoom(camera.gameObject);
+					Rooms.Add(cameraID, room);
+				}
 				Types.Add(cameraID, cameraType);
-				Rooms.Add(cameraID, room);
 			}
 		}
 	}

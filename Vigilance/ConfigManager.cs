@@ -35,6 +35,7 @@ namespace Vigilance
 		public static bool DisableLocksOnRestart { get; set; }
 		public static bool FloatingItems { get; set; }
 		public static bool RemoteCard { get; set; }
+		public static bool FastRestart { get; set; }
 
 		public static float Scp173DoorCooldown { get; set; }
 		public static float Scp106PocketEnterDamage { get; set; }
@@ -121,6 +122,7 @@ namespace Vigilance
 			DisableLocksOnRestart = PluginManager.Config.GetBool("disable_locks_on_restart", false);
 			FloatingItems = PluginManager.Config.GetBool("floating_items", false);
 			RemoteCard = PluginManager.Config.GetBool("remote_card", false);
+			FastRestart = PluginManager.Config.GetBool("fast_restart", true);
 
 			Scp173DoorCooldown = PluginManager.Config.GetFloat("scp173_door_cooldown", 25f);
 			Scp106PocketEnterDamage = PluginManager.Config.GetFloat("scp106_pocket_enter_damage", 40f);
@@ -223,6 +225,7 @@ namespace Vigilance
 			AddConfig("A list of UserIDs for the players that should have their items float when dropped", "floating_items_users", "[]");
 			AddConfig("A list of blacklisted map seeds", "blacklisted_seeds", "[]");
 			AddConfig("Whether or not players need to take our their keycards in order to open a door.", "remote_card", "false");
+			AddConfig("Use the fast restart function?", "fast_restart", "true");
 
 			AddConfig("Whether or not SCP-049 should be able to revive players that were not killed by SCP-049", "scp049_revive_other", "true");
 			AddConfig("The distance SCP-049 can attack from", "scp049_attack_distance", "2.4");

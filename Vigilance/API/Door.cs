@@ -31,12 +31,14 @@ namespace Vigilance.API
         public DoorVariant Variant => _door;
         public List<Player> DisallowedPlayers { get; internal set; }
         public bool IsLocked { get; set; }
-        public bool IsDestroyed { get; set; }
-        public bool IsOpen { get => _door.NetworkTargetState; }
+        public bool IsDestroyed { get => ((BreakableDoor)_door).IsDestroyed; set => ((BreakableDoor)_door).IsDestroyed = value; }
+        public bool IsOpen { get => _door.NetworkTargetState; set => _door.NetworkTargetState = value; }
         public bool RequiredAllPermissions => _door.RequiredPermissions.RequireAll;
         public bool ScpOverride => _door.RequiredPermissions.RequiredPermissions == KeycardPermissions.ScpOverride;
         public bool IsBreakable => Properties.Contains(DoorProperties.IsBreakable);
         public bool IsPryable => Properties.Contains(DoorProperties.IsPryable);
+
+        public bool IsAllowed(Player player, bool allItems) => IsAllowed(player, allItems, 0);
 
         public bool IsAllowed(Player player, bool allItems, byte collider)
         {
@@ -86,6 +88,8 @@ namespace Vigilance.API
             return (keycardPermissions & _door.RequiredPermissions.RequiredPermissions) == _door.RequiredPermissions.RequiredPermissions;
         }
 
+        public void ChangeLock(DoorLockReason reason, bool state) => _door.ServerChangeLock(reason, state);
+
         public void Destroy()
         {
             (_door as IDamageableDoor)?.ServerDamage(65535f, DoorDamageType.ServerCommand);
@@ -124,6 +128,11 @@ namespace Vigilance.API
         public void Deny()
         {
             _door.PermissionsDenied(null, 0);
+        }
+
+        public void Beep()
+        {
+            ((BasicDoor)_door).CallRpcPlayBeepSound(true);
         }
 
         private void SetInfo(Room room, DoorType type, int id, string tag)

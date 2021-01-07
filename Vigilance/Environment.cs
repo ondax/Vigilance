@@ -98,6 +98,7 @@ namespace Vigilance
 
             public static void CollectGarbage()
             {
+                Log.Add("CACHE", "Collecting garbage ..", LogType.Debug);
                 GC.Collect();          
             }
         }
