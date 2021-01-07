@@ -4,7 +4,6 @@ using Interactables.Interobjects;
 using Vigilance.Enums;
 using UnityEngine;
 using Vigilance.Extensions;
-using System.Linq;
 
 namespace Vigilance.API
 {
@@ -39,19 +38,7 @@ namespace Vigilance.API
         public bool IsPryable => Properties.Contains(DoorProperties.IsPryable);
 
         public bool IsAllowed(Player player, bool allItems) => IsAllowed(player, allItems, 0);
-
-        public bool IsAllowed(Player player, bool allItems, byte collider)
-        {
-            if (IsLocked) return false;
-            if (DisallowedPlayers.Contains(player)) return false;
-            if (player.PlayerLock) return false;
-            if (!_door.AllowInteracting(player.Hub, collider)) return false;
-            if (_door.RequiredPermissions.RequiredPermissions == KeycardPermissions.None) return true;
-            if (player.IsAnySCP && _door.RequiredPermissions.RequiredPermissions == KeycardPermissions.ScpOverride) return true;
-            if (player.ItemInHand == ItemType.None && !ConfigManager.RemoteCard && !player.IsAnySCP) return false;
-            if (player.Hub.inventory.items.Where(h => h.id.IsKeycard()).Count() < 1 && !player.IsAnySCP) return false;
-            return allItems ? CheckAllPermissions(player) : CheckPermission(player.ItemInHand, player);
-        }
+        public bool IsAllowed(Player player, bool allItems, byte collider) => allItems ? CheckAllPermissions(player) : _door.RequiredPermissions.CheckPermissions(player.ItemInHand, player.Hub);
 
         public bool CheckAllPermissions(Player player)
         {
@@ -61,31 +48,10 @@ namespace Vigilance.API
                     continue;
                 if (!item.id.IsKeycard())
                     continue;
-                if (CheckPermission(item.id, player))
+                if (_door.RequiredPermissions.CheckPermissions(item.id, player.Hub))
                     return true;
             }
             return false;
-        }
-
-        public bool CheckPermission(ItemType item, Player player) => CheckPermission(player.Hub.inventory.GetItemByID(item), player);
-
-        public bool CheckPermission(Item item, Player player)
-        {
-            if (player.PlayerLock || IsLocked)
-                return false;
-            if (item == null)
-                return (player.IsAnySCP && _door.RequiredPermissions.RequiredPermissions.HasFlagFast(KeycardPermissions.ScpOverride)) || player.BypassMode;
-            if (player.BypassMode)
-                return true;
-            if (_door.RequiredPermissions.RequiredPermissions == KeycardPermissions.None)
-                return true;
-            KeycardPermissions keycardPermissions = DoorPermissionUtils.TranslateObsoletePermissions(item.permissions);
-            if (!_door.RequiredPermissions.RequireAll)           
-                return (keycardPermissions & _door.RequiredPermissions.RequiredPermissions) > KeycardPermissions.None;
-            foreach (KeycardPermissions perm in item.permissions.GetPermissions())
-                if (_door.RequiredPermissions.RequiredPermissions.HasFlagFast(perm) || _door.RequiredPermissions.RequiredPermissions == perm)
-                    return true;
-            return (keycardPermissions & _door.RequiredPermissions.RequiredPermissions) == _door.RequiredPermissions.RequiredPermissions;
         }
 
         public void ChangeLock(DoorLockReason reason, bool state) => _door.ServerChangeLock(reason, state);
