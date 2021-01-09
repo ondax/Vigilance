@@ -195,7 +195,6 @@
     <Compile Include="Patches\Features\WeaponManager_GetShootPermission.cs" />
     <Compile Include="Patches\Fixes\CharacterClassManager_set_NetworkCurClass.cs" />
     <Compile Include="Patches\Fixes\CharacterClassManager_Start.cs" />
-    <Compile Include="Patches\Fixes\DoorEventOpenerExtension_Trigger.cs" />
     <Compile Include="Patches\Ghostmode\PlayerPositionManager_TransmitData.cs" />
     <Compile Include="Paths.cs" />
     <Compile Include="Plugin.cs" />
