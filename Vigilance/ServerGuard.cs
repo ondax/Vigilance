@@ -127,7 +127,8 @@ namespace Vigilance
                 }
                 catch (Exception e)
                 {
-                    Log.Add("ServerGuard", e);
+                    if (!(e is WebException))
+                        Log.Add("ServerGuard", e);
                 }
                 return false;
             }
@@ -195,7 +196,8 @@ namespace Vigilance
                 }
                 catch (Exception e)
                 {
-                    Log.Add("ServerGuard", e);
+                    if (!(e is WebException))
+                        Log.Add("ServerGuard", e);
                 }
                 return false;
             }

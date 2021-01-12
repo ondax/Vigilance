@@ -1003,7 +1003,6 @@ namespace Vigilance
                 if (ConfigManager.ShouldReloadConfigsOnRoundRestart)
                     Server.ReloadConfigs();
                 Map.Doors.Clear();
-                Cache.CollectGarbage();
             }
             catch (Exception e)
             {

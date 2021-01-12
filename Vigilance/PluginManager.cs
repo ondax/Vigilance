@@ -13,7 +13,7 @@ namespace Vigilance
     {
         private static bool _enabled = false;
 
-        public static Version Version { get; } = new Version(5, 5, 1, "", false);
+        public static Version Version { get; } = new Version(5, 5, 2, "", false);
         public static List<string> CompatibleVersions = new List<string>() { "10.2.0", "10.2.1" };
         public static Dictionary<string, Assembly> Assemblies { get; set; }
         public static Dictionary<string, Plugin> Plugins { get; set; }
@@ -72,7 +72,6 @@ namespace Vigilance
                 }
 
                 CustomNetworkManager.Modded = ConfigManager.MarkAsModded;
-                CustomNetworkManager.EnableFastRestart = ConfigManager.FastRestart;
                 BuildInfoCommand.ModDescription = $"Vigilance v{Version} - a simple plugin loader and a little API for SCP: Secret Laboratory.";
                 _enabled = true;
                 Log.Add("PluginManager", $"Succesfully loaded Vigilance version \"{Version}\"!\nPlugins: {Plugins.Values.Count}\nDependencies: {Dependencies.Values.Count}", LogType.Info);

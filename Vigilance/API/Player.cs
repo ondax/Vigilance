@@ -317,6 +317,7 @@ namespace Vigilance.API
         public void OpenRemoteAdmin() => _hub.serverRoles.CallTargetOpenRemoteAdmin(Connection, string.IsNullOrEmpty(ServerStatic.GetPermissionsHandler()?._overridePassword) ? false : true);
         public void OpenRemoteAdmin(bool password) => _hub.serverRoles.CallTargetOpenRemoteAdmin(Connection, password);
         public void CloseRemoteAdmin() => _hub.serverRoles.CallTargetCloseRemoteAdmin(Connection);
+        public void Blink() => _hub?.characterClassManager?.Scp173?.RpcBlinkTime();
 
         public void ShowHint(string message, float duration = 10f)
         {
